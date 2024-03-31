@@ -1,0 +1,26 @@
+version: '3.9'
+
+services:
+    db-spaceimoveis:
+        container_name: 'db-spaceimoveis'
+        image: postgres
+        volumes:
+            - storage_db:/var/lib/postgres/data
+        ports:
+            - ${DB_PORT}:${DB_PORT}
+        environment:
+            POSTGRES_USER: ${DB_USER}
+            POSTGRES_PASSWORD: ${DB_PASS}
+            POSTGRES_DB: ${DB_NAME}
+    pgadmin-spaceimoveis:
+        container_name: pgadmin4_container-spaceimoveis
+        image: dpage/pgadmin4
+        restart: always
+        environment:
+            PGADMIN_DEFAULT_EMAIL: ${DB_USER}@admin.com
+            PGADMIN_DEFAULT_PASSWORD: ${DB_PASS}
+        ports:
+            - "5050:80"
+
+volumes:
+  storage_db:
