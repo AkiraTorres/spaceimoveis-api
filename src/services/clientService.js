@@ -1,8 +1,9 @@
 import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
+import validator from 'validator';
 
 import Client from '../models/Client.js';
-import { EmailAlreadyExists, ClientNotFound, InvalidEmail, InvalidName, InsecurePasssword, InvalidPhone, NoClientsFound } from '../errors/clientErrors.js';
+import { EmailAlreadyExists, ClientNotFound, InvalidEmail, InvalidName, InsecurePassword, InvalidPhone, NoClientsFound } from '../errors/clientErrors.js';
 
 dotenv.config();
 const salt = process.env.CRYPT_SALT;
@@ -52,7 +53,9 @@ async function findByPk(email) {
   try {
     email = validateEmail(email);
 
-    const client =  await Client.findByPk(email);
+    const client =  await Client.findByPk(email, {
+      attributes: ['email', 'name', 'phone'],
+    });
     
     if (!client) {
       throw new ClientNotFound();
@@ -124,43 +127,55 @@ async function destroy(email) {
 }
 
 function validateEmail(email) {
+  const sanitizedEmail = validator.escape(email);
+
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   
-  if(!emailRegex.test(email)) throw new InvalidEmail();
+  if(!emailRegex.test(sanitizedEmail)) throw new InvalidEmail();
 
-  return email;
+  return sanitizedEmail;
 }
 
 function validateName(name) {
-  if (name.length == 0 || name == '' || name == undefined) {
+  const sanitizedName = validator.escape(name);
+
+  if (sanitizedName.length == 0 || sanitizedName == '' || sanitizedName == undefined) {
     throw new InvalidName();
   }
 
-  return name;
+  return sanitizedName;
 }
 
 function validatePassword(password) {
-  const passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*()_+])[0-9a-zA-Z!@#$%^&*()_+]{8,}$/;
+  const sanitizedPassword = validator.escape(password);
 
-  if (!passwordRegex.test(password)) {
-    throw new InsecurePasssword();
+  if (sanitizedPassword.length == 0 || sanitizedPassword == '' || sanitizedPassword == undefined) {
+    throw new InsecurePassword('O campo senha é obrigatório');
   }
 
-  return bcrypt.hashSync(password, salt);
+  const sanitizedPasswordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*()_+])[0-9a-zA-Z!@#$%^&*()_+]{8,}$/;
+
+  if (!sanitizedPasswordRegex.test(sanitizedPassword)) {
+    throw new InsecurePassword();
+  }
+
+  return bcrypt.hashSync(sanitizedPassword, salt);
 }
 
 function validatePhone(phone) {
-  if (phone.length == 0 || phone == '' || phone == undefined) {
+  const sanitizedPhone = validator.escape(phone);
+
+  if (sanitizedPhone.length == 0 || sanitizedPhone == '' || sanitizedPhone == undefined) {
     throw new InvalidPhone('O campo telefone é obrigatório');
   }
 
   const brazilianPhoneNumberRegex = /^(?:\+|00)?(?:55)?(?:\s|-|\.)?(?:(?:\(?\d{2}\)?)(?:\s|-|\.)?)?(?:9\d{4}|\d{4})[-. ]?\d{4}$/;
 
-  if (!brazilianPhoneNumberRegex.test(phone)) {
+  if (!brazilianPhoneNumberRegex.test(sanitizedPhone)) {
     throw new InvalidPhone();
   }
 
-  return phone;
+  return sanitizedPhone;
 }
 
 export { findAll, findByPk, create, update, destroy };
