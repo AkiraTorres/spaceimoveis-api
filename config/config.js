@@ -14,6 +14,7 @@ export default {
     "dialectOptions": {
       "ssl": {
         "require": true,
+        "rejectUnauthorized": false
       }
     },
     "loggin": true
