@@ -16,7 +16,7 @@ export const findAll = asyncHandler(async (req, res) => {
 
 export const findByPk = asyncHandler(async (req, res) => {
   try {
-    const result = await service.findByPk(req.params.id);
+    const result = await service.findByPk(req.params.email);
     res.status(200).json(result);
   } catch (error) {
     const status = error.status || 500;
@@ -38,7 +38,7 @@ export const create = asyncHandler(async (req, res) => {
 export const update = asyncHandler(async (req, res) => {
   try {
     const data = req.body;
-    const result = await service.update(req.params.id, data);
+    const result = await service.update(req.params.email, data);
     res.status(200).json(result);
   } catch (error) {
     const status = error.status || 500;
@@ -48,7 +48,7 @@ export const update = asyncHandler(async (req, res) => {
 
 export const destroy = asyncHandler(async (req, res) => {
   try {
-    const result = await service.destroy(req.params.id);
+    const result = await service.destroy(req.params.email);
     res.status(204).json(result);
   } catch (error) {
     const status = error.status || 500;
