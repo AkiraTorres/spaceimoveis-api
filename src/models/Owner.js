@@ -30,6 +30,10 @@ const Owner = sequelize.define('owners', {
     type: DataTypes.STRING,
     allowNull: true,
   },
+  house_number: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
   cep: {
     type: DataTypes.STRING,
     allowNull: true,

@@ -98,11 +98,15 @@ async function update(email, data) {
       throw new ClientNotFound();
     }
 
-    const client = {};
-    client.email = validateEmail(data.email) || oldClient.email;
-    client.name = validateString(data.name, 'O campo nome é obrigatório') || oldClient.name;
-    client.password = validatePassword(data.password) || oldClient.password;
-    client.phone = validatePhone(data.phone) || oldClient.phone;
+    const client = {
+      email: data.email || oldClient.email,
+      name: data.name || oldClient.name,
+      phone: data.phone || oldClient.phone,
+    };
+
+    client.email = validateEmail(client.email);
+    client.name = validateString(client.name, 'O campo nome é obrigatório');
+    client.phone = validatePhone(client.phone);
 
     return await Client.update(client, { where: { validatedEmail } });
   } catch (error) {
