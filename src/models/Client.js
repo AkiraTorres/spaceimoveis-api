@@ -1,4 +1,4 @@
-import { DataTypes, sequelize } from "../db/Conn.js";
+import { DataTypes, sequelize } from '../db/Conn.js';
 
 const Client = sequelize.define('clients', {
   email: {
@@ -17,8 +17,7 @@ const Client = sequelize.define('clients', {
   phone: {
     type: DataTypes.STRING,
     allowNull: false,
-    },
   },
-);
+});
 
 export default Client;

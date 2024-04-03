@@ -23,6 +23,9 @@ module.exports = {
   },
   rules: {
     'import/extensions': 'off',
-    endOfLine: 'auto',
+    'no-console': 'off',
+    'object-curly-newline': 'off',
+    strict: 'off',
+    // endOfLine: 'auto',
   },
 };

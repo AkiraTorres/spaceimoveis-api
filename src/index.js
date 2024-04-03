@@ -1,9 +1,9 @@
-import Express from "express";
-import bodyParser from "body-parser";
-import dotenv from "dotenv";
-import cors from "cors";
+import Express from 'express';
+import bodyParser from 'body-parser';
+import dotenv from 'dotenv';
+import cors from 'cors';
 
-import clientRoutes from "./routes/clientRoutes.js";
+import clientRoutes from './routes/clientRoutes.js';
 
 dotenv.config();
 
@@ -14,16 +14,13 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(cors());
 
-app.use("/clients", clientRoutes);
+app.use('/clients', clientRoutes);
 
-app.get("/", (req, res) => {
-    res.send("Hello World");
-});
-
-app.all("*", (req, res) => {
-    res.status(404).send("Not Found");
+app.all('*', (req, res) => {
+  res.status(404).send('Not Found');
 });
 
 app.listen(port, () => {
-    console.log(`\u001B[32mServer is running on http://localhost:${port}\u001B[0m`);
+  // eslint-disable-next-line no-console
+  console.log(`\u001B[32mServer is running on http://localhost:${port}\u001B[0m`);
 });
