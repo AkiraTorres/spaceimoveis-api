@@ -10,14 +10,6 @@ export default {
     host: process.env.DB_HOST,
     port: process.env.DB_PORT,
     dialect: process.env.DB_DIALECT,
-    ssl: true,
-    dialectOptions: {
-      ssl: {
-        require: true,
-        rejectUnauthorized: false,
-      },
-    },
-    loggin: true,
   },
   test: {
     username: process.env.DB_USER,
@@ -26,6 +18,14 @@ export default {
     host: process.env.DB_HOST,
     port: process.env.DB_PORT,
     dialect: process.env.DB_DIALECT,
+    ssl: true,
+    dialectOptions: {
+      ssl: {
+        require: true,
+        rejectUnauthorized: false,
+      },
+    },
+    loggin: true,
   },
   production: {
     username: process.env.DB_USER,

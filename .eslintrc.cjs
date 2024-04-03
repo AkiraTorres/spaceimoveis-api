@@ -26,6 +26,7 @@ module.exports = {
     'no-console': 'off',
     'object-curly-newline': 'off',
     strict: 'off',
+    'no-plusplus': 'off',
     // endOfLine: 'auto',
   },
 };

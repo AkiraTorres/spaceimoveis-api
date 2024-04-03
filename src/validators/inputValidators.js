@@ -3,14 +3,15 @@ import dotenv from 'dotenv';
 import validator from 'validator';
 
 import InvalidEmail from '../errors/invalidEmail.js';
-import InvalidName from '../errors/invalidName.js';
+import InvalidString from '../errors/invalidString.js';
 import InsecurePassword from '../errors/insecurePassword.js';
 import InvalidPhone from '../errors/invalidPhone.js';
+import InvalidCpf from '../errors/invalidCpf.js';
 
 dotenv.config();
 const salt = process.env.CRYPT_SALT;
 
-function validateEmail(email) {
+export function validateEmail(email) {
   const sanitizedEmail = validator.escape(email);
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -20,17 +21,20 @@ function validateEmail(email) {
   return sanitizedEmail;
 }
 
-function validateName(name) {
-  const sanitizedName = validator.escape(name);
+export function validateString(string, msg = '') {
+  const sanitizedString = validator.escape(string);
 
-  if (sanitizedName.length === 0 || sanitizedName === '' || sanitizedName === undefined) {
-    throw new InvalidName();
+  if (sanitizedString.length === 0 || sanitizedString === '' || sanitizedString === undefined) {
+    if (msg !== '') {
+      throw new InvalidString(msg);
+    }
+    throw new InvalidString();
   }
 
-  return sanitizedName;
+  return sanitizedString;
 }
 
-function validatePassword(password) {
+export function validatePassword(password) {
   const sanitizedPassword = validator.escape(password);
 
   if (sanitizedPassword.length === 0 || sanitizedPassword === '' || sanitizedPassword === undefined) {
@@ -46,7 +50,7 @@ function validatePassword(password) {
   return bcrypt.hashSync(sanitizedPassword, salt);
 }
 
-function validatePhone(phone) {
+export function validatePhone(phone) {
   const sanitizedPhone = validator.escape(phone);
 
   if (sanitizedPhone.length === 0 || sanitizedPhone === '' || sanitizedPhone === undefined) {
@@ -62,4 +66,65 @@ function validatePhone(phone) {
   return sanitizedPhone;
 }
 
-export { validateEmail, validateName, validatePassword, validatePhone };
+export function validateCpf(cpf) {
+  const validatedCpf = cpf.replace(/[^\d]+/g, '');
+
+  if (validatedCpf.length !== 11 || /^(\d)\1{10}$/.test(validatedCpf)) throw new InvalidCpf();
+
+  let sum = 0;
+  let remainder;
+
+  for (let i = 1; i <= 9; i++) sum += parseInt(validatedCpf.substring(i - 1, i), 10) * (11 - i);
+  remainder = (sum * 10) % 11;
+
+  if ((remainder === 10) || (remainder === 11)) remainder = 0;
+
+  if (remainder !== parseInt(validatedCpf.substring(9, 10), 10)) throw new InvalidCpf();
+
+  sum = 0;
+
+  for (let i = 1; i <= 10; i++) sum += parseInt(validatedCpf.substring(i - 1, i), 10) * (12 - i);
+  remainder = (sum * 10) % 11;
+
+  if ((remainder === 10) || (remainder === 11)) remainder = 0;
+
+  if (remainder !== parseInt(validatedCpf.substring(10, 11), 10)) throw new InvalidCpf();
+
+  return validatedCpf; // valid
+}
+
+export function validateCep(cep) {
+  const sanitizedCep = validator.escape(cep);
+
+  if (sanitizedCep.length === 0 || sanitizedCep === '' || sanitizedCep === undefined) {
+    throw new InvalidString('O campo CEP é obrigatório');
+  }
+
+  const brazilianCepRegex = /^\d{5}-?\d{3}$/;
+
+  if (!brazilianCepRegex.test(sanitizedCep)) {
+    throw new InvalidString('CEP inválido');
+  }
+
+  return sanitizedCep;
+}
+
+export function validateUF(uf) {
+  const sanitizedUf = validator.escape(uf.toUpperCase().trim());
+
+  if (sanitizedUf.length === 0 || sanitizedUf === '' || sanitizedUf === undefined) {
+    throw new InvalidString('O campo estado é obrigatório');
+  }
+
+  const validUfs = [
+    'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS',
+    'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC',
+    'SP', 'SE', 'TO',
+  ];
+
+  if (!validUfs.includes(sanitizedUf)) {
+    throw new InvalidString('Estado inválido');
+  }
+
+  return sanitizedUf;
+}
