@@ -3,12 +3,12 @@ import dotenv from 'dotenv';
 import validator from 'validator';
 
 import Client from '../models/Client.js';
-import EmailAlreadyExists from '../errors/clientErrors/emailAlreadyExists.js';
+import EmailAlreadyExists from '../errors/emailAlreadyExists.js';
 import ClientNotFound from '../errors/clientErrors/clientNotFound.js';
-import InvalidEmail from '../errors/clientErrors/invalidEmail.js';
-import InvalidName from '../errors/clientErrors/invalidName.js';
-import InsecurePassword from '../errors/clientErrors/insecurePassword.js';
-import InvalidPhone from '../errors/clientErrors/invalidPhone.js';
+import InvalidEmail from '../errors/invalidEmail.js';
+import InvalidName from '../errors/invalidName.js';
+import InsecurePassword from '../errors/insecurePassword.js';
+import InvalidPhone from '../errors/invalidPhone.js';
 import NoClientsFound from '../errors/clientErrors/noClientsFound.js';
 
 dotenv.config();
