@@ -23,7 +23,8 @@ router.post('/login', async (req, res) => {
     if (!isValid) throw error;
 
     const token = generateJwt(email);
-    res.json({ auth: true, token });
+    const loggedUser = { user, token };
+    res.json(loggedUser);
   } catch (error) {
     const status = error.status || 500;
     res.status(status).json(error.message).end();
