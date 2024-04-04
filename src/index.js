@@ -5,6 +5,7 @@ import cors from 'cors';
 
 import clientRoutes from './routes/clientRoutes.js';
 import ownerRoutes from './routes/ownerRoutes.js';
+import * as globalController from './controllers/globalController.js';
 
 dotenv.config();
 
@@ -17,6 +18,9 @@ app.use(cors());
 
 app.use('/clients', clientRoutes);
 app.use('/owners', ownerRoutes);
+
+app.get('/find/:email', globalController.find);
+app.get('/find', globalController.findAll);
 
 app.all('*', (req, res) => {
   res.status(404).send('Not Found');

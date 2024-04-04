@@ -18,6 +18,11 @@ const Client = sequelize.define('clients', {
     type: DataTypes.STRING,
     allowNull: false,
   },
+  type: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    defaultValue: 'client',
+  },
 });
 
 export default Client;

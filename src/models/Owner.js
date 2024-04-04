@@ -50,6 +50,11 @@ const Owner = sequelize.define('owners', {
     type: DataTypes.STRING(2),
     allowNull: true,
   },
+  type: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    defaultValue: 'owner',
+  },
 });
 
 export default Owner;

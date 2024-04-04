@@ -8,6 +8,13 @@ import { validateEmail, validateString, validatePassword, validatePhone, validat
 
 async function findAll(page) {
   try {
+    if (page < 1) {
+      return await Owner.findAll({
+        attributes: ['email', 'name', 'phone', 'cpf', 'rg', 'address', 'house_number', 'cep', 'district', 'city', 'state', 'type'],
+        order: [['name', 'ASC']],
+      });
+    }
+
     const limit = 5;
     const countTotal = await Owner.count();
 
@@ -19,7 +26,7 @@ async function findAll(page) {
     const offset = Number(limit * (page - 1));
 
     const owners = await Owner.findAll({
-      attributes: ['email', 'name', 'phone', 'cpf', 'rg', 'address', 'house_number', 'cep', 'district', 'city', 'state'],
+      attributes: ['email', 'name', 'phone', 'cpf', 'rg', 'address', 'house_number', 'cep', 'district', 'city', 'state', 'type'],
       order: [['name', 'ASC']],
       offset,
       limit,
@@ -51,7 +58,7 @@ async function findByPk(email) {
     const validatedEmail = validateEmail(email);
 
     const owner = await Owner.findByPk(validatedEmail, {
-      attributes: ['email', 'name', 'phone', 'cpf', 'rg', 'address', 'house_number', 'cep', 'district', 'city', 'state'],
+      attributes: ['email', 'name', 'phone', 'cpf', 'rg', 'address', 'house_number', 'cep', 'district', 'city', 'state', 'type'],
     });
 
     if (!owner) {
