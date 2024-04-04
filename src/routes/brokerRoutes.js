@@ -1,6 +1,6 @@
 import Express from 'express';
 
-import * as controller from '../controllers/ownerController.js';
+import * as controller from '../controllers/brokerController.js';
 import verifyJwt from '../middlewares/verifyJwt.js';
 import matchEmail from '../middlewares/matchEmail.js';
 

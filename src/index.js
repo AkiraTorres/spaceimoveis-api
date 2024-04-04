@@ -6,6 +6,7 @@ import cors from 'cors';
 import clientRoutes from './routes/clientRoutes.js';
 import ownerRoutes from './routes/ownerRoutes.js';
 import loginRoutes from './routes/loginRoutes.js';
+import brokerRoutes from './routes/brokerRoutes.js';
 import * as globalController from './controllers/globalController.js';
 
 dotenv.config();
@@ -13,13 +14,14 @@ dotenv.config();
 const app = Express();
 const port = Number(process.env.PORT) || 3000;
 
-app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors());
 
+app.use('/', loginRoutes);
 app.use('/clients', clientRoutes);
 app.use('/owners', ownerRoutes);
-app.use('/', loginRoutes);
+app.use('/brokers', brokerRoutes);
 
 app.get('/find/:email', globalController.find);
 app.get('/find', globalController.findAll);

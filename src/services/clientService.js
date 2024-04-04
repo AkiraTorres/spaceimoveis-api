@@ -1,5 +1,6 @@
 import Client from '../db/models/Client.js';
 import Owner from '../db/models/Owner.js';
+import Broker from '../db/models/Broker.js';
 
 import EmailAlreadyExists from '../errors/emailAlreadyExists.js';
 import ClientNotFound from '../errors/clientErrors/clientNotFound.js';
@@ -86,7 +87,10 @@ async function create(data) {
 
     const client = userData;
 
-    if (await Client.findByPk(client.email) || await Owner.findByPk(client.email)) {
+    if (
+      await Client.findByPk(client.email)
+      || await Owner.findByPk(client.email)
+      || await Broker.findByPk(client.email)) {
       throw new EmailAlreadyExists();
     }
 
@@ -117,7 +121,7 @@ async function update(email, data) {
     client.name = validateString(client.name, 'O campo nome é obrigatório');
     client.phone = validatePhone(client.phone);
 
-    return await Client.update(client, { where: { validatedEmail } });
+    return await Client.update(client, { where: { email: validatedEmail } });
   } catch (error) {
     const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     console.error(message);

@@ -128,3 +128,15 @@ export function validateUF(uf) {
 
   return sanitizedUf;
 }
+
+export function validateCreci(creci) {
+  const sanitizedCreci = validator.escape(creci);
+
+  const creciRegex = /^CRECI-[A-Z]{2}\s?\d{5}$/;
+
+  if (!creciRegex.test(sanitizedCreci)) {
+    throw new InvalidString('CRECI inválido');
+  }
+
+  return sanitizedCreci;
+}

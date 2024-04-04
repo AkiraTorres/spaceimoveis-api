@@ -1,13 +1,15 @@
 import * as clientService from './clientService.js';
 import * as ownerService from './ownerService.js';
+import * as brokerService from './brokerService.js';
 
 // eslint-disable-next-line import/prefer-default-export
 export async function findAll() {
   try {
     const clients = await clientService.findAll(0);
     const owners = await ownerService.findAll(0);
+    const brokers = await brokerService.findAll(0);
 
-    return { ...clients, ...owners };
+    return { ...clients, ...owners, ...brokers };
   } catch (error) {
     error.status = error.status || 500;
     error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
@@ -29,6 +31,13 @@ export async function find(email, pass = false) {
         const owner = await ownerService.findByPk(email, pass);
         if (owner) {
           return owner;
+        }
+      } catch (error) { /* empty */ }
+
+      try {
+        const broker = await brokerService.findByPk(email, pass);
+        if (broker) {
+          return broker;
         }
       } catch (error) { /* empty */ }
     }
