@@ -53,12 +53,14 @@ async function findAll(page) {
   }
 }
 
-async function findByPk(email) {
+async function findByPk(email, password) {
   try {
     const validatedEmail = validateEmail(email);
+    const attributes = ['email', 'name', 'phone', 'cpf', 'rg', 'address', 'house_number', 'cep', 'district', 'city', 'state', 'type'];
+    if (password) attributes.push('password');
 
     const owner = await Owner.findByPk(validatedEmail, {
-      attributes: ['email', 'name', 'phone', 'cpf', 'rg', 'address', 'house_number', 'cep', 'district', 'city', 'state', 'type'],
+      attributes,
     });
 
     if (!owner) {

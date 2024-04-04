@@ -27,6 +27,7 @@ module.exports = {
     'object-curly-newline': 'off',
     strict: 'off',
     'no-plusplus': 'off',
+    'import/no-extraneous-dependencies': 'off',
     // endOfLine: 'auto',
   },
 };

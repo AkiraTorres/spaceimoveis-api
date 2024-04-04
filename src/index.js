@@ -5,8 +5,8 @@ import cors from 'cors';
 
 import clientRoutes from './routes/clientRoutes.js';
 import ownerRoutes from './routes/ownerRoutes.js';
-import * as globalController from './controllers/globalController.js';
 import loginRoutes from './routes/loginRoutes.js';
+import * as globalController from './controllers/globalController.js';
 
 dotenv.config();
 

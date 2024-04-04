@@ -53,12 +53,14 @@ async function findAll(page) {
   }
 }
 
-async function findByPk(email) {
+async function findByPk(email, password) {
   try {
     const validatedEmail = validateEmail(email);
+    const attributes = ['email', 'name', 'phone', 'type'];
+    if (password) attributes.push('password');
 
     const client = await Client.findByPk(validatedEmail, {
-      attributes: ['email', 'name', 'phone', 'type'],
+      attributes,
     });
 
     if (!client) {

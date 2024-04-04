@@ -8,7 +8,7 @@
   },
   "type": "module",
   "scripts": {
-    "build": "npm i & sequelize db:migrate",
+    "build": "npm i && cd src/db && sequelize db:migrate",
     "start:dev": "nodemon src/index.js",
     "start": "node src/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -23,6 +23,7 @@
     "express": "^4.19.2",
     "express-async-handler": "^1.2.0",
     "firebase": "^10.10.0",
+    "jsonwebtoken": "^9.0.2",
     "pg": "^8.11.4",
     "pg-hstore": "^2.3.4",
     "sequelize": "^6.37.2",
