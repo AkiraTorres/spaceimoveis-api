@@ -1,6 +1,6 @@
 import { DataTypes, sequelize } from '../Conn.js';
 
-const Broker = sequelize.define('brokers', {
+const Realtor = sequelize.define('realtors', {
   email: {
     type: DataTypes.STRING,
     primaryKey: true,
@@ -53,8 +53,8 @@ const Broker = sequelize.define('brokers', {
   type: {
     type: DataTypes.STRING,
     allowNull: false,
-    defaultValue: 'broker',
+    defaultValue: 'realtor',
   },
 });
 
-export default Broker;
+export default Realtor;

@@ -1,6 +1,6 @@
 import Client from '../db/models/Client.js';
 import Owner from '../db/models/Owner.js';
-import Broker from '../db/models/Broker.js';
+import Realtor from '../db/models/Realtor.js';
 
 import EmailAlreadyExists from '../errors/emailAlreadyExists.js';
 import ClientNotFound from '../errors/clientErrors/clientNotFound.js';
@@ -90,7 +90,7 @@ async function create(data) {
     if (
       await Client.findByPk(client.email)
       || await Owner.findByPk(client.email)
-      || await Broker.findByPk(client.email)) {
+      || await Realtor.findByPk(client.email)) {
       throw new EmailAlreadyExists();
     }
 

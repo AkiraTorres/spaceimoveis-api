@@ -1,45 +1,45 @@
 import Client from '../db/models/Client.js';
 import Owner from '../db/models/Owner.js';
-import Broker from '../db/models/Broker.js';
+import Realtor from '../db/models/Realtor.js';
 
 import EmailAlreadyExists from '../errors/emailAlreadyExists.js';
-import BrokerNotFound from '../errors/brokerErrors/brokerNotFound.js';
-import NoBrokersFound from '../errors/brokerErrors/noBrokersFound.js';
+import RealtorNotFound from '../errors/realtorErrors/realtorNotFound.js';
+import NoRealtorsFound from '../errors/realtorErrors/noRealtorsFound.js';
 import { validateEmail, validateString, validatePassword, validatePhone, validateCpf, validateUF, validateCep, validateCreci } from '../validators/inputValidators.js';
 
 async function findAll(page) {
   try {
     const attributes = ['email', 'name', 'phone', 'cpf', 'rg', 'creci', 'cep', 'address', 'house_number', 'city', 'state', 'type'];
     if (page < 1) {
-      return await Broker.findAll({
+      return await Realtor.findAll({
         attributes,
         order: [['name', 'ASC']],
       });
     }
 
     const limit = 5;
-    const countTotal = await Broker.count();
+    const countTotal = await Realtor.count();
 
     if (countTotal === 0) {
-      throw new NoBrokersFound();
+      throw new NoRealtorsFound();
     }
 
     const lastPage = Math.ceil(countTotal / limit);
     const offset = Number(limit * (page - 1));
 
-    const brokers = await Broker.findAll({
+    const realtors = await Realtor.findAll({
       attributes,
       order: [['name', 'ASC']],
       offset,
       limit,
     });
 
-    if (brokers.length === 0) {
-      throw new NoBrokersFound();
+    if (realtors.length === 0) {
+      throw new NoRealtorsFound();
     }
 
     const pagination = {
-      path: '/brokers',
+      path: '/realtors',
       page,
       prev_page_url: page - 1 >= 1 ? page - 1 : null,
       next_page_url: Number(page) + 1 <= lastPage ? Number(page) + 1 : null,
@@ -47,7 +47,7 @@ async function findAll(page) {
       total: countTotal,
     };
 
-    return { brokers, pagination };
+    return { realtors, pagination };
   } catch (error) {
     const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     console.error(message);
@@ -61,15 +61,15 @@ async function findByPk(email, password) {
     const attributes = ['email', 'name', 'phone', 'cpf', 'rg', 'creci', 'cep', 'address', 'house_number', 'city', 'state', 'type'];
     if (password) attributes.push('password');
 
-    const broker = await Broker.findByPk(validatedEmail, {
+    const realtor = await Realtor.findByPk(validatedEmail, {
       attributes,
     });
 
-    if (!broker) {
-      throw new BrokerNotFound();
+    if (!realtor) {
+      throw new RealtorNotFound();
     }
 
-    return broker;
+    return realtor;
   } catch (error) {
     const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     console.error(message);
@@ -94,16 +94,16 @@ async function create(data) {
     userData.city = validateString(data.city, 'O campo cidade é obrigatório');
     userData.state = validateUF(data.state);
 
-    const broker = userData;
+    const realtor = userData;
 
     if (
-      await Client.findByPk(broker.email)
-      || await Owner.findByPk(broker.email)
-      || await Broker.findByPk(broker.email)) {
+      await Client.findByPk(realtor.email)
+      || await Owner.findByPk(realtor.email)
+      || await Realtor.findByPk(realtor.email)) {
       throw new EmailAlreadyExists();
     }
 
-    return await Broker.create(broker);
+    return await Realtor.create(realtor);
   } catch (error) {
     const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     console.error(message);
@@ -115,39 +115,39 @@ async function update(email, data) {
   try {
     const validatedEmail = validateEmail(email);
 
-    const oldBroker = await Broker.findByPk(validatedEmail);
-    if (!oldBroker) {
-      throw new BrokerNotFound();
+    const oldRealtor = await Realtor.findByPk(validatedEmail);
+    if (!oldRealtor) {
+      throw new RealtorNotFound();
     }
 
-    const broker = {
-      email: data.email || oldBroker.email,
-      name: data.name || oldBroker.name,
-      phone: data.phone || oldBroker.phone,
-      cpf: data.cpf || oldBroker.cpf,
-      rg: data.rg || oldBroker.rg,
-      creci: data.creci || oldBroker.creci,
-      cep: data.cep || oldBroker.cep,
-      address: data.address || oldBroker.address,
-      house_number: data.house_number || oldBroker.house_number,
-      city: data.city || oldBroker.city,
-      state: data.state || oldBroker.state,
+    const realtor = {
+      email: data.email || oldRealtor.email,
+      name: data.name || oldRealtor.name,
+      phone: data.phone || oldRealtor.phone,
+      cpf: data.cpf || oldRealtor.cpf,
+      rg: data.rg || oldRealtor.rg,
+      creci: data.creci || oldRealtor.creci,
+      cep: data.cep || oldRealtor.cep,
+      address: data.address || oldRealtor.address,
+      house_number: data.house_number || oldRealtor.house_number,
+      city: data.city || oldRealtor.city,
+      state: data.state || oldRealtor.state,
     };
 
-    broker.email = validateEmail(data.email);
-    broker.name = validateString(data.name, 'O campo nome é obrigatório');
-    broker.password = validatePassword(data.password);
-    broker.phone = validatePhone(data.phone);
-    broker.cpf = validateCpf(data.cpf);
-    broker.rg = validateString(data.rg, 'O campo RG é obrigatório');
-    broker.creci = validateCreci(data.creci);
-    broker.cep = validateCep(data.cep);
-    broker.address = validateString(data.address, 'O campo endereço é obrigatório');
-    broker.house_number = validateString(data.house_number, 'O campo número é obrigatório');
-    broker.city = validateString(data.city, 'O campo cidade é obrigatório');
-    broker.state = validateUF(data.state);
+    realtor.email = validateEmail(data.email);
+    realtor.name = validateString(data.name, 'O campo nome é obrigatório');
+    realtor.password = validatePassword(data.password);
+    realtor.phone = validatePhone(data.phone);
+    realtor.cpf = validateCpf(data.cpf);
+    realtor.rg = validateString(data.rg, 'O campo RG é obrigatório');
+    realtor.creci = validateCreci(data.creci);
+    realtor.cep = validateCep(data.cep);
+    realtor.address = validateString(data.address, 'O campo endereço é obrigatório');
+    realtor.house_number = validateString(data.house_number, 'O campo número é obrigatório');
+    realtor.city = validateString(data.city, 'O campo cidade é obrigatório');
+    realtor.state = validateUF(data.state);
 
-    return await Broker.update(broker, { where: { email: validatedEmail } });
+    return await Realtor.update(realtor, { where: { email: validatedEmail } });
   } catch (error) {
     const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     console.error(message);
@@ -159,11 +159,11 @@ async function destroy(email) {
   try {
     const validatedEmail = validateEmail(email);
 
-    if (!await Broker.findByPk(validatedEmail)) {
-      throw new BrokerNotFound();
+    if (!await Realtor.findByPk(validatedEmail)) {
+      throw new RealtorNotFound();
     }
 
-    return await Broker.destroy({ where: { email: validatedEmail } });
+    return await Realtor.destroy({ where: { email: validatedEmail } });
   } catch (error) {
     const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     console.error(message);

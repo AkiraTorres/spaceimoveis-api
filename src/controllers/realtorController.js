@@ -1,6 +1,6 @@
 import asyncHandler from 'express-async-handler';
 
-import * as service from '../services/brokerService.js';
+import * as service from '../services/realtorService.js';
 
 export const findAll = asyncHandler(async (req, res) => {
   try {
