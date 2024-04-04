@@ -1,4 +1,4 @@
-import { DataTypes, sequelize } from '../db/Conn.js';
+import { DataTypes, sequelize } from '../Conn.js';
 
 const Owner = sequelize.define('owners', {
   email: {
