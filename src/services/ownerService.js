@@ -1,5 +1,5 @@
-import Client from '../../db/models/Client.js';
-import Owner from '../../db/models/Owner.js';
+import Client from '../db/models/Client.js';
+import Owner from '../db/models/Owner.js';
 
 import EmailAlreadyExists from '../errors/emailAlreadyExists.js';
 import OwnerNotFound from '../errors/ownerErrors/ownerNotFound.js';

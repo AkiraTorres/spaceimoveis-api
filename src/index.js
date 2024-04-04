@@ -6,6 +6,7 @@ import cors from 'cors';
 import clientRoutes from './routes/clientRoutes.js';
 import ownerRoutes from './routes/ownerRoutes.js';
 import * as globalController from './controllers/globalController.js';
+import loginRoutes from './routes/loginRoutes.js';
 
 dotenv.config();
 
@@ -18,6 +19,7 @@ app.use(cors());
 
 app.use('/clients', clientRoutes);
 app.use('/owners', ownerRoutes);
+app.use('/', loginRoutes);
 
 app.get('/find/:email', globalController.find);
 app.get('/find', globalController.findAll);
