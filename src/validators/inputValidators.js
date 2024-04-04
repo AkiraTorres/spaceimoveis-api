@@ -110,11 +110,11 @@ export function validateCep(cep) {
 }
 
 export function validateUF(uf) {
-  const sanitizedUf = validator.escape(uf.toUpperCase().trim());
-
-  if (sanitizedUf.length === 0 || sanitizedUf === '' || sanitizedUf === undefined) {
+  if (uf.length === 0 || uf === '' || uf === undefined) {
     throw new InvalidString('O campo estado é obrigatório');
   }
+
+  const sanitizedUf = validator.escape(uf.toUpperCase().trim());
 
   const validUfs = [
     'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS',
