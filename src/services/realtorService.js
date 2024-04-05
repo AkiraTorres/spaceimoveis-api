@@ -9,7 +9,7 @@ import { validateEmail, validateString, validatePassword, validatePhone, validat
 
 async function findAll(page) {
   try {
-    const attributes = ['email', 'name', 'phone', 'cpf', 'rg', 'creci', 'cep', 'address', 'house_number', 'city', 'state', 'type'];
+    const attributes = ['email', 'name', 'phone', 'cpf', 'rg', 'creci', 'cep', 'address', 'district', 'house_number', 'city', 'state', 'type'];
     if (page < 1) {
       return await Realtor.findAll({
         attributes,
@@ -58,7 +58,7 @@ async function findAll(page) {
 async function findByPk(email, password) {
   try {
     const validatedEmail = validateEmail(email);
-    const attributes = ['email', 'name', 'phone', 'cpf', 'rg', 'creci', 'cep', 'address', 'house_number', 'city', 'state', 'type'];
+    const attributes = ['email', 'name', 'phone', 'cpf', 'rg', 'creci', 'cep', 'address', 'district', 'house_number', 'city', 'state', 'type'];
     if (password) attributes.push('password');
 
     const realtor = await Realtor.findByPk(validatedEmail, {

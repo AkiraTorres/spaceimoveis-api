@@ -38,6 +38,10 @@ const Realtor = sequelize.define('realtors', {
     type: DataTypes.STRING,
     allowNull: false,
   },
+  district: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
   house_number: {
     type: DataTypes.STRING,
     allowNull: false,
