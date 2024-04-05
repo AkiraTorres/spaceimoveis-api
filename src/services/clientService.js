@@ -137,7 +137,7 @@ async function destroy(email) {
       throw new ClientNotFound();
     }
 
-    return await Client.destroy({ where: { validatedEmail } });
+    return await Client.destroy({ where: { email: validatedEmail } });
   } catch (error) {
     const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     console.error(message);

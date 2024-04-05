@@ -49,7 +49,7 @@ export const update = asyncHandler(async (req, res) => {
 export const destroy = asyncHandler(async (req, res) => {
   try {
     const result = await service.destroy(req.params.email);
-    res.status(204).json(result);
+    res.status(200).json(result);
   } catch (error) {
     const status = error.status || 500;
     res.status(status).json({ message: error.message });
