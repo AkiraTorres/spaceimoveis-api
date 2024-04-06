@@ -128,10 +128,19 @@ async function create(data) {
     userData.name = validateString(data.name, 'O campo nome é obrigatório');
     userData.password = validatePassword(data.password);
     userData.phone = validatePhone(data.phone);
+    userData.cpf = validateCpf(data.cpf);
+    userData.rg = validateString(data.rg, 'O campo RG é obrigatório');
+    userData.address = validateString(data.address, 'O campo endereço é obrigatório');
+    userData.house_number = validateString(data.house_number, 'O campo número é obrigatório');
+    userData.cep = validateCep(data.cep);
+    userData.district = validateString(data.district, 'O campo bairro é obrigatório');
+    userData.city = validateString(data.city, 'O campo cidade é obrigatório');
+    userData.state = validateUF(data.state);
 
     const owner = userData;
-
     validateIfUniqueEmail(owner.email);
+    validateIfUniqueCpf(owner.cpf);
+    validateIfUniqueRg(owner.rg);
 
     return await Owner.create(owner);
   } catch (error) {
@@ -151,40 +160,25 @@ async function update(email, data) {
     }
 
     const owner = {
-      email: data.email || oldOwner.email,
-      name: data.name || oldOwner.name,
-      phone: data.phone || oldOwner.phone,
-      cpf: data.cpf || oldOwner.cpf,
-      rg: data.rg || oldOwner.rg,
-      address: data.address || oldOwner.address,
-      house_number: data.house_number || oldOwner.house_number,
-      cep: data.cep || oldOwner.cep,
-      district: data.district || oldOwner.district,
-      city: data.city || oldOwner.city,
-      state: data.state || oldOwner.state,
+      email: validateEmail(data.email || oldOwner.email),
+      name: validateString(data.name || oldOwner.name, 'O campo nome é obrigatório'),
+      phone: validatePhone(data.phone || oldOwner.phone),
+      cpf: validateCpf(data.cpf || oldOwner.cpf),
+      rg: validateString(data.rg || oldOwner.rg, 'O campo RG é obrigatório'),
+      address: validateString(data.address || oldOwner.address, 'O campo endereço é obrigatório'),
+      house_number: validateString(data.house_number || oldOwner.house_number, 'O campo número é obrigatório'),
+      cep: validateCep(data.cep || oldOwner.cep),
+      district: validateString(data.district || oldOwner.district, 'O campo bairro é obrigatório'),
+      city: validateString(data.city || oldOwner.city, 'O campo cidade é obrigatório'),
+      state: validateUF(data.state || oldOwner.state),
     };
 
-    owner.email = validateEmail(owner.email);
     validateIfUniqueEmail(owner.email);
-    owner.name = validateString(owner.name, 'O campo nome é obrigatório');
-    owner.phone = validatePhone(owner.phone);
+    validateIfUniqueCpf(owner.cpf);
+    validateIfUniqueRg(owner.rg);
 
-    if (owner.cpf) {
-      owner.cpf = validateCpf(owner.cpf);
-      validateIfUniqueCpf(owner.cpf);
-    }
-    if (owner.rg) {
-      owner.rg = validateString(owner.rg, 'O campo RG é obrigatório');
-      validateIfUniqueRg(owner.rg);
-    }
-    if (owner.address) owner.address = validateString(owner.address, 'O campo endereço é obrigatório');
-    if (owner.house_number) owner.house_number = validateString(owner.house_number, 'O campo número é obrigatório');
-    if (owner.cep) owner.cep = validateCep(owner.cep);
-    if (owner.district) owner.district = validateString(owner.district, 'O campo bairro é obrigatório');
-    if (owner.city) owner.city = validateString(owner.city, 'O campo cidade é obrigatório');
-    if (owner.state) owner.state = validateUF(owner.state);
-
-    return await Owner.update(owner, { where: { email: validatedEmail } });
+    await Owner.update(owner, { where: { email: validatedEmail } });
+    return { message: 'Usuário atualizado com sucesso' };
   } catch (error) {
     const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     console.error(message);
