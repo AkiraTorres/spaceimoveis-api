@@ -179,7 +179,6 @@ async function update(email, data) {
 
     realtor.email = validateEmail(realtor.email);
     realtor.name = validateString(realtor.name, 'O campo nome é obrigatório');
-    realtor.password = validatePassword(realtor.password);
     realtor.phone = validatePhone(realtor.phone);
     realtor.cpf = validateCpf(realtor.cpf);
     realtor.rg = validateString(realtor.rg, 'O campo RG é obrigatório');
