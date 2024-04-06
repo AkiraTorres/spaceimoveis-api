@@ -131,7 +131,9 @@ async function create(data) {
     userData.password = validatePassword(data.password);
     userData.phone = validatePhone(data.phone);
     userData.cpf = validateCpf(data.cpf);
+    validateIfUniqueCpf(userData.cpf);
     userData.rg = validateString(data.rg, 'O campo RG é obrigatório');
+    validateIfUniqueRg(userData.rg);
     userData.creci = validateCreci(data.creci);
     userData.cep = validateCep(data.cep);
     userData.address = validateString(data.address, 'O campo endereço é obrigatório');
