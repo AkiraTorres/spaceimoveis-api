@@ -126,20 +126,22 @@ async function create(data) {
     const userData = {};
 
     userData.email = validateEmail(data.email);
-    validateIfUniqueEmail(userData.email);
     userData.name = validateString(data.name, 'O campo nome é obrigatório');
     userData.password = validatePassword(data.password);
     userData.phone = validatePhone(data.phone);
     userData.cpf = validateCpf(data.cpf);
-    validateIfUniqueCpf(userData.cpf);
     userData.rg = validateString(data.rg, 'O campo RG é obrigatório');
-    validateIfUniqueRg(userData.rg);
     userData.creci = validateCreci(data.creci);
     userData.cep = validateCep(data.cep);
     userData.address = validateString(data.address, 'O campo endereço é obrigatório');
+    userData.district = validateString(data.district, 'O campo bairro é obrigatório');
     userData.house_number = validateString(data.house_number, 'O campo número é obrigatório');
     userData.city = validateString(data.city, 'O campo cidade é obrigatório');
     userData.state = validateUF(data.state);
+
+    validateIfUniqueEmail(userData.email);
+    validateIfUniqueCpf(userData.cpf);
+    validateIfUniqueRg(userData.rg);
 
     const realtor = userData;
 
@@ -175,20 +177,22 @@ async function update(email, data) {
     };
 
     realtor.email = validateEmail(realtor.email);
-    validateIfUniqueEmail(realtor.email);
     realtor.name = validateString(realtor.name, 'O campo nome é obrigatório');
     realtor.password = validatePassword(realtor.password);
     realtor.phone = validatePhone(realtor.phone);
     realtor.cpf = validateCpf(realtor.cpf);
-    validateIfUniqueCpf(realtor.cpf);
     realtor.rg = validateString(realtor.rg, 'O campo RG é obrigatório');
-    validateIfUniqueRg(realtor.rg);
     realtor.creci = validateCreci(realtor.creci);
     realtor.cep = validateCep(realtor.cep);
     realtor.address = validateString(realtor.address, 'O campo endereço é obrigatório');
+    realtor.district = validateString(data.district, 'O campo bairro é obrigatório');
     realtor.house_number = validateString(realtor.house_number, 'O campo número é obrigatório');
     realtor.city = validateString(realtor.city, 'O campo cidade é obrigatório');
     realtor.state = validateUF(realtor.state);
+
+    validateIfUniqueEmail(realtor.email);
+    validateIfUniqueCpf(realtor.cpf);
+    validateIfUniqueRg(realtor.rg);
 
     return await Realtor.update(realtor, { where: { email: validatedEmail } });
   } catch (error) {
