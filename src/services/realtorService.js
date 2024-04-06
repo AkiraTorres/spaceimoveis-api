@@ -171,6 +171,7 @@ async function update(email, data) {
       creci: data.creci || oldRealtor.creci,
       cep: data.cep || oldRealtor.cep,
       address: data.address || oldRealtor.address,
+      district: data.district || oldRealtor.district,
       house_number: data.house_number || oldRealtor.house_number,
       city: data.city || oldRealtor.city,
       state: data.state || oldRealtor.state,
@@ -185,7 +186,7 @@ async function update(email, data) {
     realtor.creci = validateCreci(realtor.creci);
     realtor.cep = validateCep(realtor.cep);
     realtor.address = validateString(realtor.address, 'O campo endereço é obrigatório');
-    realtor.district = validateString(data.district, 'O campo bairro é obrigatório');
+    realtor.district = validateString(realtor.district, 'O campo bairro é obrigatório');
     realtor.house_number = validateString(realtor.house_number, 'O campo número é obrigatório');
     realtor.city = validateString(realtor.city, 'O campo cidade é obrigatório');
     realtor.state = validateUF(realtor.state);
