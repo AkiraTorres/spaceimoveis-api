@@ -2,6 +2,12 @@ import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
 import validator from 'validator';
 
+import Client from '../db/models/Client.js';
+import Owner from '../db/models/Owner.js';
+import Realtor from '../db/models/Realtor.js';
+import EmailAlreadyExists from '../errors/emailAlreadyExists.js';
+import CpfAlreadyExists from '../errors/cpfAlreadyExists.js';
+import RgAlreadyExists from '../errors/rgAlreadyExists.js';
 import InvalidEmail from '../errors/invalidEmail.js';
 import InvalidString from '../errors/invalidString.js';
 import InsecurePassword from '../errors/insecurePassword.js';
@@ -19,6 +25,15 @@ export function validateEmail(email) {
   if (!emailRegex.test(sanitizedEmail)) throw new InvalidEmail();
 
   return sanitizedEmail;
+}
+
+export async function validateIfUniqueEmail(email) {
+  if (
+    await Client.findByPk(email)
+    || await Owner.findByPk(email)
+    || await Realtor.findByPk(email)) {
+    throw new EmailAlreadyExists();
+  }
 }
 
 export function validateString(string, msg = '') {
@@ -91,6 +106,22 @@ export function validateCpf(cpf) {
   if (remainder !== parseInt(validatedCpf.substring(10, 11), 10)) throw new InvalidCpf();
 
   return validatedCpf; // valid
+}
+
+export async function validateIfUniqueCpf(cpf) {
+  if (
+    await Owner.find({ where: { cpf } })
+    || await Realtor.find({ where: { cpf } })) {
+    throw new CpfAlreadyExists();
+  }
+}
+
+export async function validateIfUniqueRg(rg) {
+  if (
+    await Owner.find({ where: { rg } })
+    || await Realtor.find({ where: { rg } })) {
+    throw new RgAlreadyExists();
+  }
 }
 
 export function validateCep(cep) {

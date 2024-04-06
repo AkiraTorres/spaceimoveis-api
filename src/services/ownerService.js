@@ -1,10 +1,11 @@
-import Client from '../db/models/Client.js';
 import Owner from '../db/models/Owner.js';
 
-import EmailAlreadyExists from '../errors/emailAlreadyExists.js';
 import OwnerNotFound from '../errors/ownerErrors/ownerNotFound.js';
 import NoOwnersFound from '../errors/ownerErrors/noOwnersFound.js';
-import { validateEmail, validateString, validatePassword, validatePhone, validateCpf, validateCep, validateUF } from '../validators/inputValidators.js';
+import {
+  validateEmail, validateString, validatePassword, validatePhone, validateCpf, validateCep,
+  validateUF, validateIfUniqueEmail, validateIfUniqueCpf, validateIfUniqueRg,
+} from '../validators/inputValidators.js';
 
 async function findAll(page) {
   try {
@@ -75,6 +76,50 @@ async function findByPk(email, password) {
   }
 }
 
+async function findByCpf(cpf, password = false) {
+  try {
+    const validatedCpf = validateCpf(cpf);
+    const attributes = ['email', 'name', 'phone', 'cpf', 'rg', 'address', 'house_number', 'cep', 'district', 'city', 'state', 'type'];
+    if (password) attributes.push('password');
+
+    const realtor = await Owner.findOne({ where: { cpf: validatedCpf } }, {
+      attributes,
+    });
+
+    if (!realtor) {
+      throw new OwnerNotFound();
+    }
+
+    return realtor;
+  } catch (error) {
+    const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
+    console.error(message);
+    throw error;
+  }
+}
+
+async function findByRg(rg, password = false) {
+  try {
+    const validatedRg = validateString(rg);
+    const attributes = ['email', 'name', 'phone', 'cpf', 'rg', 'address', 'house_number', 'cep', 'district', 'city', 'state', 'type'];
+    if (password) attributes.push('password');
+
+    const realtor = await Owner.findOne({ where: { rg: validatedRg } }, {
+      attributes,
+    });
+
+    if (!realtor) {
+      throw new OwnerNotFound();
+    }
+
+    return realtor;
+  } catch (error) {
+    const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
+    console.error(message);
+    throw error;
+  }
+}
+
 async function create(data) {
   try {
     const userData = {};
@@ -86,9 +131,7 @@ async function create(data) {
 
     const owner = userData;
 
-    if (await Owner.findByPk(owner.email) || await Client.findByPk(owner.email)) {
-      throw new EmailAlreadyExists();
-    }
+    validateIfUniqueEmail(owner.email);
 
     return await Owner.create(owner);
   } catch (error) {
@@ -122,11 +165,18 @@ async function update(email, data) {
     };
 
     owner.email = validateEmail(owner.email);
+    validateIfUniqueEmail(owner.email);
     owner.name = validateString(owner.name, 'O campo nome é obrigatório');
     owner.phone = validatePhone(owner.phone);
 
-    if (owner.cpf) owner.cpf = validateCpf(owner.cpf);
-    if (owner.rg) owner.rg = validateString(owner.rg, 'O campo RG é obrigatório');
+    if (owner.cpf) {
+      owner.cpf = validateCpf(owner.cpf);
+      validateIfUniqueCpf(owner.cpf);
+    }
+    if (owner.rg) {
+      owner.rg = validateString(owner.rg, 'O campo RG é obrigatório');
+      validateIfUniqueRg(owner.rg);
+    }
     if (owner.address) owner.address = validateString(owner.address, 'O campo endereço é obrigatório');
     if (owner.house_number) owner.house_number = validateString(owner.house_number, 'O campo número é obrigatório');
     if (owner.cep) owner.cep = validateCep(owner.cep);
@@ -150,7 +200,8 @@ async function destroy(email) {
       throw new OwnerNotFound();
     }
 
-    return await Owner.destroy({ where: { validatedEmail } });
+    await Owner.destroy({ where: { email: validatedEmail } });
+    return { message: 'Usuário apagado com sucesso' };
   } catch (error) {
     const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     console.error(message);
@@ -158,4 +209,4 @@ async function destroy(email) {
   }
 }
 
-export { findAll, findByPk, create, update, destroy };
+export { findAll, findByPk, findByCpf, findByRg, create, update, destroy };

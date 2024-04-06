@@ -1,11 +1,8 @@
 import Client from '../db/models/Client.js';
-import Owner from '../db/models/Owner.js';
-import Realtor from '../db/models/Realtor.js';
 
-import EmailAlreadyExists from '../errors/emailAlreadyExists.js';
 import ClientNotFound from '../errors/clientErrors/clientNotFound.js';
 import NoClientsFound from '../errors/clientErrors/noClientsFound.js';
-import { validateEmail, validateString, validatePassword, validatePhone } from '../validators/inputValidators.js';
+import { validateEmail, validateString, validatePassword, validatePhone, validateIfUniqueEmail } from '../validators/inputValidators.js';
 
 async function findAll(page) {
   try {
@@ -87,12 +84,7 @@ async function create(data) {
 
     const client = userData;
 
-    if (
-      await Client.findByPk(client.email)
-      || await Owner.findByPk(client.email)
-      || await Realtor.findByPk(client.email)) {
-      throw new EmailAlreadyExists();
-    }
+    validateIfUniqueEmail(client.email);
 
     return await Client.create(client);
   } catch (error) {
@@ -118,6 +110,7 @@ async function update(email, data) {
     };
 
     client.email = validateEmail(client.email);
+    validateIfUniqueEmail(client.email);
     client.name = validateString(client.name, 'O campo nome é obrigatório');
     client.phone = validatePhone(client.phone);
 
@@ -136,8 +129,8 @@ async function destroy(email) {
     if (!await Client.findByPk(validatedEmail)) {
       throw new ClientNotFound();
     }
-
-    return await Client.destroy({ where: { email: validatedEmail } });
+    await Client.destroy({ where: { email: validatedEmail } });
+    return { message: 'Usuário apagado com sucesso' };
   } catch (error) {
     const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     console.error(message);
