@@ -139,9 +139,9 @@ async function create(data) {
     userData.city = validateString(data.city, 'O campo cidade é obrigatório');
     userData.state = validateUF(data.state);
 
-    validateIfUniqueEmail(userData.email);
-    validateIfUniqueCpf(userData.cpf);
-    validateIfUniqueRg(userData.rg);
+    await validateIfUniqueEmail(userData.email);
+    await validateIfUniqueCpf(userData.cpf);
+    await validateIfUniqueRg(userData.rg);
 
     const realtor = userData;
 
@@ -190,9 +190,9 @@ async function update(email, data) {
     realtor.city = validateString(realtor.city, 'O campo cidade é obrigatório');
     realtor.state = validateUF(realtor.state);
 
-    validateIfUniqueEmail(realtor.email);
-    validateIfUniqueCpf(realtor.cpf);
-    validateIfUniqueRg(realtor.rg);
+    await validateIfUniqueEmail(realtor.email);
+    await validateIfUniqueCpf(realtor.cpf);
+    await validateIfUniqueRg(realtor.rg);
 
     return await Realtor.update(realtor, { where: { email: validatedEmail } });
   } catch (error) {

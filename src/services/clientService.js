@@ -84,7 +84,7 @@ async function create(data) {
 
     const client = userData;
 
-    validateIfUniqueEmail(client.email);
+    await validateIfUniqueEmail(client.email);
 
     return await Client.create(client);
   } catch (error) {
@@ -110,7 +110,7 @@ async function update(email, data) {
     };
 
     client.email = validateEmail(client.email);
-    validateIfUniqueEmail(client.email);
+    await validateIfUniqueEmail(client.email);
     client.name = validateString(client.name, 'O campo nome é obrigatório');
     client.phone = validatePhone(client.phone);
 

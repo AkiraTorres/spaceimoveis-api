@@ -138,9 +138,9 @@ async function create(data) {
     userData.state = validateUF(data.state);
 
     const owner = userData;
-    validateIfUniqueEmail(owner.email);
-    validateIfUniqueCpf(owner.cpf);
-    validateIfUniqueRg(owner.rg);
+    await validateIfUniqueEmail(owner.email);
+    await validateIfUniqueCpf(owner.cpf);
+    await validateIfUniqueRg(owner.rg);
 
     return await Owner.create(owner);
   } catch (error) {
@@ -173,9 +173,15 @@ async function update(email, data) {
       state: validateUF(data.state || oldOwner.state),
     };
 
-    validateIfUniqueEmail(owner.email);
-    validateIfUniqueCpf(owner.cpf);
-    validateIfUniqueRg(owner.rg);
+    if (owner.email !== validatedEmail) {
+      await validateIfUniqueEmail(owner.email);
+    }
+    if (owner.rg !== oldOwner.rg) {
+      await validateIfUniqueRg(owner.rg);
+    }
+    if (owner.cpf !== oldOwner.cpf) {
+      await validateIfUniqueCpf(owner.cpf);
+    }
 
     await Owner.update(owner, { where: { email: validatedEmail } });
     return { message: 'Usuário atualizado com sucesso' };
