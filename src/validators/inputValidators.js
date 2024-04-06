@@ -110,16 +110,16 @@ export function validateCpf(cpf) {
 
 export async function validateIfUniqueCpf(cpf) {
   if (
-    await Owner.find({ where: { cpf } })
-    || await Realtor.find({ where: { cpf } })) {
+    await Owner.findOne({ where: { cpf } })
+    || await Realtor.findOne({ where: { cpf } })) {
     throw new CpfAlreadyExists();
   }
 }
 
 export async function validateIfUniqueRg(rg) {
   if (
-    await Owner.find({ where: { rg } })
-    || await Realtor.find({ where: { rg } })) {
+    await Owner.findOne({ where: { rg } })
+    || await Realtor.findOne({ where: { rg } })) {
     throw new RgAlreadyExists();
   }
 }
