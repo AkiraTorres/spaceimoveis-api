@@ -142,6 +142,7 @@ async function create(data) {
     await validateIfUniqueEmail(userData.email);
     await validateIfUniqueCpf(userData.cpf);
     await validateIfUniqueRg(userData.rg);
+    await validateCreci(userData.creci);
 
     const realtor = userData;
 
@@ -193,6 +194,7 @@ async function update(email, data) {
     if (realtor.email !== oldRealtor.email) await validateIfUniqueEmail(realtor.email);
     if (realtor.cpf !== oldRealtor.cpf) await validateIfUniqueCpf(realtor.cpf);
     if (realtor.rg !== oldRealtor.rg) await validateIfUniqueRg(realtor.rg);
+    if (realtor.creci !== oldRealtor.creci) await validateCreci(realtor.creci);
 
     return await Realtor.update(realtor, { where: { email: validatedEmail } });
   } catch (error) {
