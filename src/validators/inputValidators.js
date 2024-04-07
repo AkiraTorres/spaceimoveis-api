@@ -5,9 +5,12 @@ import validator from 'validator';
 import Client from '../db/models/Client.js';
 import Owner from '../db/models/Owner.js';
 import Realtor from '../db/models/Realtor.js';
+import Realstate from '../db/models/Realstate.js';
 import EmailAlreadyExists from '../errors/emailAlreadyExists.js';
 import CpfAlreadyExists from '../errors/cpfAlreadyExists.js';
 import RgAlreadyExists from '../errors/rgAlreadyExists.js';
+import CnpjAlreadyExists from '../errors/cnpjAlreadyExists.js';
+import CreciAlreadyExists from '../errors/creciAlreadyExists.js';
 import InvalidEmail from '../errors/invalidEmail.js';
 import InvalidString from '../errors/invalidString.js';
 import InsecurePassword from '../errors/insecurePassword.js';
@@ -31,7 +34,8 @@ export async function validateIfUniqueEmail(email) {
   if (
     await Client.findByPk(email)
     || await Owner.findByPk(email)
-    || await Realtor.findByPk(email)) {
+    || await Realtor.findByPk(email)
+    || await Realstate.findByPk(email)) {
     throw new EmailAlreadyExists();
   }
 }
@@ -124,6 +128,49 @@ export async function validateIfUniqueRg(rg) {
   }
 }
 
+export async function validateCnpj(cnpj) {
+  const validatedCnpj = validator.escape(cnpj).replace(/\D/g, '');
+
+  const error = new Error('CNPJ Inválido');
+  error.status = 400;
+
+  if (validatedCnpj.length !== 14) throw error;
+
+  if (/^(\d)\1{13}$/.test(validatedCnpj)) throw error;
+
+  let sum = 0;
+  let position = 5;
+  for (let i = 0; i < 12; i++) {
+    sum += parseInt(validatedCnpj.charAt(i), 10) * position;
+    position--;
+    if (position < 2) {
+      position = 9;
+    }
+  }
+  let result = sum % 11 < 2 ? 0 : 11 - (sum % 11);
+  if (parseInt(validatedCnpj.charAt(12), 10) !== result) throw error;
+
+  sum = 0;
+  position = 6;
+  for (let i = 0; i < 13; i++) {
+    sum += parseInt(validatedCnpj.charAt(i), 10) * position;
+    position--;
+    if (position < 2) {
+      position = 9;
+    }
+  }
+  result = sum % 11 < 2 ? 0 : 11 - (sum % 11);
+  if (parseInt(validatedCnpj.charAt(13), 10) !== result) throw error;
+
+  return validatedCnpj;
+}
+
+export async function validateIfUniqueCnpj(cnpj) {
+  if (await Realstate.findOne({ where: { cnpj } })) {
+    throw new CnpjAlreadyExists();
+  }
+}
+
 export function validateCep(cep) {
   const sanitizedCep = validator.escape(cep);
 
@@ -163,11 +210,19 @@ export function validateUF(uf) {
 export function validateCreci(creci) {
   const sanitizedCreci = validator.escape(creci);
 
-  const creciRegex = /^CRECI-[A-Z]{2}\s?\d{5}$/;
+  const creciRegex = /^CRECI-[A-Z]{2}\s?\d{5,9}$/;
 
   if (!creciRegex.test(sanitizedCreci)) {
     throw new InvalidString('CRECI inválido');
   }
 
   return sanitizedCreci;
+}
+
+export async function validateIfUniqueCreci(creci) {
+  if (
+    await Realtor.findOne({ where: { creci } })
+    || await Realstate.findOne({ where: { creci } })) {
+    throw new CreciAlreadyExists();
+  }
 }
