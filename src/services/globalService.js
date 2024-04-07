@@ -1,6 +1,7 @@
 import * as clientService from './clientService.js';
 import * as ownerService from './ownerService.js';
 import * as realtorService from './realtorService.js';
+import * as realstateService from './realstateService.js';
 
 // eslint-disable-next-line import/prefer-default-export
 export async function findAll() {
@@ -8,8 +9,9 @@ export async function findAll() {
     const clients = await clientService.findAll(0);
     const owners = await ownerService.findAll(0);
     const realtors = await realtorService.findAll(0);
+    const realstate = await realstateService.findAll(0);
 
-    return { ...clients, ...owners, ...realtors };
+    return { ...clients, ...owners, ...realtors, ...realstate };
   } catch (error) {
     error.status = error.status || 500;
     error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
@@ -42,7 +44,7 @@ export async function find(email, pass = false) {
       } catch (error) { /* empty */ }
 
       try {
-        const realstate = await realtorService.findByPk(email, pass);
+        const realstate = await realstateService.findByPk(email, pass);
         if (realstate) {
           return realstate;
         }
