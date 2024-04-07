@@ -40,6 +40,13 @@ export async function find(email, pass = false) {
           return realtor;
         }
       } catch (error) { /* empty */ }
+
+      try {
+        const realstate = await realtorService.findByPk(email, pass);
+        if (realstate) {
+          return realstate;
+        }
+      } catch (error) { /* empty */ }
     }
 
     const error = new Error('Email não encontrado');
