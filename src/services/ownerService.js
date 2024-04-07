@@ -173,15 +173,9 @@ async function update(email, data) {
       state: validateUF(data.state || oldOwner.state),
     };
 
-    if (owner.email !== validatedEmail) {
-      await validateIfUniqueEmail(owner.email);
-    }
-    if (owner.rg !== oldOwner.rg) {
-      await validateIfUniqueRg(owner.rg);
-    }
-    if (owner.cpf !== oldOwner.cpf) {
-      await validateIfUniqueCpf(owner.cpf);
-    }
+    if (owner.email !== validatedEmail) await validateIfUniqueEmail(owner.email);
+    if (owner.rg !== oldOwner.rg) await validateIfUniqueRg(owner.rg);
+    if (owner.cpf !== oldOwner.cpf) await validateIfUniqueCpf(owner.cpf);
 
     await Owner.update(owner, { where: { email: validatedEmail } });
     return { message: 'Usuário atualizado com sucesso' };

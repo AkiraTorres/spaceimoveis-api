@@ -190,9 +190,9 @@ async function update(email, data) {
     realtor.city = validateString(realtor.city, 'O campo cidade é obrigatório');
     realtor.state = validateUF(realtor.state);
 
-    await validateIfUniqueEmail(realtor.email);
-    await validateIfUniqueCpf(realtor.cpf);
-    await validateIfUniqueRg(realtor.rg);
+    if (realtor.email !== oldRealtor.email) await validateIfUniqueEmail(realtor.email);
+    if (realtor.cpf !== oldRealtor.cpf) await validateIfUniqueCpf(realtor.cpf);
+    if (realtor.rg !== oldRealtor.rg) await validateIfUniqueRg(realtor.rg);
 
     return await Realtor.update(realtor, { where: { email: validatedEmail } });
   } catch (error) {

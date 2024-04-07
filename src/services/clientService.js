@@ -110,9 +110,7 @@ async function update(email, data) {
     };
 
     client.email = validateEmail(client.email);
-    if (client.email !== validatedEmail) {
-      await validateIfUniqueEmail(client.email);
-    }
+    if (client.email !== validatedEmail) await validateIfUniqueEmail(client.email);
     client.name = validateString(client.name, 'O campo nome é obrigatório');
     client.phone = validatePhone(client.phone);
 
