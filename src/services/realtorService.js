@@ -5,6 +5,7 @@ import NoRealtorsFound from '../errors/realtorErrors/noRealtorsFound.js';
 import {
   validateEmail, validateString, validatePassword, validatePhone, validateCpf, validateUF,
   validateCep, validateCreci, validateIfUniqueEmail, validateIfUniqueCpf, validateIfUniqueRg,
+  validateIfUniqueCreci,
 } from '../validators/inputValidators.js';
 
 async function findAll(page) {
@@ -142,7 +143,7 @@ async function create(data) {
     await validateIfUniqueEmail(userData.email);
     await validateIfUniqueCpf(userData.cpf);
     await validateIfUniqueRg(userData.rg);
-    await validateCreci(userData.creci);
+    await validateIfUniqueCreci(userData.creci);
 
     const realtor = userData;
 
@@ -194,7 +195,7 @@ async function update(email, data) {
     if (realtor.email !== oldRealtor.email) await validateIfUniqueEmail(realtor.email);
     if (realtor.cpf !== oldRealtor.cpf) await validateIfUniqueCpf(realtor.cpf);
     if (realtor.rg !== oldRealtor.rg) await validateIfUniqueRg(realtor.rg);
-    if (realtor.creci !== oldRealtor.creci) await validateCreci(realtor.creci);
+    if (realtor.creci !== oldRealtor.creci) await validateIfUniqueCreci(realtor.creci);
 
     return await Realtor.update(realtor, { where: { email: validatedEmail } });
   } catch (error) {
