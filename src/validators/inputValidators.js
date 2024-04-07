@@ -128,7 +128,7 @@ export async function validateIfUniqueRg(rg) {
   }
 }
 
-export async function validateCnpj(cnpj) {
+export function validateCnpj(cnpj) {
   const validatedCnpj = validator.escape(cnpj).replace(/\D/g, '');
 
   const error = new Error('CNPJ Inválido');
