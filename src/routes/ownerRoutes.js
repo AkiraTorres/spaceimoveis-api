@@ -11,7 +11,7 @@ router.get('/', controller.findAll);
 router.get('/:email', controller.findByPk);
 router.post('/', controller.create);
 router.put('/:email', verifyJwt, matchEmail, controller.update);
-router.put('/:email/elevate', verifyGoogleToken, verifyJwt, matchEmail, controller.elevate);
+router.put('/elevate/:email', verifyGoogleToken, verifyJwt, matchEmail, controller.elevate);
 router.delete('/:email', verifyJwt, matchEmail, controller.destroy);
 
 export default router;
