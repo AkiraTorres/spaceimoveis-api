@@ -46,6 +46,17 @@ export const update = asyncHandler(async (req, res) => {
   }
 });
 
+export const elevate = asyncHandler(async (req, res) => {
+  try {
+    const data = req.body;
+    const result = await service.elevate(req.params.email, data);
+    res.status(201).json(result);
+  } catch (error) {
+    const status = error.status || 500;
+    res.status(status).json({ message: error.message });
+  }
+});
+
 export const destroy = asyncHandler(async (req, res) => {
   try {
     const result = await service.destroy(req.params.email);

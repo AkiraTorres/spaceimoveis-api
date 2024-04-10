@@ -1,7 +1,9 @@
+import Client from '../db/models/Client.js';
 import Realstate from '../db/models/Realstate.js';
 
 import RealstateNotFound from '../errors/realstateErrors/realstateNotFound.js';
 import NoRealstatesFound from '../errors/realstateErrors/noRealstatesFound.js';
+import ClientNotFound from '../errors/clientErrors/clientNotFound.js';
 import {
   validateEmail, validateString, validatePassword, validatePhone, validateCnpj, validateUF,
   validateCep, validateCreci, validateIfUniqueEmail, validateIfUniqueCnpj, validateIfUniqueCreci,
@@ -208,6 +210,41 @@ async function update(email, data) {
   }
 }
 
+async function elevate(email, data) {
+  try {
+    const validatedEmail = validateEmail(email);
+
+    const client = await Client.findByPk(validatedEmail);
+    if (!client) {
+      throw new ClientNotFound();
+    }
+
+    const realstate = {
+      email: validateEmail(client.email),
+      company_name: validateString(client.name, 'O campo nome é obrigatório'),
+      phone: validatePhone(client.phone || data.phone),
+      cnpj: validateCnpj(data.cnpj),
+      creci: validateCreci(data.creci),
+      cep: validateCep(data.cep),
+      address: validateString(data.address, 'O campo endereço é obrigatório'),
+      district: validateString(data.district, 'O campo bairro é obrigatório'),
+      house_number: validateString(data.house_number, 'O campo número é obrigatório'),
+      city: validateString(data.city, 'O campo cidade é obrigatório'),
+      state: validateUF(data.state),
+    };
+
+    await validateIfUniqueCnpj(realstate.cnpj);
+    await validateIfUniqueCreci(realstate.creci);
+
+    await Client.destroy({ where: { email: validatedEmail } });
+    return await Realstate.create(realstate);
+  } catch (error) {
+    const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
+    console.error(message);
+    throw error;
+  }
+}
+
 async function destroy(email) {
   try {
     const validatedEmail = validateEmail(email);
@@ -225,4 +262,4 @@ async function destroy(email) {
   }
 }
 
-export { findAll, findByPk, findByCnpj, findByCreci, create, update, destroy };
+export { findAll, findByPk, findByCnpj, findByCreci, create, update, elevate, destroy };

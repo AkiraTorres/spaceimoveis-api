@@ -1,7 +1,9 @@
+import Client from '../db/models/Client.js';
 import Owner from '../db/models/Owner.js';
 
 import OwnerNotFound from '../errors/ownerErrors/ownerNotFound.js';
 import NoOwnersFound from '../errors/ownerErrors/noOwnersFound.js';
+import ClientNotFound from '../errors/clientErrors/clientNotFound.js';
 import {
   validateEmail, validateString, validatePassword, validatePhone, validateCpf, validateCep,
   validateUF, validateIfUniqueEmail, validateIfUniqueCpf, validateIfUniqueRg,
@@ -186,6 +188,41 @@ async function update(email, data) {
   }
 }
 
+async function elevate(email, data) {
+  try {
+    const validatedEmail = validateEmail(email);
+
+    const client = await Client.findByPk(validatedEmail);
+    if (!client) {
+      throw new ClientNotFound();
+    }
+
+    const owner = {
+      email: validateEmail(client.email),
+      name: validateString(client.name, 'O campo nome é obrigatório'),
+      phone: validatePhone(client.phone || data.phone),
+      cpf: validateCpf(data.cpf),
+      rg: validateString(data.rg, 'O campo RG é obrigatório'),
+      cep: validateCep(data.cep),
+      address: validateString(data.address, 'O campo endereço é obrigatório'),
+      district: validateString(data.district, 'O campo bairro é obrigatório'),
+      house_number: validateString(data.house_number, 'O campo número é obrigatório'),
+      city: validateString(data.city, 'O campo cidade é obrigatório'),
+      state: validateUF(data.state),
+    };
+
+    await validateIfUniqueRg(owner.rg);
+    await validateIfUniqueCpf(owner.cpf);
+
+    await Client.destroy({ where: { email: validatedEmail } });
+    return await Owner.create(owner);
+  } catch (error) {
+    const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
+    console.error(message);
+    throw error;
+  }
+}
+
 async function destroy(email) {
   try {
     const validatedEmail = validateEmail(email);
@@ -203,4 +240,4 @@ async function destroy(email) {
   }
 }
 
-export { findAll, findByPk, findByCpf, findByRg, create, update, destroy };
+export { findAll, findByPk, findByCpf, findByRg, create, update, elevate, destroy };
