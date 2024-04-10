@@ -236,9 +236,8 @@ async function elevate(email, data) {
     await validateIfUniqueCpf(owner.cpf);
     await validateIfUniqueCreci(owner.creci);
 
-    const response = await Realtor.create(owner);
     await Client.destroy({ where: { email: validatedEmail } });
-    return response;
+    return await Realtor.create(owner);
   } catch (error) {
     const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     console.error(message);
