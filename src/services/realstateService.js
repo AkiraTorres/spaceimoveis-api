@@ -223,6 +223,7 @@ async function elevate(email, data) {
       email: validateEmail(client.email),
       company_name: validateString(client.name, 'O campo nome é obrigatório'),
       phone: validatePhone(client.phone || data.phone),
+      password: validateString(data.password, 'O campo senha é obrigatório'),
       cnpj: validateCnpj(data.cnpj),
       creci: validateCreci(data.creci),
       cep: validateCep(data.cep),

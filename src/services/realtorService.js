@@ -220,6 +220,7 @@ async function elevate(email, data) {
       email: validateEmail(client.email),
       name: validateString(client.name, 'O campo nome é obrigatório'),
       phone: validatePhone(client.phone || data.phone),
+      password: validateString(data.password, 'O campo senha é obrigatório'),
       cpf: validateCpf(data.cpf),
       rg: validateString(data.rg, 'O campo RG é obrigatório'),
       creci: validateCreci(data.creci),
@@ -235,8 +236,9 @@ async function elevate(email, data) {
     await validateIfUniqueCpf(owner.cpf);
     await validateIfUniqueCreci(owner.creci);
 
+    const response = await Realtor.create(owner);
     await Client.destroy({ where: { email: validatedEmail } });
-    return await Realtor.create(owner);
+    return response;
   } catch (error) {
     const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     console.error(message);
