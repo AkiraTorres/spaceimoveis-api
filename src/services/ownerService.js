@@ -215,8 +215,9 @@ async function elevate(email, data) {
     await validateIfUniqueRg(owner.rg);
     await validateIfUniqueCpf(owner.cpf);
 
+    const response = await Owner.create(owner);
     await Client.destroy({ where: { email: validatedEmail } });
-    return await Owner.create(owner);
+    return response;
   } catch (error) {
     const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     console.error(message);
