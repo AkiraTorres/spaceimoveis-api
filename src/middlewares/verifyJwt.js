@@ -7,6 +7,8 @@ const blacklist = [];
 const { JWT_SECRET } = process.env;
 
 export default function verifyJwt(req, res, next) {
+  if (req.email) return next();
+
   try {
     const token = req.headers['x-access-token'];
     const isBlacklisted = blacklist.includes(token);
@@ -18,7 +20,9 @@ export default function verifyJwt(req, res, next) {
     next();
     return jwt.decode(token);
   } catch (error) {
-    return res.status(401).json({ message: 'Unauthorized' }).end();
+    const status = error.status || error.code || 500;
+    const message = error.message || 'Erro ao se conectar com o banco de dados';
+    return res.status(status).json(message).end();
   }
 }
 

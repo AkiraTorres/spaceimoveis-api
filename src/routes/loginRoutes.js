@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import bcrypt from 'bcryptjs';
 
 import verifyJwt, { blacklist, generateJwt } from '../middlewares/verifyJwt.js';
+import verify from '../middlewares/verifyGoogle.cjs';
 import { find } from '../services/globalService.js';
 
 dotenv.config();
@@ -28,6 +29,28 @@ router.post('/login', async (req, res) => {
   } catch (error) {
     const status = error.status || 500;
     res.status(status).json(error.message).end();
+  }
+});
+
+router.post('/google', async (req, res) => {
+  try {
+    const { googleToken } = req.body;
+    const error = new Error('Email ou senha incorretos');
+    error.status = 404;
+    const { email } = await verify.validateGoogleToken(googleToken).catch(console.error);
+
+    if (!email) throw error;
+
+    const user = await find(email, false);
+    if (!user) throw error;
+
+    const loggedUser = { user, token: googleToken };
+    // console.log(JSON.stringify(loggedUser, null, 2));
+    res.json(loggedUser);
+  } catch (error) {
+    const status = error.status || error.code || 500;
+    const message = error.message || 'Erro ao se conectar com o banco de dados';
+    res.status(status).json(message).end();
   }
 });
 

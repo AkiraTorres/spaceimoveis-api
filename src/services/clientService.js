@@ -79,8 +79,12 @@ async function create(data) {
 
     userData.email = validateEmail(data.email);
     userData.name = validateString(data.name, 'O campo nome é obrigatório');
-    userData.password = validatePassword(data.password);
-    userData.phone = validatePhone(data.phone);
+
+    if (data.password) userData.password = validatePassword(data.password);
+    else userData.password = null;
+
+    if (data.phone) userData.phone = validatePhone(data.phone);
+    else userData.phone = null;
 
     const client = userData;
 
@@ -112,7 +116,7 @@ async function update(email, data) {
     client.email = validateEmail(client.email);
     if (client.email !== validatedEmail) await validateIfUniqueEmail(client.email);
     client.name = validateString(client.name, 'O campo nome é obrigatório');
-    client.phone = validatePhone(client.phone);
+    if (client.phone) client.phone = validatePhone(client.phone);
 
     return await Client.update(client, { where: { email: validatedEmail } });
   } catch (error) {
