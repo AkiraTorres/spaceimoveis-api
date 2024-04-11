@@ -23,3 +23,16 @@ export async function find(req, res) {
     return res.status(status).json({ message: error.message });
   }
 }
+
+export async function changePassword(req, res) {
+  try {
+    const { email, newPassword } = req.body;
+
+    const result = await globalService.changePassword(email, newPassword);
+
+    return res.json(result);
+  } catch (error) {
+    const status = error.status || 500;
+    return res.status(status).json({ message: error.message });
+  }
+}

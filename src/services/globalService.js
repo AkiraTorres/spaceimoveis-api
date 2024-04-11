@@ -3,6 +3,8 @@ import * as ownerService from './ownerService.js';
 import * as realtorService from './realtorService.js';
 import * as realstateService from './realstateService.js';
 
+import { validateEmail, validatePassword } from '../validators/inputValidators.js';
+
 // eslint-disable-next-line import/prefer-default-export
 export async function findAll() {
   try {
@@ -54,6 +56,25 @@ export async function find(email, pass = false) {
     const error = new Error('Email não encontrado');
     error.status = 404;
     throw error;
+  } catch (error) {
+    error.status = error.status || 500;
+    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
+    throw error;
+  }
+}
+
+export async function changePassword(email, newPassword) {
+  try {
+    const validatedEmail = validateEmail(email);
+
+    const user = await find(validatedEmail, true);
+    if (!user) throw new Error('Email não encontrado');
+
+    const validatedPassword = validatePassword(newPassword);
+
+    user.password = validatedPassword;
+    await user.save();
+    return user;
   } catch (error) {
     error.status = error.status || 500;
     error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;

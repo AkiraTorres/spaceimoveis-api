@@ -27,6 +27,7 @@ app.use('/realstate', realstateRoutes);
 
 app.get('/find/:email', globalController.find);
 app.get('/find', globalController.findAll);
+app.post('/change/password', globalController.changePassword);
 
 app.all('*', (req, res) => {
   res.status(404).send('Not Found');
