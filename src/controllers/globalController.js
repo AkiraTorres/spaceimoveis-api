@@ -26,9 +26,9 @@ export async function find(req, res) {
 
 export async function changePassword(req, res) {
   try {
-    const { email, newPassword } = req.body;
+    const { email, password } = req.body;
 
-    const result = await globalService.changePassword(email, newPassword);
+    const result = await globalService.changePassword(email, password);
 
     return res.json(result);
   } catch (error) {
