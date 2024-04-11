@@ -72,6 +72,12 @@ export async function changePassword(email, newPassword) {
 
     const validatedPassword = validatePassword(newPassword);
 
+    if (user.password === validatedPassword) {
+      const error = new Error('A senha não pode ser igual a anterior');
+      error.status = 400;
+      throw error;
+    }
+
     user.password = validatedPassword;
     await user.save();
     return user;
