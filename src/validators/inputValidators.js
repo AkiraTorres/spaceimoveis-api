@@ -13,6 +13,7 @@ import CnpjAlreadyExists from '../errors/cnpjAlreadyExists.js';
 import CreciAlreadyExists from '../errors/creciAlreadyExists.js';
 import InvalidEmail from '../errors/invalidEmail.js';
 import InvalidString from '../errors/invalidString.js';
+import InvalidInteger from '../errors/invalidInteger.js';
 import InsecurePassword from '../errors/insecurePassword.js';
 import InvalidPhone from '../errors/invalidPhone.js';
 import InvalidCpf from '../errors/invalidCpf.js';
@@ -41,6 +42,8 @@ export async function validateIfUniqueEmail(email) {
 }
 
 export function validateString(string, msg = '') {
+  if (string === undefined || string === '') throw new InvalidString(msg || 'O campo é obrigatório');
+
   const sanitizedString = validator.escape(string);
 
   if (sanitizedString.length === 0 || sanitizedString === '' || sanitizedString === undefined) {
@@ -51,6 +54,49 @@ export function validateString(string, msg = '') {
   }
 
   return sanitizedString;
+}
+
+export function validateInteger(integer, msg = '') {
+  const sanitizedInteger = parseInt(integer, 10);
+
+  console.log(sanitizedInteger);
+  console.log(Number.isInteger(sanitizedInteger));
+
+  if (!sanitizedInteger || !Number.isInteger(sanitizedInteger)) {
+    if (msg !== '') {
+      throw new InvalidInteger(msg);
+    }
+    throw new InvalidInteger();
+  }
+
+  return sanitizedInteger;
+}
+
+export function validatePrice(price, msg = '') {
+  const sanitizedPrice = parseInt((parseFloat(price, 10) * 100), 10);
+
+  if (!sanitizedPrice || !Number.isInteger(sanitizedPrice)) {
+    if (msg !== '') {
+      throw new InvalidInteger(msg);
+    }
+    throw new InvalidInteger();
+  }
+
+  return sanitizedPrice;
+}
+
+export function validateBoolean(bool, msg = '') {
+  if (bool === false || bool === true) return bool;
+
+  const sanitizedBool = validator.escape(bool);
+
+  if (sanitizedBool === 'true') return true;
+  if (sanitizedBool === 'false') return false;
+
+  if (msg !== '') {
+    throw new InvalidString(msg);
+  }
+  throw new InvalidString();
 }
 
 export function validatePassword(password) {
