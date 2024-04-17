@@ -12,7 +12,7 @@ import {
 
 async function findAll(page) {
   try {
-    const attributes = ['email', 'name', 'phone', 'cpf', 'rg', 'creci', 'cep', 'address', 'district', 'house_number', 'city', 'state', 'type'];
+    const attributes = ['email', 'name', 'phone', 'cpf', 'rg', 'creci', 'cep', 'address', 'district', 'house_number', 'city', 'state', 'type', 'bio'];
     if (page < 1) {
       return await Realtor.findAll({
         attributes,
@@ -61,7 +61,7 @@ async function findAll(page) {
 async function findByPk(email, password = false) {
   try {
     const validatedEmail = validateEmail(email);
-    const attributes = ['email', 'name', 'phone', 'cpf', 'rg', 'creci', 'cep', 'address', 'district', 'house_number', 'city', 'state', 'type'];
+    const attributes = ['email', 'name', 'phone', 'cpf', 'rg', 'creci', 'cep', 'address', 'district', 'house_number', 'city', 'state', 'type', 'bio'];
     if (password) attributes.push('password');
 
     const realtor = await Realtor.findByPk(validatedEmail, {
@@ -83,7 +83,7 @@ async function findByPk(email, password = false) {
 async function findByCpf(cpf, password = false) {
   try {
     const validatedCpf = validateCpf(cpf);
-    const attributes = ['email', 'name', 'phone', 'cpf', 'rg', 'creci', 'cep', 'address', 'district', 'house_number', 'city', 'state', 'type'];
+    const attributes = ['email', 'name', 'phone', 'cpf', 'rg', 'creci', 'cep', 'address', 'district', 'house_number', 'city', 'state', 'type', 'bio'];
     if (password) attributes.push('password');
 
     const realtor = await Realtor.findOne({ where: { cpf: validatedCpf } }, {
@@ -105,7 +105,7 @@ async function findByCpf(cpf, password = false) {
 async function findByRg(rg, password = false) {
   try {
     const validatedRg = validateString(rg);
-    const attributes = ['email', 'name', 'phone', 'cpf', 'rg', 'creci', 'cep', 'address', 'district', 'house_number', 'city', 'state', 'type'];
+    const attributes = ['email', 'name', 'phone', 'cpf', 'rg', 'creci', 'cep', 'address', 'district', 'house_number', 'city', 'state', 'type', 'bio'];
     if (password) attributes.push('password');
 
     const realtor = await Realtor.findOne({ where: { rg: validatedRg } }, {
@@ -141,6 +141,8 @@ async function create(data) {
     userData.house_number = validateString(data.house_number, 'O campo número é obrigatório');
     userData.city = validateString(data.city, 'O campo cidade é obrigatório');
     userData.state = validateUF(data.state);
+
+    if (data.bio) userData.bio = validateString(data.bio);
 
     await validateIfUniqueEmail(userData.email);
     await validateIfUniqueCpf(userData.cpf);
@@ -179,6 +181,7 @@ async function update(email, data) {
       house_number: data.house_number || oldRealtor.house_number,
       city: data.city || oldRealtor.city,
       state: data.state || oldRealtor.state,
+      bio: data.bio,
     };
 
     realtor.email = validateEmail(realtor.email);
@@ -193,6 +196,7 @@ async function update(email, data) {
     realtor.house_number = validateString(realtor.house_number, 'O campo número é obrigatório');
     realtor.city = validateString(realtor.city, 'O campo cidade é obrigatório');
     realtor.state = validateUF(realtor.state);
+    realtor.bio = validateString(realtor.bio);
 
     if (realtor.email !== oldRealtor.email) await validateIfUniqueEmail(realtor.email);
     if (realtor.cpf !== oldRealtor.cpf) await validateIfUniqueCpf(realtor.cpf);
@@ -216,7 +220,7 @@ async function elevate(email, data) {
       throw new ClientNotFound();
     }
 
-    const owner = {
+    const realtor = {
       email: validateEmail(client.email),
       name: validateString(client.name, 'O campo nome é obrigatório'),
       phone: validatePhone(client.phone || data.phone),
@@ -230,14 +234,15 @@ async function elevate(email, data) {
       house_number: validateString(data.house_number, 'O campo número é obrigatório'),
       city: validateString(data.city, 'O campo cidade é obrigatório'),
       state: validateUF(data.state),
+      bio: data.bio ? validateString(data.bio) : null,
     };
 
-    await validateIfUniqueRg(owner.rg);
-    await validateIfUniqueCpf(owner.cpf);
-    await validateIfUniqueCreci(owner.creci);
+    await validateIfUniqueRg(realtor.rg);
+    await validateIfUniqueCpf(realtor.cpf);
+    await validateIfUniqueCreci(realtor.creci);
 
     await Client.destroy({ where: { email: validatedEmail } });
-    return await Realtor.create(owner);
+    return await Realtor.create(realtor);
   } catch (error) {
     const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     console.error(message);

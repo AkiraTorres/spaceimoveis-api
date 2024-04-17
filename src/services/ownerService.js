@@ -13,7 +13,7 @@ async function findAll(page) {
   try {
     if (page < 1) {
       return await Owner.findAll({
-        attributes: ['email', 'name', 'phone', 'cpf', 'rg', 'address', 'house_number', 'cep', 'district', 'city', 'state', 'type'],
+        attributes: ['email', 'name', 'phone', 'cpf', 'rg', 'address', 'house_number', 'cep', 'district', 'city', 'state', 'type', 'bio'],
         order: [['name', 'ASC']],
       });
     }
@@ -29,7 +29,7 @@ async function findAll(page) {
     const offset = Number(limit * (page - 1));
 
     const owners = await Owner.findAll({
-      attributes: ['email', 'name', 'phone', 'cpf', 'rg', 'address', 'house_number', 'cep', 'district', 'city', 'state', 'type'],
+      attributes: ['email', 'name', 'phone', 'cpf', 'rg', 'address', 'house_number', 'cep', 'district', 'city', 'state', 'type', 'bio'],
       order: [['name', 'ASC']],
       offset,
       limit,
@@ -59,7 +59,7 @@ async function findAll(page) {
 async function findByPk(email, password) {
   try {
     const validatedEmail = validateEmail(email);
-    const attributes = ['email', 'name', 'phone', 'cpf', 'rg', 'address', 'house_number', 'cep', 'district', 'city', 'state', 'type'];
+    const attributes = ['email', 'name', 'phone', 'cpf', 'rg', 'address', 'house_number', 'cep', 'district', 'city', 'state', 'type', 'bio'];
     if (password) attributes.push('password');
 
     const owner = await Owner.findByPk(validatedEmail, {
@@ -81,7 +81,7 @@ async function findByPk(email, password) {
 async function findByCpf(cpf, password = false) {
   try {
     const validatedCpf = validateCpf(cpf);
-    const attributes = ['email', 'name', 'phone', 'cpf', 'rg', 'address', 'house_number', 'cep', 'district', 'city', 'state', 'type'];
+    const attributes = ['email', 'name', 'phone', 'cpf', 'rg', 'address', 'house_number', 'cep', 'district', 'city', 'state', 'type', 'bio'];
     if (password) attributes.push('password');
 
     const realtor = await Owner.findOne({ where: { cpf: validatedCpf } }, {
@@ -103,7 +103,7 @@ async function findByCpf(cpf, password = false) {
 async function findByRg(rg, password = false) {
   try {
     const validatedRg = validateString(rg);
-    const attributes = ['email', 'name', 'phone', 'cpf', 'rg', 'address', 'house_number', 'cep', 'district', 'city', 'state', 'type'];
+    const attributes = ['email', 'name', 'phone', 'cpf', 'rg', 'address', 'house_number', 'cep', 'district', 'city', 'state', 'type', 'bio'];
     if (password) attributes.push('password');
 
     const realtor = await Owner.findOne({ where: { rg: validatedRg } }, {
@@ -138,6 +138,8 @@ async function create(data) {
     userData.district = validateString(data.district, 'O campo bairro é obrigatório');
     userData.city = validateString(data.city, 'O campo cidade é obrigatório');
     userData.state = validateUF(data.state);
+
+    if (data.bio) userData.bio = validateString(data.bio);
 
     const owner = userData;
     await validateIfUniqueEmail(owner.email);
@@ -178,6 +180,7 @@ async function update(email, data) {
     if (owner.email !== validatedEmail) await validateIfUniqueEmail(owner.email);
     if (owner.rg !== oldOwner.rg) await validateIfUniqueRg(owner.rg);
     if (owner.cpf !== oldOwner.cpf) await validateIfUniqueCpf(owner.cpf);
+    if (data.bio) owner.bio = validateString(data.bio);
 
     await Owner.update(owner, { where: { email: validatedEmail } });
     return { message: 'Usuário atualizado com sucesso' };
@@ -211,6 +214,8 @@ async function elevate(email, data) {
       city: validateString(data.city, 'O campo cidade é obrigatório'),
       state: validateUF(data.state),
     };
+
+    if (data.bio) owner.bio = validateString(data.bio);
 
     await validateIfUniqueRg(owner.rg);
     await validateIfUniqueCpf(owner.cpf);

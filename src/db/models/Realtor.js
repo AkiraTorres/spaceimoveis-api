@@ -59,6 +59,11 @@ const Realtor = sequelize.define('realtors', {
     allowNull: false,
     defaultValue: 'realtor',
   },
+  bio: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    defaultValue: true,
+  },
 });
 
 export default Realtor;

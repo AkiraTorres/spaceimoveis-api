@@ -11,7 +11,7 @@ import {
 
 async function findAll(page) {
   try {
-    const attributes = ['email', 'company_name', 'phone', 'cnpj', 'creci', 'cep', 'address', 'district', 'house_number', 'city', 'state', 'type', 'social_one', 'social_two'];
+    const attributes = ['email', 'company_name', 'phone', 'cnpj', 'creci', 'cep', 'address', 'district', 'house_number', 'city', 'state', 'type', 'social_one', 'social_two', 'bio'];
     if (page < 1) {
       return await Realstate.findAll({
         attributes,
@@ -60,7 +60,7 @@ async function findAll(page) {
 async function findByPk(email, password = false) {
   try {
     const validatedEmail = validateEmail(email);
-    const attributes = ['email', 'company_name', 'phone', 'cnpj', 'creci', 'cep', 'address', 'district', 'house_number', 'city', 'state', 'type', 'social_one', 'social_two'];
+    const attributes = ['email', 'company_name', 'phone', 'cnpj', 'creci', 'cep', 'address', 'district', 'house_number', 'city', 'state', 'type', 'social_one', 'social_two', 'bio'];
     if (password) attributes.push('password');
 
     const realstate = await Realstate.findByPk(validatedEmail, {
@@ -82,7 +82,7 @@ async function findByPk(email, password = false) {
 async function findByCnpj(cnpj, password = false) {
   try {
     const validatedCnpj = validateCnpj(cnpj);
-    const attributes = ['email', 'company_name', 'phone', 'cnpj', 'creci', 'cep', 'address', 'district', 'house_number', 'city', 'state', 'type', 'social_one', 'social_two'];
+    const attributes = ['email', 'company_name', 'phone', 'cnpj', 'creci', 'cep', 'address', 'district', 'house_number', 'city', 'state', 'type', 'social_one', 'social_two', 'bio'];
     if (password) attributes.push('password');
 
     const realstate = await Realstate.findOne({ where: { cnpj: validatedCnpj } }, {
@@ -142,6 +142,8 @@ async function create(data) {
     if (data.socialOne) userData.social_one = data.socialOne;
     if (data.socialTwo) userData.social_two = data.socialTwo;
 
+    if (data.bio) userData.bio = validateString(data.bio);
+
     await validateIfUniqueEmail(userData.email);
     await validateIfUniqueCnpj(userData.cnpj);
     await validateIfUniqueCreci(userData.creci);
@@ -198,6 +200,8 @@ async function update(email, data) {
     realstate.city = validateString(realstate.city, 'O campo cidade é obrigatório');
     realstate.state = validateUF(realstate.state);
 
+    if (data.bio) realstate.bio = validateString(data.bio);
+
     if (realstate.email !== oldRealstate.email) await validateIfUniqueEmail(realstate.email);
     if (realstate.cnpj !== oldRealstate.cnpj) await validateIfUniqueCnpj(realstate.cnpj);
     if (realstate.creci !== oldRealstate.creci) await validateIfUniqueCreci(realstate.creci);
@@ -233,6 +237,8 @@ async function elevate(email, data) {
       city: validateString(data.city, 'O campo cidade é obrigatório'),
       state: validateUF(data.state),
     };
+
+    if (data.bio) realstate.bio = validateString(data.bio);
 
     await validateIfUniqueCnpj(realstate.cnpj);
     await validateIfUniqueCreci(realstate.creci);
