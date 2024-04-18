@@ -31,19 +31,24 @@ async function findAll(page) {
     const lastPage = Math.ceil(countTotal / limit);
     const offset = Number(limit * (page - 1));
 
-    const properties = await Property.findAll({
+    const props = await Property.findAll({
       order: [['cep', 'ASC']],
       offset,
       limit,
     });
 
-    if (properties.length === 0) {
+    if (props.length === 0) {
       throw new NoPropertiesFound();
     }
 
-    const pictures = await Promise.all(properties.map(async (property) => {
-      const photos = await Photo.findAll({ where: { property_id: property.id } });
-      return photos;
+    const properties = await Promise.all(props.map(async (property) => {
+      const editedProperty = property;
+      editedProperty.rent_price = parseFloat((property.rent_price / 100).toFixed(2));
+      editedProperty.sell_price = parseFloat((property.sell_price / 100).toFixed(2));
+
+      const pictures = await Photo.findAll({ where: { property_id: property.id } });
+
+      return { property: editedProperty, pictures };
     }));
 
     const pagination = {
@@ -55,7 +60,7 @@ async function findAll(page) {
       total: countTotal,
     };
 
-    return { properties, pictures, pagination };
+    return { properties, pagination };
   } catch (error) {
     const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     console.error(message);
@@ -97,18 +102,23 @@ async function findBySellerEmail(email) {
       error.status = 404;
     }
 
-    const properties = await Property.findAll({
+    const props = await Property.findAll({
       where: {
         [`${user.type}_email`]: validatedEmail,
       },
     });
 
-    const pictures = await Promise.all(properties.map(async (property) => {
-      const photos = await Photo.findAll({ where: { property_id: property.id } });
-      return photos;
+    const properties = await Promise.all(props.map(async (property) => {
+      const editedProperty = property;
+      editedProperty.rent_price = parseFloat((property.rent_price / 100).toFixed(2));
+      editedProperty.sell_price = parseFloat((property.sell_price / 100).toFixed(2));
+
+      const pictures = await Photo.findAll({ where: { property_id: property.id } });
+
+      return { property: editedProperty, pictures };
     }));
 
-    return { properties, pictures };
+    return properties;
   } catch (error) {
     error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     throw error;
