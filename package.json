@@ -8,7 +8,7 @@
   },
   "type": "module",
   "scripts": {
-    "build": "npm i && cd src/db && sequelize db:migrate",
+    "build": "npm i && sequelize db:migrate",
     "start:dev": "nodemon src/index.js",
     "start": "node src/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -22,8 +22,10 @@
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "express-async-handler": "^1.2.0",
+    "firebase": "^10.11.0",
     "google-auth-library": "^9.7.0",
     "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
     "passport-google-oauth": "^2.0.0",
     "pg": "^8.11.4",
     "pg-hstore": "^2.3.4",

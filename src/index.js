@@ -8,6 +8,7 @@ import ownerRoutes from './routes/ownerRoutes.js';
 import loginRoutes from './routes/loginRoutes.js';
 import realtorRoutes from './routes/realtorRoutes.js';
 import realstateRoutes from './routes/realstateRoutes.js';
+import propertyRoutes from './routes/propertyRoutes.js';
 import * as globalController from './controllers/globalController.js';
 
 dotenv.config();
@@ -15,8 +16,8 @@ dotenv.config();
 const app = Express();
 const port = Number(process.env.PORT) || 3000;
 
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json({ limit: '250mb', extended: true }));
+app.use(bodyParser.urlencoded({ limit: '250mb', extended: true }));
 app.use(cors());
 
 app.use('/', loginRoutes);
@@ -24,6 +25,7 @@ app.use('/clients', clientRoutes);
 app.use('/owners', ownerRoutes);
 app.use('/realtors', realtorRoutes);
 app.use('/realstate', realstateRoutes);
+app.use('/properties', propertyRoutes);
 
 app.get('/find/:email', globalController.find);
 app.get('/find', globalController.findAll);

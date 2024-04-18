@@ -56,7 +56,7 @@ const Owner = sequelize.define('owners', {
     defaultValue: 'owner',
   },
   bio: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING(1024),
     allowNull: true,
     defaultValue: true,
   },

@@ -27,7 +27,7 @@ export default function verifyJwt(req, res, next) {
 }
 
 export function generateJwt(email) {
-  const token = jwt.sign({ email }, JWT_SECRET, { expiresIn: 300 });
+  const token = jwt.sign({ email }, JWT_SECRET, { expiresIn: '24h' });
   return token;
 }
 

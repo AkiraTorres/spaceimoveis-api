@@ -64,7 +64,7 @@ const Realstate = sequelize.define('realstates', {
     allowNull: true,
   },
   bio: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING(1024),
     allowNull: true,
     defaultValue: true,
   },

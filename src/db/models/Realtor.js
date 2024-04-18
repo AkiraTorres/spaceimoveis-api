@@ -60,7 +60,7 @@ const Realtor = sequelize.define('realtors', {
     defaultValue: 'realtor',
   },
   bio: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING(1024),
     allowNull: true,
     defaultValue: true,
   },
