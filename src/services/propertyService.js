@@ -43,8 +43,8 @@ async function findAll(page) {
 
     const properties = await Promise.all(props.map(async (property) => {
       const editedProperty = property;
-      editedProperty.rent_price = parseFloat((property.rent_price / 100).toFixed(2));
-      editedProperty.sell_price = parseFloat((property.sell_price / 100).toFixed(2));
+      editedProperty.rent_price = parseFloat((property.rent_price / 100)).toFixed(2);
+      editedProperty.sell_price = parseFloat((property.sell_price / 100)).toFixed(2);
 
       const pictures = await Photo.findAll({ where: { property_id: property.id } });
 
@@ -78,8 +78,8 @@ async function findByPk(id) {
       throw new PropertyNotFound();
     }
 
-    property.rent_price = (property.rent_price / 100).toFixed(2);
-    property.sell_price = (property.sell_price / 100).toFixed(2);
+    property.rent_price = parseFloat((property.rent_price / 100)).toFixed(2);
+    property.sell_price = parseFloat((property.sell_price / 100)).toFixed(2);
 
     const pictures = await Photo.findAll({ where: { property_id: validatedId } });
 
@@ -110,8 +110,8 @@ async function findBySellerEmail(email) {
 
     const properties = await Promise.all(props.map(async (property) => {
       const editedProperty = property;
-      editedProperty.rent_price = parseFloat((property.rent_price / 100).toFixed(2));
-      editedProperty.sell_price = parseFloat((property.sell_price / 100).toFixed(2));
+      editedProperty.rent_price = parseFloat((property.rent_price / 100)).toFixed(2);
+      editedProperty.sell_price = parseFloat((property.sell_price / 100)).toFixed(2);
 
       const pictures = await Photo.findAll({ where: { property_id: property.id } });
 
