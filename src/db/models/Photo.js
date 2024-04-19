@@ -2,13 +2,13 @@ import { DataTypes, sequelize } from '../Conn.js';
 
 const Client = sequelize.define('photos', {
   id: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.UUID,
     primaryKey: true,
-    autoIncrement: true,
+    autoIncrement: false,
     allowNull: false,
   },
   property_id: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.UUID,
     allowNull: false,
     references: {
       model: 'properties',

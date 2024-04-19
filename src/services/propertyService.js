@@ -1,5 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getStorage, ref, getDownloadURL, uploadBytesResumable } from 'firebase/storage';
+import { v4 as uuid } from 'uuid';
 
 import Property from '../db/models/Property.js';
 import Photo from '../db/models/Photo.js';
@@ -70,7 +71,7 @@ async function findAll(page) {
 
 async function findByPk(id) {
   try {
-    const validatedId = validateInteger(id);
+    const validatedId = validateString(id);
 
     const property = await Property.findByPk(validatedId);
 
@@ -128,6 +129,7 @@ async function findBySellerEmail(email) {
 async function create(data, files) {
   try {
     const propertyData = {
+      id: uuid(),
       announcement_type: validateString(data.announcementType, 'O campo "tipo do anúncio" é obrigatório'),
       property_type: validateString(data.propertyType, 'O campo "tipo do imóvel" é obrigatório'),
       cep: validateString(data.cep, 'O campo "cep" é obrigatório'),
@@ -168,6 +170,7 @@ async function create(data, files) {
       const downloadURL = await getDownloadURL(snapshot.ref);
 
       await Photo.create({
+        id: uuid(),
         property_id: newProperty.id,
         url: downloadURL,
         name: `${picture.fieldname}-${picture.originalname}`,
