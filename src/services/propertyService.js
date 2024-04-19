@@ -46,7 +46,7 @@ async function findAll(page) {
       editedProperty.rent_price = parseFloat((property.rent_price / 100)).toFixed(2);
       editedProperty.sell_price = parseFloat((property.sell_price / 100)).toFixed(2);
 
-      const pictures = await Photo.findAll({ where: { property_id: property.id } });
+      const pictures = await Photo.findAll({ where: { property_id: property.id }, order: [['type', 'ASC']] });
 
       return { property: editedProperty, pictures };
     }));
@@ -81,7 +81,7 @@ async function findByPk(id) {
     property.rent_price = parseFloat((property.rent_price / 100)).toFixed(2);
     property.sell_price = parseFloat((property.sell_price / 100)).toFixed(2);
 
-    const pictures = await Photo.findAll({ where: { property_id: validatedId } });
+    const pictures = await Photo.findAll({ where: { property_id: property.id }, order: [['type', 'ASC']] });
 
     return { property, pictures };
   } catch (error) {
@@ -113,7 +113,7 @@ async function findBySellerEmail(email) {
       editedProperty.rent_price = parseFloat((property.rent_price / 100)).toFixed(2);
       editedProperty.sell_price = parseFloat((property.sell_price / 100)).toFixed(2);
 
-      const pictures = await Photo.findAll({ where: { property_id: property.id } });
+      const pictures = await Photo.findAll({ where: { property_id: property.id }, order: [['type', 'ASC']] });
 
       return { property: editedProperty, pictures };
     }));
