@@ -2,9 +2,10 @@ import { DataTypes, sequelize } from '../Conn.js';
 
 const Property = sequelize.define('properties', {
   id: {
-    type: DataTypes.INTEGER,
-    autoIncrement: true,
+    type: DataTypes.UUID,
+    autoIncrement: false,
     primaryKey: true,
+    allowNull: false,
   },
   type: {
     type: DataTypes.STRING,
