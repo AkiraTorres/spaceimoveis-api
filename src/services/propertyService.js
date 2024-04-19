@@ -44,6 +44,10 @@ async function findAll(page) {
 
     const properties = await Promise.all(props.map(async (property) => {
       const editedProperty = property;
+      if (property.owner_email) editedProperty.email = editedProperty.owner_email;
+      if (property.realtor_email) editedProperty.email = editedProperty.realtor_email;
+      if (property.realstate_email) editedProperty.email = editedProperty.realstate_email;
+
       editedProperty.rent_price = parseFloat((property.rent_price / 100)).toFixed(2);
       editedProperty.sell_price = parseFloat((property.sell_price / 100)).toFixed(2);
 
@@ -79,6 +83,10 @@ async function findByPk(id) {
       throw new PropertyNotFound();
     }
 
+    if (property.owner_email) property.email = property.owner_email;
+    if (property.realtor_email) property.email = property.realtor_email;
+    if (property.realstate_email) property.email = property.realstate_email;
+
     property.rent_price = parseFloat((property.rent_price / 100)).toFixed(2);
     property.sell_price = parseFloat((property.sell_price / 100)).toFixed(2);
 
@@ -111,6 +119,10 @@ async function findBySellerEmail(email) {
 
     const properties = await Promise.all(props.map(async (property) => {
       const editedProperty = property;
+      if (property.owner_email) editedProperty.email = editedProperty.owner_email;
+      if (property.realtor_email) editedProperty.email = editedProperty.realtor_email;
+      if (property.realstate_email) editedProperty.email = editedProperty.realstate_email;
+
       editedProperty.rent_price = parseFloat((property.rent_price / 100)).toFixed(2);
       editedProperty.sell_price = parseFloat((property.sell_price / 100)).toFixed(2);
 
