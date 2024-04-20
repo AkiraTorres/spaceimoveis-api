@@ -16,10 +16,14 @@ async function setFavorite(clientEmail, propertyId) {
   }
 
   const favorite = await Favorite.findOne({ where: {
-    client_email: validatedEmail,
+    [`${user.type}_email`]: validatedEmail,
     property_id: validatedPropertyId,
   } });
-  if (favorite) return favorite;
+  if (favorite) {
+    const error = new Error('Imóvel já favoritado');
+    error.status = 400;
+    throw error;
+  }
 
   return Favorite.create({ id: uuid(), [`${user.type}_email`]: validatedEmail, property_id: validatedPropertyId });
 }
@@ -27,7 +31,12 @@ async function setFavorite(clientEmail, propertyId) {
 async function getFavorites(clientEmail) {
   const validatedEmail = validateString(clientEmail);
 
-  const user = await find(Favorite, { client_email: clientEmail });
+  const user = await find(validatedEmail);
+  if (!user) {
+    const error = new Error('Usuário não encontrado');
+    error.status = 404;
+    throw error;
+  }
 
   const favorites = await Favorite.findAll({ where: { [`${user.type}_email`]: validatedEmail } });
 
@@ -39,10 +48,25 @@ async function removeFavorite(clientEmail, propertyId) {
   const validatedEmail = validateString(clientEmail);
   const validatedPropertyId = validateString(propertyId);
 
-  return Favorite.destroy({ where: {
-    client_email: validatedEmail,
+  const user = await find(validatedEmail);
+  if (!user) {
+    const error = new Error('Usuário não encontrado');
+    error.status = 404;
+    throw error;
+  }
+
+  const destroyed = await Favorite.destroy({ where: {
+    [`${user.type}_email`]: validatedEmail,
     property_id: validatedPropertyId,
   } });
+
+  if (!destroyed) {
+    const error = new Error('Imóvel não encontrado');
+    error.status = 404;
+    throw error;
+  }
+
+  return destroyed;
 }
 
 export { setFavorite, getFavorites, removeFavorite };
