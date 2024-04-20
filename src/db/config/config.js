@@ -25,7 +25,7 @@ export default {
         rejectUnauthorized: false,
       },
     },
-    // loggin: true,
+    logging: false,
   },
   production: {
     username: process.env.DB_USER,
