@@ -8,6 +8,6 @@ const router = Express.Router();
 
 router.get('/:email', verifyGoogleToken, verifyJwt, controller.getFavorites);
 router.post('/', verifyGoogleToken, verifyJwt, controller.setFavorite);
-router.delete('/', verifyGoogleToken, verifyJwt, controller.removeFavorite);
+router.delete('/:email/:propertyId', verifyGoogleToken, verifyJwt, controller.removeFavorite);
 
 export default router;

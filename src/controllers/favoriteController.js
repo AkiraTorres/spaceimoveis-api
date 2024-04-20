@@ -4,9 +4,9 @@ import * as service from '../services/favoriteService.js';
 
 export const setFavorite = asyncHandler(async (req, res) => {
   try {
-    const { clientEmail, propertyId } = req.body;
+    const { email, propertyId } = req.body;
 
-    const result = await service.setFavorite(clientEmail, propertyId);
+    const result = await service.setFavorite(email, propertyId);
     res.status(201).json(result);
   } catch (error) {
     const status = error.status || 500;
@@ -16,9 +16,9 @@ export const setFavorite = asyncHandler(async (req, res) => {
 
 export const getFavorites = asyncHandler(async (req, res) => {
   try {
-    const { clientEmail } = req.params;
+    const { email } = req.params;
 
-    const result = await service.getFavorites(clientEmail);
+    const result = await service.getFavorites(email);
     res.status(200).json(result);
   } catch (error) {
     const status = error.status || 500;
@@ -28,9 +28,9 @@ export const getFavorites = asyncHandler(async (req, res) => {
 
 export const removeFavorite = asyncHandler(async (req, res) => {
   try {
-    const { clientEmail, propertyId } = req.body;
+    const { email, propertyId } = req.params;
 
-    await service.removeFavorite(clientEmail, propertyId);
+    await service.removeFavorite(email, propertyId);
     res.status(204).end();
   } catch (error) {
     const status = error.status || 500;
