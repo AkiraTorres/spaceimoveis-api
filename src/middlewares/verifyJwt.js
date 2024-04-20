@@ -11,6 +11,7 @@ export default function verifyJwt(req, res, next) {
 
   try {
     const token = req.headers['x-access-token'];
+    if (!token) return res.status(401).json({ message: 'Token not provided' }).end();
     const isBlacklisted = blacklist.includes(token);
 
     if (isBlacklisted) return res.status(401).json({ message: 'Unauthorized' }).end();

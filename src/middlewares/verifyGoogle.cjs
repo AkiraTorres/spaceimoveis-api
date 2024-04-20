@@ -7,7 +7,7 @@ const client = new OAuth2Client();
 
 async function validateGoogleToken(token) {
   // console.log(`verifyGoogleToken: ${token}`);
-  console.log(`google client id: ${process.env.GOOGLE_CLIENT_ID}`);
+  // console.log(`google client id: ${process.env.GOOGLE_CLIENT_ID}`);
 
   const ticket = await client.verifyIdToken({
     idToken: token,
@@ -31,7 +31,7 @@ async function verifyGoogleToken(req, res, next) {
   } catch (error) {
     const status = error.status || error.code || 500;
     const message = error.message || 'Erro ao se conectar com o banco de dados';
-    console.error(`${status}: ${message}`);
+    // console.error(`${status}: ${message}`);
     return `${status}: ${message}`;
     // return res.status(status).json(message).end();
   } finally {
