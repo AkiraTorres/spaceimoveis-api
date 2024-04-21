@@ -7,7 +7,7 @@ import Photo from '../db/models/Photo.js';
 import { find } from './globalService.js';
 import NoPropertiesFound from '../errors/propertyErrors/noPropertyFound.js';
 import PropertyNotFound from '../errors/propertyErrors/properyNotFound.js';
-import { validateString, validateInteger, validateBoolean, validatePhone, validatePrice, validateEmail } from '../validators/inputValidators.js';
+import { validateString, validateInteger, validateBoolean, validatePhone, validatePrice, validateEmail, validateCep, validateUF } from '../validators/inputValidators.js';
 
 import firebaseConfig from '../config/firebase.js';
 
@@ -144,11 +144,11 @@ async function create(data, files) {
       id: uuid(),
       announcement_type: validateString(data.announcementType, 'O campo "tipo do anúncio" é obrigatório'),
       property_type: validateString(data.propertyType, 'O campo "tipo do imóvel" é obrigatório'),
-      cep: validateString(data.cep, 'O campo "cep" é obrigatório'),
+      cep: validateCep(data.cep),
       address: validateString(data.address, 'O campo "rua" é obrigatório'),
       house_number: validateString(data.houseNumber, 'O campo "numero" é obrigatório'),
       city: validateString(data.city, 'O campo "cidade" é obrigatório'),
-      state: validateString(data.state, 'O campo "estado" é obrigatório'),
+      state: validateUF(data.state, 'O campo "estado" é obrigatório'),
       district: validateString(data.district, 'O campo "bairro" é obrigatório'),
       size: validateInteger(data.size, 'O campo "tamanho do imóvel" é obrigatório'),
       bedrooms: validateInteger(data.bedrooms, 'O campo "quartos" é obrigatório'),
@@ -162,15 +162,16 @@ async function create(data, files) {
       description: validateString(data.description, 'O campo "descrição" é obrigatório'),
       contact: validatePhone(data.contact, 'O campo "telefone" é obrigatório'),
       financiable: validateBoolean(data.financiable, 'O campo "aceita financiamento" é obrigatório'),
+      rent_price: data.rentPrice ? validatePrice(data.rentPrice) : null,
+      sell_price: data.sellPrice ? validatePrice(data.sellPrice) : null,
+      owner_email: data.sellerEmail && data.sellerType === 'owner' ? validateEmail(data.sellerEmail) : null,
+      realtor_email: data.sellerEmail && data.sellerType === 'realtor' ? validateEmail(data.sellerEmail) : null,
+      realstate_email: data.sellerEmail && data.sellerType === 'realstate' ? validateEmail(data.sellerEmail) : null,
+      complement: data.complement ? validateString(data.complement) : null,
+      floor: data.floor ? validateString(data.floor) : null,
+      latitude: data.latitude ? validateString(data.latitude) : null,
+      longitude: data.longitude ? validateString(data.longitude) : null,
     };
-
-    if (data.rentPrice) propertyData.rent_price = validatePrice(data.rentPrice, 'O campo "preço de aluguel" é obrigatório');
-    if (data.sellPrice) propertyData.sell_price = validatePrice(data.sellPrice, 'O campo "preço de venda" é obrigatório');
-    if (data.sellerType === 'owner') propertyData.owner_email = validateEmail(data.sellerEmail);
-    if (data.sellerType === 'realtor') propertyData.realtor_email = validateEmail(data.sellerEmail);
-    if (data.sellerType === 'realstate') propertyData.realstate_email = validateEmail(data.sellerEmail);
-    if (data.complement) propertyData.complement = validateString(data.complement);
-    if (data.floor) propertyData.floor = validateString(data.floor);
 
     const property = propertyData;
     const newProperty = await Property.create(property);
@@ -209,40 +210,37 @@ async function update(id, data, files) {
       throw new PropertyNotFound();
     }
 
-    const property = oldProperProperty;
-
-    if (data.announcementType) property.announcement_type = validateString(data.announcementType, 'O campo "tipo do anúncio" é obrigatório');
-    if (data.propertyType) property.property_type = validateString(data.propertyType, 'O campo "tipo do imóvel" é obrigatório');
-    if (data.rentPrice) property.rent_price = validatePrice(data.rentPrice, 'O campo "preço de aluguel" é obrigatório');
-    if (data.sellPrice) property.sell_price = validatePrice(data.sellPrice, 'O campo "preço de venda" é obrigatório');
-    if (data.cep) property.cep = validateString(data.cep, 'O campo "cep" é obrigatório');
-    if (data.address) property.address = validateString(data.address, 'O campo "rua" é obrigatório');
-    if (data.number) property.number = validateString(data.number, 'O campo "numero" é obrigatório');
-    if (data.city) property.city = validateString(data.city, 'O campo "cidade" é obrigatório');
-    if (data.state) property.state = validateString(data.state, 'O campo "estado" é obrigatório');
-    if (data.neighborhood) property.neighborhood = validateString(data.neighborhood, 'O campo "bairro" é obrigatório');
-    if (data.complement) property.complement = validateString(data.complement);
-    if (data.floor) property.floor = validateString(data.floor, 'O campo "andar do imóvel" é obrigatório');
-    if (data.size) property.size = validateInteger(data.size, 'O campo "tamanho do imóvel" é obrigatório');
-    if (data.bedrooms) property.bedrooms = validateInteger(data.bedrooms, 'O campo "quartos" é obrigatório');
-    if (data.bathrooms) property.bathrooms = validateInteger(data.bathrooms, 'O campo "banheiros" é obrigatório');
-    if (data.parkingSpaces) property.parking_spaces = validateInteger(data.parkingSpaces, 'O campo "vagas" é obrigatório');
-    if (data.pool) property.pool = validateBoolean(data.pool, 'O campo "piscina" é obrigatório');
-    if (data.grill) property.grill = validateBoolean(data.grill, 'O campo "churrasqueira" é obrigatório');
-    if (data.airConditioning) property.air_conditioning = validateBoolean(data.airConditioning, 'O campo "ar condicionado" é obrigatório');
-    if (data.playground) property.playground = validateBoolean(data.playground, 'O campo "playground" é obrigatório');
-    if (data.eventArea) property.event_area = validateBoolean(data.eventArea, 'O campo "sala de eventos" é obrigatório');
-    if (data.description) property.description = validateString(data.description, 'O campo "descrição" é obrigatório');
-    if (data.contact) property.contact = validatePhone(data.contact, 'O campo "telefone" é obrigatório');
-    if (data.financiable) property.financiable = validateBoolean(data.financiable, 'O campo "aceita financiamento" é obrigatório');
-    if (data.ownerEmail) property.owner_email = validateEmail(data.ownerEmail);
-    if (data.realtorEmail) property.realtor_email = validateEmail(data.realtorEmail);
-    if (data.realstateEmail) property.realstate_email = validateEmail(data.realstateEmail);
-    if (data.complement) property.complement = validateString(data.complement);
-
-    if (data.sellerEmail && data.sellerType === 'owner') property.owner_email = validateEmail(data.sellerEmail);
-    if (data.sellerEmail && data.sellerType === 'realtor') property.realtor_email = validateEmail(data.sellerEmail);
-    if (data.sellerEmail && data.sellerType === 'realstate') property.realstate_email = validateEmail(data.sellerEmail);
+    const property = {
+      announcement_type: data.announcementType ? validateString(data.announcementType) : oldProperProperty.announcement_type,
+      property_type: data.propertyType ? validateString(data.propertyType) : oldProperProperty.property_type,
+      cep: data.cep ? validateCep(data.cep) : oldProperProperty.cep,
+      address: data.address ? validateString(data.address) : oldProperProperty.address,
+      house_number: data.houseNumber ? validateString(data.houseNumber) : oldProperProperty.house_number,
+      city: data.city ? validateString(data.city) : oldProperProperty.city,
+      state: data.state ? validateUF(data.state) : oldProperProperty.state,
+      district: data.district ? validateString(data.district) : oldProperProperty.district,
+      size: data.size ? validateInteger(data.size) : oldProperProperty.size,
+      bedrooms: data.bedrooms ? validateInteger(data.bedrooms) : oldProperProperty.bedrooms,
+      bathrooms: data.bathrooms ? validateInteger(data.bathrooms) : oldProperProperty.bathrooms,
+      parking_spaces: data.parkingSpaces ? validateInteger(data.parkingSpaces) : oldProperProperty.parking_spaces,
+      pool: data.pool ? validateBoolean(data.pool) : oldProperProperty.pool,
+      grill: data.grill ? validateBoolean(data.grill) : oldProperProperty.grill,
+      air_conditioning: data.airConditioning ? validateBoolean(data.airConditioning) : oldProperProperty.air_conditioning,
+      playground: data.playground ? validateBoolean(data.playground) : oldProperProperty.playground,
+      event_area: data.eventArea ? validateBoolean(data.eventArea) : oldProperProperty.event_area,
+      description: data.description ? validateString(data.description) : oldProperProperty.description,
+      contact: data.contact ? validatePhone(data.contact) : oldProperProperty.contact,
+      financiable: data.financiable ? validateBoolean(data.financiable) : oldProperProperty.financiable,
+      rent_price: data.rentPrice ? validatePrice(data.rentPrice) : oldProperProperty.rent_price,
+      sell_price: data.sellPrice ? validatePrice(data.sellPrice) : oldProperProperty.sell_price,
+      owner_email: data.sellerEmail && data.sellerType === 'owner' ? validateEmail(data.sellerEmail) : oldProperProperty.owner_email,
+      realtor_email: data.sellerEmail && data.sellerType === 'realtor' ? validateEmail(data.sellerEmail) : oldProperProperty.realtor_email,
+      realstate_email: data.sellerEmail && data.sellerType === 'realstate' ? validateEmail(data.sellerEmail) : oldProperProperty.realstate_email,
+      complement: data.complement ? validateString(data.complement) : oldProperProperty.complement,
+      floor: data.floor ? validateString(data.floor) : oldProperProperty.floor,
+      latitude: data.latitude ? validateString(data.latitude) : oldProperProperty.latitude,
+      longitude: data.longitude ? validateString(data.longitude) : oldProperProperty.longitude,
+    };
 
     const updatedProperty = await Property.create(property);
 

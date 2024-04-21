@@ -132,6 +132,16 @@ const Property = sequelize.define('properties', {
     type: DataTypes.BOOLEAN,
     allowNull: false,
   },
+  latitude: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    defaultValue: null,
+  },
+  longitude: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    defaultValue: null,
+  },
 });
 
 export default Property;
