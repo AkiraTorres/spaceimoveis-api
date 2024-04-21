@@ -1,5 +1,10 @@
+import { initializeApp } from 'firebase/app';
+import { getStorage, ref, getDownloadURL, uploadBytesResumable, deleteObject } from 'firebase/storage';
+import { v4 as uuid } from 'uuid';
+
 import Client from '../db/models/Client.js';
 import Realstate from '../db/models/Realstate.js';
+import RealstatePhoto from '../db/models/RealstatePhoto.js';
 
 import RealstateNotFound from '../errors/realstateErrors/realstateNotFound.js';
 import NoRealstatesFound from '../errors/realstateErrors/noRealstatesFound.js';
@@ -8,6 +13,11 @@ import {
   validateEmail, validateString, validatePassword, validatePhone, validateCnpj, validateUF,
   validateCep, validateCreci, validateIfUniqueEmail, validateIfUniqueCnpj, validateIfUniqueCreci,
 } from '../validators/inputValidators.js';
+
+import firebaseConfig from '../config/firebase.js';
+
+const app = initializeApp(firebaseConfig);
+const storage = getStorage(app);
 
 async function findAll(page) {
   try {
@@ -40,6 +50,11 @@ async function findAll(page) {
       throw new NoRealstatesFound();
     }
 
+    const result = await Promise.all(realstates.map(async (realstate) => {
+      const profile = await RealstatePhoto.findOne({ where: { email: realstate.email } });
+      return { ...realstate.dataValues, profile };
+    }));
+
     const pagination = {
       path: '/realstates',
       page,
@@ -49,7 +64,7 @@ async function findAll(page) {
       total: countTotal,
     };
 
-    return { realstates, pagination };
+    return { result, pagination };
   } catch (error) {
     const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     console.error(message);
@@ -71,7 +86,8 @@ async function findByPk(email, password = false) {
       throw new RealstateNotFound();
     }
 
-    return realstate;
+    const profile = await RealstatePhoto.findOne({ where: { email: realstate.email } });
+    return { ...realstate.dataValues, profile };
   } catch (error) {
     const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     console.error(message);
@@ -93,7 +109,8 @@ async function findByCnpj(cnpj, password = false) {
       throw new RealstateNotFound();
     }
 
-    return realstate;
+    const profile = await RealstatePhoto.findOne({ where: { email: realstate.email } });
+    return { ...realstate.dataValues, profile };
   } catch (error) {
     const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     console.error(message);
@@ -115,7 +132,8 @@ async function findByCreci(creci, password = false) {
       throw new RealstateNotFound();
     }
 
-    return realstate;
+    const profile = await RealstatePhoto.findOne({ where: { email: realstate.email } });
+    return { ...realstate.dataValues, profile };
   } catch (error) {
     const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     console.error(message);
@@ -123,26 +141,25 @@ async function findByCreci(creci, password = false) {
   }
 }
 
-async function create(data) {
+async function create(data, photo) {
   try {
-    const userData = {};
-
-    userData.email = validateEmail(data.email);
-    userData.company_name = validateString(data.company_name, 'O campo razão social é obrigatório');
-    userData.password = validatePassword(data.password);
-    userData.phone = validatePhone(data.phone);
-    userData.cnpj = validateCnpj(data.cnpj);
-    userData.creci = validateCreci(data.creci);
-    userData.cep = validateCep(data.cep);
-    userData.address = validateString(data.address, 'O campo endereço é obrigatório');
-    userData.district = validateString(data.district, 'O campo bairro é obrigatório');
-    userData.house_number = validateString(data.house_number, 'O campo número é obrigatório');
-    userData.city = validateString(data.city, 'O campo cidade é obrigatório');
-    userData.state = validateUF(data.state);
-    if (data.socialOne) userData.social_one = data.socialOne;
-    if (data.socialTwo) userData.social_two = data.socialTwo;
-
-    if (data.bio) userData.bio = validateString(data.bio);
+    const userData = {
+      email: validateEmail(data.email),
+      company_name: validateString(data.company_name, 'O campo razão social é obrigatório'),
+      password: validatePassword(data.password),
+      phone: validatePhone(data.phone),
+      cnpj: validateCnpj(data.cnpj),
+      creci: validateCreci(data.creci),
+      cep: validateCep(data.cep),
+      address: validateString(data.address, 'O campo endereço é obrigatório'),
+      district: validateString(data.district, 'O campo bairro é obrigatório'),
+      house_number: validateString(data.house_number, 'O campo número é obrigatório'),
+      city: validateString(data.city, 'O campo cidade é obrigatório'),
+      state: validateUF(data.state),
+      social_one: data.socialOne ? validateString(data.socialOne) : null,
+      social_two: data.socialTwo ? validateString(data.socialTwo) : null,
+      bio: data.bio ? validateString(data.bio) : null,
+    };
 
     await validateIfUniqueEmail(userData.email);
     await validateIfUniqueCnpj(userData.cnpj);
@@ -150,7 +167,25 @@ async function create(data) {
 
     const realstate = userData;
 
-    return await Realstate.create(realstate);
+    const newRealstate = await Realstate.create(realstate);
+    let profile = null;
+
+    if (photo) {
+      const storageRef = ref(storage, `images/realstates/${newRealstate.email}/${photo.name}`);
+      const metadata = { contentType: photo.mimetype };
+      const snapshot = await uploadBytesResumable(storageRef, photo.buffer, metadata);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+
+      profile = await RealstatePhoto.create({
+        id: uuid(),
+        email: newRealstate.email,
+        url: downloadURL,
+        name: photo.name,
+        type: 'profile',
+      });
+    }
+
+    return { ...newRealstate.dataValues, profile };
   } catch (error) {
     const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     console.error(message);
@@ -158,7 +193,7 @@ async function create(data) {
   }
 }
 
-async function update(email, data) {
+async function update(email, data, photo) {
   try {
     const validatedEmail = validateEmail(email);
 
@@ -168,45 +203,51 @@ async function update(email, data) {
     }
 
     const realstate = {
-      email: data.email || oldRealstate.email,
-      company_name: data.company_name || oldRealstate.company_name,
-      phone: data.phone || oldRealstate.phone,
-      cnpj: data.cnpj || oldRealstate.cnpj,
-      creci: data.creci || oldRealstate.creci,
-      cep: data.cep || oldRealstate.cep,
-      address: data.address || oldRealstate.address,
-      district: data.district || oldRealstate.district,
-      house_number: data.house_number || oldRealstate.house_number,
-      city: data.city || oldRealstate.city,
-      state: data.state || oldRealstate.state,
+      email: data.email ? validateEmail(data.email) : oldRealstate.email,
+      company_name: data.company_name ? validateString(data.company_name, 'O campo razão social é obrigatório') : oldRealstate.company_name,
+      phone: data.phone ? validatePhone(data.phone) : oldRealstate.phone,
+      cnpj: data.cnpj ? validateCnpj(data.cnpj) : oldRealstate.cnpj,
+      creci: data.creci ? validateCreci(data.creci) : oldRealstate.creci,
+      cep: data.cep ? validateCep(data.cep) : oldRealstate.cep,
+      address: data.address ? validateString(data.address, 'O campo endereço é obrigatório') : oldRealstate.address,
+      district: data.district ? validateString(data.district, 'O campo bairro é obrigatório') : oldRealstate.district,
+      house_number: data.house_number ? validateString(data.house_number, 'O campo número é obrigatório') : oldRealstate.house_number,
+      city: data.city ? validateString(data.city, 'O campo cidade é obrigatório') : oldRealstate.city,
+      state: data.state ? validateUF(data.state) : oldRealstate.state,
+      bio: data.bio ? validateString(data.bio) : oldRealstate.bio,
+      social_one: data.socialOne ? validateString(data.socialOne) : oldRealstate.social_one,
+      social_two: data.socialTwo ? validateString(data.socialTwo) : oldRealstate.social_two,
     };
-
-    if (oldRealstate.social_one || data.socialOne) {
-      realstate.social_one = validateString(data.socialOne || oldRealstate.social_one);
-    }
-    if (oldRealstate.social_two || data.socialTwo) {
-      realstate.social_two = validateString(data.socialTwo || oldRealstate.social_two);
-    }
-
-    realstate.email = validateEmail(realstate.email);
-    realstate.company_name = validateString(realstate.company_name, 'O campo razão social é obrigatório');
-    realstate.phone = validatePhone(realstate.phone);
-    realstate.cnpj = validateCnpj(realstate.cnpj);
-    realstate.creci = validateCreci(realstate.creci);
-    realstate.cep = validateCep(realstate.cep);
-    realstate.address = validateString(realstate.address, 'O campo endereço é obrigatório');
-    realstate.district = validateString(realstate.district, 'O campo bairro é obrigatório');
-    realstate.house_number = validateString(realstate.house_number, 'O campo número é obrigatório');
-    realstate.city = validateString(realstate.city, 'O campo cidade é obrigatório');
-    realstate.state = validateUF(realstate.state);
-
-    if (data.bio) realstate.bio = validateString(data.bio);
 
     if (realstate.email !== oldRealstate.email) await validateIfUniqueEmail(realstate.email);
     if (realstate.cnpj !== oldRealstate.cnpj) await validateIfUniqueCnpj(realstate.cnpj);
     if (realstate.creci !== oldRealstate.creci) await validateIfUniqueCreci(realstate.creci);
 
-    return await Realstate.update(realstate, { where: { email: validatedEmail } });
+    const updatedRealstate = Realstate.update(realstate, { where: { email: validatedEmail } });
+    let profile = await RealstatePhoto.findOne({ where: { email: realstate.email } });
+
+    if (photo) {
+      if (profile) {
+        const storageRef = ref(storage, `images/realstates/${realstate.email}/${profile.name}`);
+        await deleteObject(storageRef);
+        await RealstatePhoto.destroy({ where: { email: realstate.email } });
+      }
+
+      const storageRef = ref(storage, `images/realstates/${realstate.email}/${photo.name}`);
+      const metadata = { contentType: photo.mimetype };
+      const snapshot = await uploadBytesResumable(storageRef, photo.buffer, metadata);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+
+      profile = await RealstatePhoto.create({
+        id: uuid(),
+        email: realstate.email,
+        url: downloadURL,
+        name: photo.name,
+        type: 'profile',
+      });
+    }
+
+    return { ...updatedRealstate.dataValues, profile };
   } catch (error) {
     const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     console.error(message);
@@ -214,7 +255,7 @@ async function update(email, data) {
   }
 }
 
-async function elevate(email, data) {
+async function elevate(email, data, photo) {
   try {
     const validatedEmail = validateEmail(email);
 
@@ -236,15 +277,34 @@ async function elevate(email, data) {
       house_number: validateString(data.house_number, 'O campo número é obrigatório'),
       city: validateString(data.city, 'O campo cidade é obrigatório'),
       state: validateUF(data.state),
+      bio: data.bio ? validateString(data.bio) : null,
+      social_one: data.socialOne ? validateString(data.socialOne) : null,
+      social_two: data.socialTwo ? validateString(data.socialTwo) : null,
     };
-
-    if (data.bio) realstate.bio = validateString(data.bio);
 
     await validateIfUniqueCnpj(realstate.cnpj);
     await validateIfUniqueCreci(realstate.creci);
 
     await Client.destroy({ where: { email: validatedEmail } });
-    return await Realstate.create(realstate);
+    const newRealstate = await Realstate.create(realstate);
+
+    let profile = null;
+    if (photo) {
+      const storageRef = ref(storage, `images/realstates/${newRealstate.email}/${photo.name}`);
+      const metadata = { contentType: photo.mimetype };
+      const snapshot = await uploadBytesResumable(storageRef, photo.buffer, metadata);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+
+      profile = await RealstatePhoto.create({
+        id: uuid(),
+        email: newRealstate.email,
+        url: downloadURL,
+        name: photo.name,
+        type: 'profile',
+      });
+    }
+
+    return { ...newRealstate.dataValues, profile };
   } catch (error) {
     const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     console.error(message);
@@ -258,6 +318,13 @@ async function destroy(email) {
 
     if (!await Realstate.findByPk(validatedEmail)) {
       throw new RealstateNotFound();
+    }
+
+    const profile = await RealstatePhoto.findOne({ where: { email: validatedEmail } });
+    if (profile) {
+      const storageRef = ref(storage, `images/realstates/${validatedEmail}/${profile.name}`);
+      await deleteObject(storageRef);
+      await RealstatePhoto.destroy({ where: { email: validatedEmail } });
     }
 
     await Realstate.destroy({ where: { email: validatedEmail } });
