@@ -27,7 +27,11 @@ export const findByPk = asyncHandler(async (req, res) => {
 export const create = asyncHandler(async (req, res) => {
   try {
     const data = req.body;
-    const result = await service.create(data);
+    const photo = req;
+
+    const realtorData = JSON.parse(data);
+
+    const result = await service.create(realtorData, photo);
     res.status(201).json(result);
   } catch (error) {
     const status = error.status || 500;
@@ -38,7 +42,11 @@ export const create = asyncHandler(async (req, res) => {
 export const update = asyncHandler(async (req, res) => {
   try {
     const data = req.body;
-    const result = await service.update(req.params.email, data);
+    const photo = req;
+
+    const realtorData = JSON.parse(data);
+
+    const result = await service.update(req.params.email, realtorData, photo);
     res.status(200).json(result);
   } catch (error) {
     const status = error.status || 500;
@@ -49,7 +57,11 @@ export const update = asyncHandler(async (req, res) => {
 export const elevate = asyncHandler(async (req, res) => {
   try {
     const data = req.body;
-    const result = await service.elevate(req.params.email, data);
+    const photo = req;
+
+    const realtorData = JSON.parse(data);
+
+    const result = await service.elevate(req.params.email, realtorData, photo);
     res.status(201).json(result);
   } catch (error) {
     const status = error.status || 500;

@@ -1,5 +1,10 @@
+import { initializeApp } from 'firebase/app';
+import { getStorage, ref, getDownloadURL, uploadBytesResumable, deleteObject } from 'firebase/storage';
+import { v4 as uuid } from 'uuid';
+
 import Client from '../db/models/Client.js';
 import Realtor from '../db/models/Realtor.js';
+import RealtorPhoto from '../db/models/RealtorPhoto.js';
 
 import RealtorNotFound from '../errors/realtorErrors/realtorNotFound.js';
 import NoRealtorsFound from '../errors/realtorErrors/noRealtorsFound.js';
@@ -9,6 +14,11 @@ import {
   validateCep, validateCreci, validateIfUniqueEmail, validateIfUniqueCpf, validateIfUniqueRg,
   validateIfUniqueCreci,
 } from '../validators/inputValidators.js';
+
+import firebaseConfig from '../config/firebase.js';
+
+const app = initializeApp(firebaseConfig);
+const storage = getStorage(app);
 
 async function findAll(page) {
   try {
@@ -41,6 +51,11 @@ async function findAll(page) {
       throw new NoRealtorsFound();
     }
 
+    const result = await Promise.all(realtors.map(async (realtor) => {
+      const profile = await RealtorPhoto.findOne({ where: { email: realtor.email } });
+      return { ...realtor.dataValues, profile };
+    }));
+
     const pagination = {
       path: '/realtors',
       page,
@@ -50,7 +65,7 @@ async function findAll(page) {
       total: countTotal,
     };
 
-    return { realtors, pagination };
+    return { result, pagination };
   } catch (error) {
     const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     console.error(message);
@@ -72,7 +87,8 @@ async function findByPk(email, password = false) {
       throw new RealtorNotFound();
     }
 
-    return realtor;
+    const profile = await RealtorPhoto.findOne({ where: { email: realtor.email } });
+    return { ...realtor.dataValues, profile };
   } catch (error) {
     const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     console.error(message);
@@ -94,7 +110,8 @@ async function findByCpf(cpf, password = false) {
       throw new RealtorNotFound();
     }
 
-    return realtor;
+    const profile = await RealtorPhoto.findOne({ where: { email: realtor.email } });
+    return { ...realtor.dataValues, profile };
   } catch (error) {
     const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     console.error(message);
@@ -116,7 +133,8 @@ async function findByRg(rg, password = false) {
       throw new RealtorNotFound();
     }
 
-    return realtor;
+    const profile = await RealtorPhoto.findOne({ where: { email: realtor.email } });
+    return { ...realtor.dataValues, profile };
   } catch (error) {
     const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     console.error(message);
@@ -124,34 +142,50 @@ async function findByRg(rg, password = false) {
   }
 }
 
-async function create(data) {
+async function create(data, photo) {
   try {
-    const userData = {};
-
-    userData.email = validateEmail(data.email);
-    userData.name = validateString(data.name, 'O campo nome é obrigatório');
-    userData.password = validatePassword(data.password);
-    userData.phone = validatePhone(data.phone);
-    userData.cpf = validateCpf(data.cpf);
-    userData.rg = validateString(data.rg, 'O campo RG é obrigatório');
-    userData.creci = validateCreci(data.creci);
-    userData.cep = validateCep(data.cep);
-    userData.address = validateString(data.address, 'O campo endereço é obrigatório');
-    userData.district = validateString(data.district, 'O campo bairro é obrigatório');
-    userData.house_number = validateString(data.house_number, 'O campo número é obrigatório');
-    userData.city = validateString(data.city, 'O campo cidade é obrigatório');
-    userData.state = validateUF(data.state);
-
-    if (data.bio) userData.bio = validateString(data.bio);
-
-    await validateIfUniqueEmail(userData.email);
-    await validateIfUniqueCpf(userData.cpf);
-    await validateIfUniqueRg(userData.rg);
-    await validateIfUniqueCreci(userData.creci);
+    const userData = {
+      email: validateEmail(data.email),
+      name: validateString(data.name, 'O campo nome é obrigatório'),
+      password: validatePassword(data.password),
+      phone: validatePhone(data.phone),
+      cpf: validateCpf(data.cpf),
+      rg: validateString(data.rg, 'O campo RG é obrigatório'),
+      creci: validateCreci(data.creci),
+      cep: validateCep(data.cep),
+      address: validateString(data.address, 'O campo endereço é obrigatório'),
+      district: validateString(data.district, 'O campo bairro é obrigatório'),
+      house_number: validateString(data.house_number, 'O campo número é obrigatório'),
+      city: validateString(data.city, 'O campo cidade é obrigatório'),
+      state: validateUF(data.state),
+      bio: data.bio ? validateString(data.bio) : null,
+    };
 
     const realtor = userData;
+    await validateIfUniqueEmail(realtor.email);
+    await validateIfUniqueCpf(realtor.cpf);
+    await validateIfUniqueRg(realtor.rg);
+    await validateIfUniqueCreci(realtor.creci);
 
-    return await Realtor.create(realtor);
+    const newRealtor = await Realtor.create(realtor);
+
+    let profile = null;
+    if (photo) {
+      const storageRef = ref(storage, `images/realtors/${newRealtor.email}/${uuid()}`);
+      const metadata = { contentType: photo.mimetype };
+      const snapshot = await uploadBytesResumable(storageRef, photo.buffer, metadata);
+      const downloadUrl = await getDownloadURL(snapshot.ref);
+
+      profile = await RealtorPhoto.create({
+        id: uuid(),
+        email: newRealtor.email,
+        url: downloadUrl,
+        name: photo.name,
+        type: 'profile',
+      });
+    }
+
+    return { ...newRealtor.dataValues, profile };
   } catch (error) {
     const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     console.error(message);
@@ -159,7 +193,7 @@ async function create(data) {
   }
 }
 
-async function update(email, data) {
+async function update(email, data, photo) {
   try {
     const validatedEmail = validateEmail(email);
 
@@ -169,41 +203,50 @@ async function update(email, data) {
     }
 
     const realtor = {
-      email: data.email || oldRealtor.email,
-      name: data.name || oldRealtor.name,
-      phone: data.phone || oldRealtor.phone,
-      cpf: data.cpf || oldRealtor.cpf,
-      rg: data.rg || oldRealtor.rg,
-      creci: data.creci || oldRealtor.creci,
-      cep: data.cep || oldRealtor.cep,
-      address: data.address || oldRealtor.address,
-      district: data.district || oldRealtor.district,
-      house_number: data.house_number || oldRealtor.house_number,
-      city: data.city || oldRealtor.city,
-      state: data.state || oldRealtor.state,
-      bio: data.bio,
+      email: data.email ? validateEmail(data.email) : oldRealtor.email,
+      name: data.name ? validateString(data.name, 'O campo nome é obrigatório') : oldRealtor.name,
+      phone: data.phone ? validatePhone(data.phone) : oldRealtor.phone,
+      cpf: data.cpf ? validateCpf(data.cpf) : oldRealtor.cpf,
+      rg: data.rg ? validateString(data.rg, 'O campo RG é obrigatório') : oldRealtor.rg,
+      creci: data.creci ? validateCreci(data.creci) : oldRealtor.creci,
+      cep: data.cep ? validateCep(data.cep) : oldRealtor.cep,
+      address: data.address ? validateString(data.address, 'O campo endereço é obrigatório') : oldRealtor.address,
+      district: data.district ? validateString(data.district, 'O campo bairro é obrigatório') : oldRealtor.district,
+      house_number: data.house_number ? validateString(data.house_number, 'O campo número é obrigatório') : oldRealtor.house_number,
+      city: data.city ? validateString(data.city, 'O campo cidade é obrigatório') : oldRealtor.city,
+      state: data.state ? validateUF(data.state) : oldRealtor.state,
+      bio: data.bio ? validateString(data.bio) : oldRealtor.bio,
     };
-
-    realtor.email = validateEmail(realtor.email);
-    realtor.name = validateString(realtor.name, 'O campo nome é obrigatório');
-    realtor.phone = validatePhone(realtor.phone);
-    realtor.cpf = validateCpf(realtor.cpf);
-    realtor.rg = validateString(realtor.rg, 'O campo RG é obrigatório');
-    realtor.creci = validateCreci(realtor.creci);
-    realtor.cep = validateCep(realtor.cep);
-    realtor.address = validateString(realtor.address, 'O campo endereço é obrigatório');
-    realtor.district = validateString(realtor.district, 'O campo bairro é obrigatório');
-    realtor.house_number = validateString(realtor.house_number, 'O campo número é obrigatório');
-    realtor.city = validateString(realtor.city, 'O campo cidade é obrigatório');
-    realtor.state = validateUF(realtor.state);
-    realtor.bio = validateString(realtor.bio);
 
     if (realtor.email !== oldRealtor.email) await validateIfUniqueEmail(realtor.email);
     if (realtor.cpf !== oldRealtor.cpf) await validateIfUniqueCpf(realtor.cpf);
     if (realtor.rg !== oldRealtor.rg) await validateIfUniqueRg(realtor.rg);
     if (realtor.creci !== oldRealtor.creci) await validateIfUniqueCreci(realtor.creci);
 
-    return await Realtor.update(realtor, { where: { email: validatedEmail } });
+    const updatedRealtor = await Realtor.update(realtor, { where: { email: validatedEmail } });
+    let profile = await RealtorPhoto.findOne({ where: { email: updatedRealtor.email } });
+    if (photo) {
+      if (profile) {
+        const storageRef = ref(storage, `images/realtors/${updatedRealtor.email}/${profile.name}`);
+        await deleteObject(storageRef);
+        await RealtorPhoto.destroy({ where: { email: updatedRealtor.email } });
+      }
+
+      const storageRef = ref(storage, `images/realtors/${updatedRealtor.email}/${photo.name}`);
+      const metadata = { contentType: photo.mimetype };
+      const snapshot = await uploadBytesResumable(storageRef, photo.buffer, metadata);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+
+      profile = await RealtorPhoto.create({
+        id: uuid(),
+        email: updatedRealtor.email,
+        url: downloadURL,
+        name: photo.name,
+        type: 'profile',
+      });
+    }
+
+    return { ...updatedRealtor.dataValues, profile };
   } catch (error) {
     const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     console.error(message);
@@ -211,7 +254,7 @@ async function update(email, data) {
   }
 }
 
-async function elevate(email, data) {
+async function elevate(email, data, photo) {
   try {
     const validatedEmail = validateEmail(email);
 
@@ -242,7 +285,25 @@ async function elevate(email, data) {
     await validateIfUniqueCreci(realtor.creci);
 
     await Client.destroy({ where: { email: validatedEmail } });
-    return await Realtor.create(realtor);
+    const newRealtor = await Realtor.create(realtor);
+
+    let profile = null;
+    if (photo) {
+      const storageRef = ref(storage, `images/realtors/${newRealtor.email}/${photo.name}`);
+      const metadata = { contentType: photo.mimetype };
+      const snapshot = await uploadBytesResumable(storageRef, photo.buffer, metadata);
+      const downloadUrl = await getDownloadURL(snapshot.ref);
+
+      profile = await RealtorPhoto.create({
+        id: uuid(),
+        email: newRealtor.email,
+        url: downloadUrl,
+        name: photo.name,
+        type: 'profile',
+      });
+    }
+
+    return { ...newRealtor.dataValues, profile };
   } catch (error) {
     const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     console.error(message);
@@ -256,6 +317,13 @@ async function destroy(email) {
 
     if (!await Realtor.findByPk(validatedEmail)) {
       throw new RealtorNotFound();
+    }
+
+    const profile = await RealtorPhoto.findOne({ where: { email: validatedEmail } });
+    if (profile) {
+      const storageRef = ref(storage, `images/realtors/${validatedEmail}/${profile.name}`);
+      await deleteObject(storageRef);
+      await RealtorPhoto.destroy({ where: { email: validatedEmail } });
     }
 
     await Realtor.destroy({ where: { email: validatedEmail } });
