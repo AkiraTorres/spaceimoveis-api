@@ -1,5 +1,10 @@
+import { initializeApp } from 'firebase/app';
+import { getStorage, ref, getDownloadURL, uploadBytesResumable, deleteObject } from 'firebase/storage';
+import { v4 as uuid } from 'uuid';
+
 import Client from '../db/models/Client.js';
 import Owner from '../db/models/Owner.js';
+import OwnerPhoto from '../db/models/OwnerPhoto.js';
 
 import OwnerNotFound from '../errors/ownerErrors/ownerNotFound.js';
 import NoOwnersFound from '../errors/ownerErrors/noOwnersFound.js';
@@ -8,6 +13,11 @@ import {
   validateEmail, validateString, validatePassword, validatePhone, validateCpf, validateCep,
   validateUF, validateIfUniqueEmail, validateIfUniqueCpf, validateIfUniqueRg,
 } from '../validators/inputValidators.js';
+
+import firebaseConfig from '../config/firebase.js';
+
+const app = initializeApp(firebaseConfig);
+const storage = getStorage(app);
 
 async function findAll(page) {
   try {
@@ -39,6 +49,11 @@ async function findAll(page) {
       throw new NoOwnersFound();
     }
 
+    const result = await Promise.all(owners.map(async (owner) => {
+      const profile = await OwnerPhoto.findOne({ where: { email: owner.email } });
+      return { ...owner.dataValues, profile };
+    }));
+
     const pagination = {
       path: '/owners',
       page,
@@ -48,7 +63,7 @@ async function findAll(page) {
       total: countTotal,
     };
 
-    return { owners, pagination };
+    return { result, pagination };
   } catch (error) {
     const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     console.error(message);
@@ -70,7 +85,8 @@ async function findByPk(email, password) {
       throw new OwnerNotFound();
     }
 
-    return owner;
+    const profile = await OwnerPhoto.findOne({ where: { email: owner.email } });
+    return { ...owner.dataValues, profile };
   } catch (error) {
     const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     console.error(message);
@@ -92,7 +108,8 @@ async function findByCpf(cpf, password = false) {
       throw new OwnerNotFound();
     }
 
-    return realtor;
+    const profile = await OwnerPhoto.findOne({ where: { email: realtor.email } });
+    return { ...realtor.dataValues, profile };
   } catch (error) {
     const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     console.error(message);
@@ -114,7 +131,8 @@ async function findByRg(rg, password = false) {
       throw new OwnerNotFound();
     }
 
-    return realtor;
+    const profile = await OwnerPhoto.findOne({ where: { email: realtor.email } });
+    return { ...realtor.dataValues, profile };
   } catch (error) {
     const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     console.error(message);
@@ -122,31 +140,48 @@ async function findByRg(rg, password = false) {
   }
 }
 
-async function create(data) {
+async function create(data, photo) {
   try {
-    const userData = {};
-
-    userData.email = validateEmail(data.email);
-    userData.name = validateString(data.name, 'O campo nome é obrigatório');
-    userData.password = validatePassword(data.password);
-    userData.phone = validatePhone(data.phone);
-    userData.cpf = validateCpf(data.cpf);
-    userData.rg = validateString(data.rg, 'O campo RG é obrigatório');
-    userData.address = validateString(data.address, 'O campo endereço é obrigatório');
-    userData.house_number = validateString(data.house_number, 'O campo número é obrigatório');
-    userData.cep = validateCep(data.cep);
-    userData.district = validateString(data.district, 'O campo bairro é obrigatório');
-    userData.city = validateString(data.city, 'O campo cidade é obrigatório');
-    userData.state = validateUF(data.state);
-
-    if (data.bio) userData.bio = validateString(data.bio);
+    const userData = {
+      email: validateEmail(data.email),
+      name: validateString(data.name, 'O campo nome é obrigatório'),
+      password: validatePassword(data.password),
+      phone: validatePhone(data.phone),
+      cpf: validateCpf(data.cpf),
+      rg: validateString(data.rg, 'O campo RG é obrigatório'),
+      address: validateString(data.address, 'O campo endereço é obrigatório'),
+      house_number: validateString(data.house_number, 'O campo número é obrigatório'),
+      cep: validateCep(data.cep),
+      district: validateString(data.district, 'O campo bairro é obrigatório'),
+      city: validateString(data.city, 'O campo cidade é obrigatório'),
+      state: validateUF(data.state),
+      bio: data.bio ? validateString(data.bio) : null,
+    };
 
     const owner = userData;
     await validateIfUniqueEmail(owner.email);
     await validateIfUniqueCpf(owner.cpf);
     await validateIfUniqueRg(owner.rg);
 
-    return await Owner.create(owner);
+    const newOwner = await Owner.create(owner);
+    let profile = null;
+
+    if (photo) {
+      const storageRef = ref(storage, `images/owners/${newOwner.email}/${photo.name}`);
+      const metadata = { contentType: photo.mimetype };
+      const snapshot = await uploadBytesResumable(storageRef, photo.buffer, metadata);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+
+      profile = await OwnerPhoto.create({
+        id: uuid(),
+        email: newOwner.email,
+        url: downloadURL,
+        name: photo.name,
+        type: 'profile',
+      });
+    }
+
+    return { ...newOwner.dataValues, profile };
   } catch (error) {
     const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     console.error(message);
@@ -154,7 +189,7 @@ async function create(data) {
   }
 }
 
-async function update(email, data) {
+async function update(email, data, photo) {
   try {
     const validatedEmail = validateEmail(email);
 
@@ -164,26 +199,49 @@ async function update(email, data) {
     }
 
     const owner = {
-      email: validateEmail(data.email || oldOwner.email),
-      name: validateString(data.name || oldOwner.name, 'O campo nome é obrigatório'),
-      phone: validatePhone(data.phone || oldOwner.phone),
-      cpf: validateCpf(data.cpf || oldOwner.cpf),
-      rg: validateString(data.rg || oldOwner.rg, 'O campo RG é obrigatório'),
-      address: validateString(data.address || oldOwner.address, 'O campo endereço é obrigatório'),
-      house_number: validateString(data.house_number || oldOwner.house_number, 'O campo número é obrigatório'),
-      cep: validateCep(data.cep || oldOwner.cep),
-      district: validateString(data.district || oldOwner.district, 'O campo bairro é obrigatório'),
-      city: validateString(data.city || oldOwner.city, 'O campo cidade é obrigatório'),
-      state: validateUF(data.state || oldOwner.state),
+      email: data.email ? validateEmail(oldOwner.email) : oldOwner.email,
+      name: data.name ? validateString(oldOwner.name, 'O campo nome é obrigatório') : oldOwner.name,
+      phone: data.phone ? validatePhone(oldOwner.phone) : oldOwner.phone,
+      cpf: data.cpf ? validateCpf(oldOwner.cpf) : oldOwner.cpf,
+      rg: data.rg ? validateString(oldOwner.rg, 'O campo RG é obrigatório') : oldOwner.rg,
+      address: data.address ? validateString(oldOwner.address, 'O campo endereço é obrigatório') : oldOwner.address,
+      house_number: data.house_number ? validateString(oldOwner.house_number, 'O campo número é obrigatório') : oldOwner.house_number,
+      cep: data.cep ? validateCep(oldOwner.cep) : oldOwner.cep,
+      district: data.district ? validateString(oldOwner.district, 'O campo bairro é obrigatório') : oldOwner.district,
+      city: data.city ? validateString(oldOwner.city, 'O campo cidade é obrigatório') : oldOwner.city,
+      state: data.state ? validateUF(oldOwner.state) : oldOwner.state,
+      bio: data.bio ? validateString(data.bio) : oldOwner.bio,
     };
 
     if (owner.email !== validatedEmail) await validateIfUniqueEmail(owner.email);
     if (owner.rg !== oldOwner.rg) await validateIfUniqueRg(owner.rg);
     if (owner.cpf !== oldOwner.cpf) await validateIfUniqueCpf(owner.cpf);
-    if (data.bio) owner.bio = validateString(data.bio);
 
-    await Owner.update(owner, { where: { email: validatedEmail } });
-    return { message: 'Usuário atualizado com sucesso' };
+    const updatedOwner = await Owner.update(owner, { where: { email: validatedEmail } });
+    let profile = await OwnerPhoto.findOne({ where: { email: updatedOwner.email } });
+
+    if (photo) {
+      if (profile) {
+        const storageRef = ref(storage, `images/owners/${updatedOwner.email}/${profile.name}`);
+        await deleteObject(storageRef);
+        await OwnerPhoto.destroy({ where: { email: updatedOwner.email } });
+      }
+
+      const storageRef = ref(storage, `images/owners/${updatedOwner.email}/${photo.name}`);
+      const metadata = { contentType: photo.mimetype };
+      const snapshot = await uploadBytesResumable(storageRef, photo.buffer, metadata);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+
+      profile = await OwnerPhoto.create({
+        id: uuid(),
+        email: updatedOwner.email,
+        url: downloadURL,
+        name: photo.name,
+        type: 'profile',
+      });
+    }
+
+    return { ...updatedOwner.dataValues, profile };
   } catch (error) {
     const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     console.error(message);
@@ -191,7 +249,7 @@ async function update(email, data) {
   }
 }
 
-async function elevate(email, data) {
+async function elevate(email, data, photo) {
   try {
     const validatedEmail = validateEmail(email);
 
@@ -213,15 +271,32 @@ async function elevate(email, data) {
       house_number: validateString(data.house_number, 'O campo número é obrigatório'),
       city: validateString(data.city, 'O campo cidade é obrigatório'),
       state: validateUF(data.state),
+      bio: data.bio ? validateString(data.bio) : null,
     };
-
-    if (data.bio) owner.bio = validateString(data.bio);
 
     await validateIfUniqueRg(owner.rg);
     await validateIfUniqueCpf(owner.cpf);
 
     await Client.destroy({ where: { email: validatedEmail } });
-    return await Owner.create(owner);
+    const newOwner = await Owner.update(owner, { where: { email: validatedEmail } });
+
+    let profile = null;
+    if (photo) {
+      const storageRef = ref(storage, `images/owners/${newOwner.email}/${photo.name}`);
+      const metadata = { contentType: photo.mimetype };
+      const snapshot = await uploadBytesResumable(storageRef, photo.buffer, metadata);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+
+      profile = await OwnerPhoto.create({
+        id: uuid(),
+        email: newOwner.email,
+        url: downloadURL,
+        name: photo.name,
+        type: 'profile',
+      });
+    }
+
+    return { ...newOwner.dataValues, profile };
   } catch (error) {
     const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     console.error(message);
@@ -235,6 +310,13 @@ async function destroy(email) {
 
     if (!await Owner.findByPk(validatedEmail)) {
       throw new OwnerNotFound();
+    }
+
+    const profile = await OwnerPhoto.findOne({ where: { email: validatedEmail } });
+    if (profile) {
+      const storageRef = ref(storage, `images/owners/${validatedEmail}/${profile.name}`);
+      await deleteObject(storageRef);
+      await OwnerPhoto.destroy({ where: { email: validatedEmail } });
     }
 
     await Owner.destroy({ where: { email: validatedEmail } });
