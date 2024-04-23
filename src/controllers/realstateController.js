@@ -26,12 +26,13 @@ export const findByPk = asyncHandler(async (req, res) => {
 
 export const create = asyncHandler(async (req, res) => {
   try {
-    const data = req.body;
-    const photo = req;
+    const { data } = req.body;
+    const { file } = req;
 
-    const realstateData = JSON.parse(data);
+    let realstateData = {};
+    if (data !== undefined) realstateData = JSON.parse(data);
 
-    const result = await service.create(realstateData, photo);
+    const result = await service.create(realstateData, file);
     res.status(201).json(result);
   } catch (error) {
     const status = error.status || 500;
@@ -41,12 +42,13 @@ export const create = asyncHandler(async (req, res) => {
 
 export const update = asyncHandler(async (req, res) => {
   try {
-    const data = req.body;
-    const photo = req;
+    const { data } = req.body;
+    const { file } = req;
 
-    const realstateData = JSON.parse(data);
+    let realstateData = {};
+    if (data !== undefined) realstateData = JSON.parse(data);
 
-    const result = await service.update(req.params.email, realstateData, photo);
+    const result = await service.update(req.params.email, realstateData, file);
     res.status(200).json(result);
   } catch (error) {
     const status = error.status || 500;
@@ -56,12 +58,13 @@ export const update = asyncHandler(async (req, res) => {
 
 export const elevate = asyncHandler(async (req, res) => {
   try {
-    const data = req.body;
-    const photo = req;
+    const { data } = req.body;
+    const { file } = req;
 
-    const realstateData = JSON.parse(data);
+    let realstateData = {};
+    if (data !== undefined) realstateData = JSON.parse(data);
 
-    const result = await service.elevate(req.params.email, realstateData, photo);
+    const result = await service.elevate(req.params.email, realstateData, file);
     res.status(201).json(result);
   } catch (error) {
     const status = error.status || 500;

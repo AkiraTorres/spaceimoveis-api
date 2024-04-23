@@ -171,7 +171,7 @@ async function create(data, photo) {
 
     let profile = null;
     if (photo) {
-      const storageRef = ref(storage, `images/realtors/${newRealtor.email}/${uuid()}`);
+      const storageRef = ref(storage, `images/realtors/${newRealtor.email}/${photo.originalname}`);
       const metadata = { contentType: photo.mimetype };
       const snapshot = await uploadBytesResumable(storageRef, photo.buffer, metadata);
       const downloadUrl = await getDownloadURL(snapshot.ref);
@@ -180,7 +180,7 @@ async function create(data, photo) {
         id: uuid(),
         email: newRealtor.email,
         url: downloadUrl,
-        name: photo.name,
+        name: photo.originalname,
         type: 'profile',
       });
     }
@@ -197,42 +197,51 @@ async function update(email, data, photo) {
   try {
     const validatedEmail = validateEmail(email);
 
+    if ((!data && !photo) || (Object.keys(data).length === 0 && !photo)) {
+      throw new Error('Nenhum dado foi informado para atualização');
+    }
+
     const oldRealtor = await Realtor.findByPk(validatedEmail);
     if (!oldRealtor) {
       throw new RealtorNotFound();
     }
 
-    const realtor = {
-      email: data.email ? validateEmail(data.email) : oldRealtor.email,
-      name: data.name ? validateString(data.name, 'O campo nome é obrigatório') : oldRealtor.name,
-      phone: data.phone ? validatePhone(data.phone) : oldRealtor.phone,
-      cpf: data.cpf ? validateCpf(data.cpf) : oldRealtor.cpf,
-      rg: data.rg ? validateString(data.rg, 'O campo RG é obrigatório') : oldRealtor.rg,
-      creci: data.creci ? validateCreci(data.creci) : oldRealtor.creci,
-      cep: data.cep ? validateCep(data.cep) : oldRealtor.cep,
-      address: data.address ? validateString(data.address, 'O campo endereço é obrigatório') : oldRealtor.address,
-      district: data.district ? validateString(data.district, 'O campo bairro é obrigatório') : oldRealtor.district,
-      house_number: data.house_number ? validateString(data.house_number, 'O campo número é obrigatório') : oldRealtor.house_number,
-      city: data.city ? validateString(data.city, 'O campo cidade é obrigatório') : oldRealtor.city,
-      state: data.state ? validateUF(data.state) : oldRealtor.state,
-      bio: data.bio ? validateString(data.bio) : oldRealtor.bio,
-    };
+    let updatedRealtor = oldRealtor.dataValues;
+    if (data) {
+      const realtor = {
+        email: data.email ? validateEmail(data.email) : oldRealtor.email,
+        name: data.name ? validateString(data.name, 'O campo nome é obrigatório') : oldRealtor.name,
+        phone: data.phone ? validatePhone(data.phone) : oldRealtor.phone,
+        cpf: data.cpf ? validateCpf(data.cpf) : oldRealtor.cpf,
+        rg: data.rg ? validateString(data.rg, 'O campo RG é obrigatório') : oldRealtor.rg,
+        creci: data.creci ? validateCreci(data.creci) : oldRealtor.creci,
+        cep: data.cep ? validateCep(data.cep) : oldRealtor.cep,
+        address: data.address ? validateString(data.address, 'O campo endereço é obrigatório') : oldRealtor.address,
+        district: data.district ? validateString(data.district, 'O campo bairro é obrigatório') : oldRealtor.district,
+        house_number: data.house_number ? validateString(data.house_number, 'O campo número é obrigatório') : oldRealtor.house_number,
+        city: data.city ? validateString(data.city, 'O campo cidade é obrigatório') : oldRealtor.city,
+        state: data.state ? validateUF(data.state) : oldRealtor.state,
+        bio: data.bio ? validateString(data.bio) : oldRealtor.bio,
+      };
 
-    if (realtor.email !== oldRealtor.email) await validateIfUniqueEmail(realtor.email);
-    if (realtor.cpf !== oldRealtor.cpf) await validateIfUniqueCpf(realtor.cpf);
-    if (realtor.rg !== oldRealtor.rg) await validateIfUniqueRg(realtor.rg);
-    if (realtor.creci !== oldRealtor.creci) await validateIfUniqueCreci(realtor.creci);
+      if (realtor.email !== oldRealtor.email) await validateIfUniqueEmail(realtor.email);
+      if (realtor.cpf !== oldRealtor.cpf) await validateIfUniqueCpf(realtor.cpf);
+      if (realtor.rg !== oldRealtor.rg) await validateIfUniqueRg(realtor.rg);
+      if (realtor.creci !== oldRealtor.creci) await validateIfUniqueCreci(realtor.creci);
 
-    const updatedRealtor = await Realtor.update(realtor, { where: { email: validatedEmail } });
+      await Realtor.update(realtor, { where: { email: realtor.email } });
+      updatedRealtor = realtor;
+    }
+
     let profile = await RealtorPhoto.findOne({ where: { email: updatedRealtor.email } });
     if (photo) {
       if (profile) {
         const storageRef = ref(storage, `images/realtors/${updatedRealtor.email}/${profile.name}`);
-        await deleteObject(storageRef);
         await RealtorPhoto.destroy({ where: { email: updatedRealtor.email } });
+        await deleteObject(storageRef);
       }
 
-      const storageRef = ref(storage, `images/realtors/${updatedRealtor.email}/${photo.name}`);
+      const storageRef = ref(storage, `images/realtors/${updatedRealtor.email}/${photo.originalname}`);
       const metadata = { contentType: photo.mimetype };
       const snapshot = await uploadBytesResumable(storageRef, photo.buffer, metadata);
       const downloadURL = await getDownloadURL(snapshot.ref);
@@ -241,12 +250,12 @@ async function update(email, data, photo) {
         id: uuid(),
         email: updatedRealtor.email,
         url: downloadURL,
-        name: photo.name,
+        name: photo.originalname,
         type: 'profile',
       });
     }
 
-    return { ...updatedRealtor.dataValues, profile };
+    return { ...updatedRealtor, profile };
   } catch (error) {
     const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     console.error(message);
@@ -289,7 +298,7 @@ async function elevate(email, data, photo) {
 
     let profile = null;
     if (photo) {
-      const storageRef = ref(storage, `images/realtors/${newRealtor.email}/${photo.name}`);
+      const storageRef = ref(storage, `images/realtors/${newRealtor.email}/${photo.originalname}`);
       const metadata = { contentType: photo.mimetype };
       const snapshot = await uploadBytesResumable(storageRef, photo.buffer, metadata);
       const downloadUrl = await getDownloadURL(snapshot.ref);
@@ -298,7 +307,7 @@ async function elevate(email, data, photo) {
         id: uuid(),
         email: newRealtor.email,
         url: downloadUrl,
-        name: photo.name,
+        name: photo.originalname,
         type: 'profile',
       });
     }

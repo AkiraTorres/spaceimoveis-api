@@ -167,7 +167,7 @@ async function create(data, photo) {
     let profile = null;
 
     if (photo) {
-      const storageRef = ref(storage, `images/owners/${newOwner.email}/${photo.name}`);
+      const storageRef = ref(storage, `images/owners/${newOwner.email}/${photo.originalname}`);
       const metadata = { contentType: photo.mimetype };
       const snapshot = await uploadBytesResumable(storageRef, photo.buffer, metadata);
       const downloadURL = await getDownloadURL(snapshot.ref);
@@ -176,7 +176,7 @@ async function create(data, photo) {
         id: uuid(),
         email: newOwner.email,
         url: downloadURL,
-        name: photo.name,
+        name: photo.originalname,
         type: 'profile',
       });
     }
@@ -193,41 +193,49 @@ async function update(email, data, photo) {
   try {
     const validatedEmail = validateEmail(email);
 
+    if ((!data && !photo) || (Object.keys(data).length === 0 && !photo)) {
+      throw new Error('Nenhum dado foi informado para atualização');
+    }
+
     const oldOwner = await Owner.findByPk(validatedEmail);
     if (!oldOwner) {
       throw new OwnerNotFound();
     }
 
-    const owner = {
-      email: data.email ? validateEmail(oldOwner.email) : oldOwner.email,
-      name: data.name ? validateString(oldOwner.name, 'O campo nome é obrigatório') : oldOwner.name,
-      phone: data.phone ? validatePhone(oldOwner.phone) : oldOwner.phone,
-      cpf: data.cpf ? validateCpf(oldOwner.cpf) : oldOwner.cpf,
-      rg: data.rg ? validateString(oldOwner.rg, 'O campo RG é obrigatório') : oldOwner.rg,
-      address: data.address ? validateString(oldOwner.address, 'O campo endereço é obrigatório') : oldOwner.address,
-      house_number: data.house_number ? validateString(oldOwner.house_number, 'O campo número é obrigatório') : oldOwner.house_number,
-      cep: data.cep ? validateCep(oldOwner.cep) : oldOwner.cep,
-      district: data.district ? validateString(oldOwner.district, 'O campo bairro é obrigatório') : oldOwner.district,
-      city: data.city ? validateString(oldOwner.city, 'O campo cidade é obrigatório') : oldOwner.city,
-      state: data.state ? validateUF(oldOwner.state) : oldOwner.state,
-      bio: data.bio ? validateString(data.bio) : oldOwner.bio,
-    };
+    let updatedOwner = oldOwner;
+    if (data) {
+      const owner = {
+        email: data.email ? validateEmail(oldOwner.email) : oldOwner.email,
+        name: data.name ? validateString(oldOwner.name, 'O campo nome é obrigatório') : oldOwner.name,
+        phone: data.phone ? validatePhone(oldOwner.phone) : oldOwner.phone,
+        cpf: data.cpf ? validateCpf(oldOwner.cpf) : oldOwner.cpf,
+        rg: data.rg ? validateString(oldOwner.rg, 'O campo RG é obrigatório') : oldOwner.rg,
+        address: data.address ? validateString(oldOwner.address, 'O campo endereço é obrigatório') : oldOwner.address,
+        house_number: data.house_number ? validateString(oldOwner.house_number, 'O campo número é obrigatório') : oldOwner.house_number,
+        cep: data.cep ? validateCep(oldOwner.cep) : oldOwner.cep,
+        district: data.district ? validateString(oldOwner.district, 'O campo bairro é obrigatório') : oldOwner.district,
+        city: data.city ? validateString(oldOwner.city, 'O campo cidade é obrigatório') : oldOwner.city,
+        state: data.state ? validateUF(oldOwner.state) : oldOwner.state,
+        bio: data.bio ? validateString(data.bio) : oldOwner.bio,
+      };
 
-    if (owner.email !== validatedEmail) await validateIfUniqueEmail(owner.email);
-    if (owner.rg !== oldOwner.rg) await validateIfUniqueRg(owner.rg);
-    if (owner.cpf !== oldOwner.cpf) await validateIfUniqueCpf(owner.cpf);
+      if (owner.email !== validatedEmail) await validateIfUniqueEmail(owner.email);
+      if (owner.rg !== oldOwner.rg) await validateIfUniqueRg(owner.rg);
+      if (owner.cpf !== oldOwner.cpf) await validateIfUniqueCpf(owner.cpf);
 
-    const updatedOwner = await Owner.update(owner, { where: { email: validatedEmail } });
+      await Owner.update(owner, { where: { email: validatedEmail } });
+      updatedOwner = owner;
+    }
+
     let profile = await OwnerPhoto.findOne({ where: { email: updatedOwner.email } });
-
     if (photo) {
       if (profile) {
         const storageRef = ref(storage, `images/owners/${updatedOwner.email}/${profile.name}`);
-        await deleteObject(storageRef);
         await OwnerPhoto.destroy({ where: { email: updatedOwner.email } });
+        await deleteObject(storageRef);
       }
 
-      const storageRef = ref(storage, `images/owners/${updatedOwner.email}/${photo.name}`);
+      const storageRef = ref(storage, `images/owners/${updatedOwner.email}/${photo.originalname}`);
       const metadata = { contentType: photo.mimetype };
       const snapshot = await uploadBytesResumable(storageRef, photo.buffer, metadata);
       const downloadURL = await getDownloadURL(snapshot.ref);
@@ -236,12 +244,12 @@ async function update(email, data, photo) {
         id: uuid(),
         email: updatedOwner.email,
         url: downloadURL,
-        name: photo.name,
+        name: photo.originalname,
         type: 'profile',
       });
     }
 
-    return { ...updatedOwner.dataValues, profile };
+    return { ...updatedOwner, profile };
   } catch (error) {
     const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     console.error(message);
@@ -282,7 +290,7 @@ async function elevate(email, data, photo) {
 
     let profile = null;
     if (photo) {
-      const storageRef = ref(storage, `images/owners/${newOwner.email}/${photo.name}`);
+      const storageRef = ref(storage, `images/owners/${newOwner.email}/${photo.originalname}`);
       const metadata = { contentType: photo.mimetype };
       const snapshot = await uploadBytesResumable(storageRef, photo.buffer, metadata);
       const downloadURL = await getDownloadURL(snapshot.ref);
@@ -291,7 +299,7 @@ async function elevate(email, data, photo) {
         id: uuid(),
         email: newOwner.email,
         url: downloadURL,
-        name: photo.name,
+        name: photo.originalname,
         type: 'profile',
       });
     }

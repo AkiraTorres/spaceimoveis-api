@@ -171,7 +171,7 @@ async function create(data, photo) {
     let profile = null;
 
     if (photo) {
-      const storageRef = ref(storage, `images/realstates/${newRealstate.email}/${photo.name}`);
+      const storageRef = ref(storage, `images/realstates/${newRealstate.email}/${photo.originalname}`);
       const metadata = { contentType: photo.mimetype };
       const snapshot = await uploadBytesResumable(storageRef, photo.buffer, metadata);
       const downloadURL = await getDownloadURL(snapshot.ref);
@@ -180,7 +180,7 @@ async function create(data, photo) {
         id: uuid(),
         email: newRealstate.email,
         url: downloadURL,
-        name: photo.name,
+        name: photo.originalname,
         type: 'profile',
       });
     }
@@ -197,52 +197,60 @@ async function update(email, data, photo) {
   try {
     const validatedEmail = validateEmail(email);
 
+    if ((!data && !photo) || (Object.keys(data).length === 0 && !photo)) {
+      throw new Error('Nenhum dado foi informado para atualização');
+    }
+
     const oldRealstate = await Realstate.findByPk(validatedEmail);
     if (!oldRealstate) {
       throw new RealstateNotFound();
     }
 
-    const realstate = {
-      email: data.email ? validateEmail(data.email) : oldRealstate.email,
-      company_name: data.company_name ? validateString(data.company_name, 'O campo razão social é obrigatório') : oldRealstate.company_name,
-      phone: data.phone ? validatePhone(data.phone) : oldRealstate.phone,
-      cnpj: data.cnpj ? validateCnpj(data.cnpj) : oldRealstate.cnpj,
-      creci: data.creci ? validateCreci(data.creci) : oldRealstate.creci,
-      cep: data.cep ? validateCep(data.cep) : oldRealstate.cep,
-      address: data.address ? validateString(data.address, 'O campo endereço é obrigatório') : oldRealstate.address,
-      district: data.district ? validateString(data.district, 'O campo bairro é obrigatório') : oldRealstate.district,
-      house_number: data.house_number ? validateString(data.house_number, 'O campo número é obrigatório') : oldRealstate.house_number,
-      city: data.city ? validateString(data.city, 'O campo cidade é obrigatório') : oldRealstate.city,
-      state: data.state ? validateUF(data.state) : oldRealstate.state,
-      bio: data.bio ? validateString(data.bio) : oldRealstate.bio,
-      social_one: data.socialOne ? validateString(data.socialOne) : oldRealstate.social_one,
-      social_two: data.socialTwo ? validateString(data.socialTwo) : oldRealstate.social_two,
-    };
+    let updatedRealstate = oldRealstate;
+    if (data) {
+      const realstate = {
+        email: data.email ? validateEmail(data.email) : oldRealstate.email,
+        company_name: data.company_name ? validateString(data.company_name, 'O campo razão social é obrigatório') : oldRealstate.company_name,
+        phone: data.phone ? validatePhone(data.phone) : oldRealstate.phone,
+        cnpj: data.cnpj ? validateCnpj(data.cnpj) : oldRealstate.cnpj,
+        creci: data.creci ? validateCreci(data.creci) : oldRealstate.creci,
+        cep: data.cep ? validateCep(data.cep) : oldRealstate.cep,
+        address: data.address ? validateString(data.address, 'O campo endereço é obrigatório') : oldRealstate.address,
+        district: data.district ? validateString(data.district, 'O campo bairro é obrigatório') : oldRealstate.district,
+        house_number: data.house_number ? validateString(data.house_number, 'O campo número é obrigatório') : oldRealstate.house_number,
+        city: data.city ? validateString(data.city, 'O campo cidade é obrigatório') : oldRealstate.city,
+        state: data.state ? validateUF(data.state) : oldRealstate.state,
+        bio: data.bio ? validateString(data.bio) : oldRealstate.bio,
+        social_one: data.socialOne ? validateString(data.socialOne) : oldRealstate.social_one,
+        social_two: data.socialTwo ? validateString(data.socialTwo) : oldRealstate.social_two,
+      };
 
-    if (realstate.email !== oldRealstate.email) await validateIfUniqueEmail(realstate.email);
-    if (realstate.cnpj !== oldRealstate.cnpj) await validateIfUniqueCnpj(realstate.cnpj);
-    if (realstate.creci !== oldRealstate.creci) await validateIfUniqueCreci(realstate.creci);
+      if (realstate.email !== oldRealstate.email) await validateIfUniqueEmail(realstate.email);
+      if (realstate.cnpj !== oldRealstate.cnpj) await validateIfUniqueCnpj(realstate.cnpj);
+      if (realstate.creci !== oldRealstate.creci) await validateIfUniqueCreci(realstate.creci);
 
-    const updatedRealstate = Realstate.update(realstate, { where: { email: validatedEmail } });
-    let profile = await RealstatePhoto.findOne({ where: { email: realstate.email } });
+      Realstate.update(realstate, { where: { email: validatedEmail } });
+      updatedRealstate = realstate;
+    }
 
+    let profile = await RealstatePhoto.findOne({ where: { email: updatedRealstate.email } });
     if (photo) {
       if (profile) {
-        const storageRef = ref(storage, `images/realstates/${realstate.email}/${profile.name}`);
+        const storageRef = ref(storage, `images/realstates/${updatedRealstate.email}/${profile.name}`);
+        await RealstatePhoto.destroy({ where: { email: updatedRealstate.email } });
         await deleteObject(storageRef);
-        await RealstatePhoto.destroy({ where: { email: realstate.email } });
       }
 
-      const storageRef = ref(storage, `images/realstates/${realstate.email}/${photo.name}`);
+      const storageRef = ref(storage, `images/realstates/${updatedRealstate.email}/${photo.originalname}`);
       const metadata = { contentType: photo.mimetype };
       const snapshot = await uploadBytesResumable(storageRef, photo.buffer, metadata);
       const downloadURL = await getDownloadURL(snapshot.ref);
 
       profile = await RealstatePhoto.create({
         id: uuid(),
-        email: realstate.email,
+        email: updatedRealstate.email,
         url: downloadURL,
-        name: photo.name,
+        name: photo.originalname,
         type: 'profile',
       });
     }
@@ -290,7 +298,7 @@ async function elevate(email, data, photo) {
 
     let profile = null;
     if (photo) {
-      const storageRef = ref(storage, `images/realstates/${newRealstate.email}/${photo.name}`);
+      const storageRef = ref(storage, `images/realstates/${newRealstate.email}/${photo.originalname}`);
       const metadata = { contentType: photo.mimetype };
       const snapshot = await uploadBytesResumable(storageRef, photo.buffer, metadata);
       const downloadURL = await getDownloadURL(snapshot.ref);
@@ -299,7 +307,7 @@ async function elevate(email, data, photo) {
         id: uuid(),
         email: newRealstate.email,
         url: downloadURL,
-        name: photo.name,
+        name: photo.originalname,
         type: 'profile',
       });
     }
