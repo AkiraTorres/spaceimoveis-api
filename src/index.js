@@ -10,6 +10,7 @@ import realtorRoutes from './routes/realtorRoutes.js';
 import realstateRoutes from './routes/realstateRoutes.js';
 import propertyRoutes from './routes/propertyRoutes.js';
 import favoriteRoutes from './routes/favoriteRoutes.js';
+import ratingRoutes from './routes/ratingRoutes.js';
 import * as globalController from './controllers/globalController.js';
 
 dotenv.config();
@@ -28,6 +29,7 @@ app.use('/realtors', realtorRoutes);
 app.use('/realstate', realstateRoutes);
 app.use('/properties', propertyRoutes);
 app.use('/favorites', favoriteRoutes);
+app.use('/rating/', ratingRoutes);
 
 app.get('/find/:email', globalController.find);
 app.get('/find', globalController.findAll);
