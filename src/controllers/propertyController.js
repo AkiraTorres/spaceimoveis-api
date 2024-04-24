@@ -53,6 +53,14 @@ export const create = asyncHandler(async (req, res) => {
   }
 });
 
+export const filter = asyncHandler(async (req, res) => {
+  const { data } = req.body;
+  const { page = 1 } = req.query;
+
+  const result = await service.filter(JSON.parse(data), page);
+  res.status(200).json(result);
+});
+
 export const update = asyncHandler(async (req, res) => {
   try {
     const { id } = req.params;

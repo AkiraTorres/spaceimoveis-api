@@ -266,6 +266,51 @@ async function update(id, data, files) {
   }
 }
 
+async function filter(data, page) {
+  const limit = 5;
+  const offset = Number(limit * (page - 1));
+  const where = {};
+  let order = [['updatedAt', 'DESC']];
+
+  if (data.announcementType) where.announcement_type = validateString(data.announcementType);
+  if (data.propertyType) where.property_type = validateString(data.propertyType);
+  if (data.city) where.city = validateString(data.city);
+  if (data.state) where.state = validateString(data.state);
+  if (data.district) where.district = validateString(data.district);
+  if (data.size) where.size = validateInteger(data.size);
+  if (data.bedrooms) where.bedrooms = validateInteger(data.bedrooms);
+  if (data.bathrooms) where.bathrooms = validateInteger(data.bathrooms);
+  if (data.parkingSpaces) where.parking_spaces = validateInteger(data.parkingSpaces);
+  if (data.pool) where.pool = validateBoolean(data.pool);
+  if (data.grill) where.grill = validateBoolean(data.grill);
+  if (data.airConditioning) where.air_conditioning = validateBoolean(data.airConditioning);
+  if (data.playground) where.playground = validateBoolean(data.playground);
+  if (data.eventArea) where.event_area = validateBoolean(data.eventArea);
+  if (data.financiable) where.financiable = validateBoolean(data.financiable);
+
+  if (data.order && data.orderType) order = [[`${data.order}`, `${data.orderType}`]];
+
+  const total = await Property.count({ where });
+  if (total === 0) {
+    throw new NoPropertiesFound();
+  }
+
+  const lastPage = Math.ceil(total / limit);
+
+  const pagination = {
+    path: '/properties/filter',
+    page,
+    prev_page_url: page - 1 >= 1 ? page - 1 : null,
+    next_page_url: Number(page) + 1 <= lastPage ? Number(page) + 1 : null,
+    lastPage,
+    total,
+  };
+
+  const properties = await Property.findAll({ where, order, limit, offset });
+
+  return { properties, pagination };
+}
+
 async function destroy(id) {
   try {
     const validatedId = validateInteger(id);
@@ -282,4 +327,4 @@ async function destroy(id) {
   }
 }
 
-export { findAll, findByPk, findBySellerEmail, create, update, destroy };
+export { findAll, findByPk, findBySellerEmail, filter, create, update, destroy };
