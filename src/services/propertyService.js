@@ -324,7 +324,21 @@ async function filter(data, page) {
     total,
   };
 
-  const properties = await Property.findAll({ where, order, limit, offset });
+  const result = await Property.findAll({ where, order, limit, offset });
+
+  const properties = await Promise.all(result.map(async (property) => {
+    const editedProperty = property.dataValues;
+    if (property.owner_email) editedProperty.email = editedProperty.owner_email;
+    if (property.realtor_email) editedProperty.email = editedProperty.realtor_email;
+    if (property.realstate_email) editedProperty.email = editedProperty.realstate_email;
+
+    editedProperty.rent_price = parseFloat((property.rent_price / 100)).toFixed(2);
+    editedProperty.sell_price = parseFloat((property.sell_price / 100)).toFixed(2);
+
+    const pictures = await Photo.findAll({ where: { property_id: property.id }, order: [['type', 'ASC']] });
+
+    return { ...editedProperty, pictures };
+  }));
 
   return { properties, pagination };
 }
