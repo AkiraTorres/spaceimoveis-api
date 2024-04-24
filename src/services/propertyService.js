@@ -44,7 +44,7 @@ async function findAll(page) {
     }
 
     const properties = await Promise.all(props.map(async (property) => {
-      const editedProperty = property;
+      const editedProperty = property.dataValues;
       if (property.owner_email) editedProperty.email = editedProperty.owner_email;
       if (property.realtor_email) editedProperty.email = editedProperty.realtor_email;
       if (property.realstate_email) editedProperty.email = editedProperty.realstate_email;
@@ -54,7 +54,7 @@ async function findAll(page) {
 
       const pictures = await Photo.findAll({ where: { property_id: property.id }, order: [['type', 'ASC']] });
 
-      return { property: editedProperty, pictures };
+      return { ...editedProperty, pictures };
     }));
 
     const pagination = {
@@ -119,7 +119,7 @@ async function findBySellerEmail(email) {
     });
 
     const properties = await Promise.all(props.map(async (property) => {
-      const editedProperty = property;
+      const editedProperty = property.dataValues;
       if (property.owner_email) editedProperty.email = editedProperty.owner_email;
       if (property.realtor_email) editedProperty.email = editedProperty.realtor_email;
       if (property.realstate_email) editedProperty.email = editedProperty.realstate_email;
@@ -129,7 +129,7 @@ async function findBySellerEmail(email) {
 
       const pictures = await Photo.findAll({ where: { property_id: property.id }, order: [['type', 'ASC']] });
 
-      return { property: editedProperty, pictures };
+      return { ...editedProperty, pictures };
     }));
 
     return properties;
