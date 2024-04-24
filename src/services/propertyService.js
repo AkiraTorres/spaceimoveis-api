@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getStorage, ref, getDownloadURL, uploadBytesResumable } from 'firebase/storage';
 import { v4 as uuid } from 'uuid';
+import { Op } from 'sequelize';
 
 import Property from '../db/models/Property.js';
 import Photo from '../db/models/Photo.js';
@@ -271,24 +272,41 @@ async function filter(data, page) {
   const offset = Number(limit * (page - 1));
   const where = {};
   let order = [['updatedAt', 'DESC']];
+  let minPrice = 0;
+  let maxPrice = 999999999;
+  let minSize = 0;
+  let maxSize = 999999999;
 
-  if (data.announcementType) where.announcement_type = validateString(data.announcementType);
-  if (data.propertyType) where.property_type = validateString(data.propertyType);
-  if (data.city) where.city = validateString(data.city);
-  if (data.state) where.state = validateString(data.state);
-  if (data.district) where.district = validateString(data.district);
-  if (data.size) where.size = validateInteger(data.size);
-  if (data.bedrooms) where.bedrooms = validateInteger(data.bedrooms);
-  if (data.bathrooms) where.bathrooms = validateInteger(data.bathrooms);
-  if (data.parkingSpaces) where.parking_spaces = validateInteger(data.parkingSpaces);
-  if (data.pool) where.pool = validateBoolean(data.pool);
-  if (data.grill) where.grill = validateBoolean(data.grill);
-  if (data.airConditioning) where.air_conditioning = validateBoolean(data.airConditioning);
-  if (data.playground) where.playground = validateBoolean(data.playground);
-  if (data.eventArea) where.event_area = validateBoolean(data.eventArea);
-  if (data.financiable) where.financiable = validateBoolean(data.financiable);
+  console.log(data);
 
-  if (data.order && data.orderType) order = [[`${data.order}`, `${data.orderType}`]];
+  if (data) {
+    if (data.announcementType) where.announcement_type = validateString(data.announcementType);
+    if (data.propertyType) where.property_type = validateString(data.propertyType);
+    if (data.city) where.city = validateString(data.city);
+    if (data.state) where.state = validateString(data.state);
+    if (data.district) where.district = validateString(data.district);
+    if (data.bedrooms) where.bedrooms = validateInteger(data.bedrooms);
+    if (data.bathrooms) where.bathrooms = validateInteger(data.bathrooms);
+    if (data.parkingSpaces) where.parking_spaces = validateInteger(data.parkingSpaces);
+    if (data.pool) where.pool = validateBoolean(data.pool);
+    if (data.grill) where.grill = validateBoolean(data.grill);
+    if (data.airConditioning) where.air_conditioning = validateBoolean(data.airConditioning);
+    if (data.playground) where.playground = validateBoolean(data.playground);
+    if (data.eventArea) where.event_area = validateBoolean(data.eventArea);
+    if (data.financiable) where.financiable = validateBoolean(data.financiable);
+
+    if (data.order && data.orderType) order = [[`${data.order}`, `${data.orderType}`]];
+
+    if (data.minSize) minSize = validateInteger(data.minSize);
+    if (data.maxSize) maxSize = validateInteger(data.maxSize);
+    if (data.minPrice) minPrice = validatePrice(data.minPrice);
+    if (data.maxPrice) maxPrice = validatePrice(data.maxPrice);
+
+    if (data.annoucementType === 'rent') where.rent_price = { [Op.between]: [minPrice, maxPrice] };
+    else if (data.annoucementType === 'sell') where.sell_price = { [Op.between]: [minPrice, maxPrice] };
+  }
+
+  where.size = { [Op.between]: [minSize, maxSize] };
 
   const total = await Property.count({ where });
   if (total === 0) {

@@ -54,10 +54,12 @@ export const create = asyncHandler(async (req, res) => {
 });
 
 export const filter = asyncHandler(async (req, res) => {
-  const { data } = req.body;
+  const data = req.body;
   const { page = 1 } = req.query;
 
-  const result = await service.filter(JSON.parse(data), page);
+  console.log(req.body);
+
+  const result = await service.filter(data, page);
   res.status(200).json(result);
 });
 
