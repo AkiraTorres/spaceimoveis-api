@@ -277,8 +277,6 @@ async function filter(data, page) {
   let minSize = 0;
   let maxSize = 999999999;
 
-  console.log(data);
-
   if (data) {
     if (data.announcementType) where.announcement_type = validateString(data.announcementType);
     if (data.propertyType) where.property_type = validateString(data.propertyType);
