@@ -4,6 +4,7 @@ import { v4 as uuid } from 'uuid';
 
 import Client from '../db/models/Client.js';
 import Realtor from '../db/models/Realtor.js';
+import Property from '../db/models/Property.js';
 import RealtorPhoto from '../db/models/RealtorPhoto.js';
 
 import RealtorNotFound from '../errors/realtorErrors/realtorNotFound.js';
@@ -52,7 +53,11 @@ async function findAll(page) {
     }
 
     const result = await Promise.all(realtors.map(async (realtor) => {
+      const editedRealtor = realtor.dataValues;
+
+      editedRealtor.totalProperties = await Property.count({ where: { realtor_email: realtor.email } });
       const profile = await RealtorPhoto.findOne({ where: { email: realtor.email } });
+
       return { ...realtor.dataValues, profile };
     }));
 
@@ -87,8 +92,10 @@ async function findByPk(email, password = false) {
       throw new RealtorNotFound();
     }
 
+    const properties = await Property.findAll({ where: { realtor_email: realtor.email } });
     const profile = await RealtorPhoto.findOne({ where: { email: realtor.email } });
-    return { ...realtor.dataValues, profile };
+
+    return { ...realtor.dataValues, properties, profile };
   } catch (error) {
     const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     console.error(message);
@@ -110,8 +117,10 @@ async function findByCpf(cpf, password = false) {
       throw new RealtorNotFound();
     }
 
+    const properties = await Property.findAll({ where: { realtor_email: realtor.email } });
     const profile = await RealtorPhoto.findOne({ where: { email: realtor.email } });
-    return { ...realtor.dataValues, profile };
+
+    return { ...realtor.dataValues, properties, profile };
   } catch (error) {
     const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     console.error(message);
@@ -133,8 +142,10 @@ async function findByRg(rg, password = false) {
       throw new RealtorNotFound();
     }
 
+    const properties = await Property.findAll({ where: { realtor_email: realtor.email } });
     const profile = await RealtorPhoto.findOne({ where: { email: realtor.email } });
-    return { ...realtor.dataValues, profile };
+
+    return { ...realtor.dataValues, properties, profile };
   } catch (error) {
     const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     console.error(message);
