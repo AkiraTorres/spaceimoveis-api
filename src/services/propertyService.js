@@ -6,7 +6,6 @@ import { Op } from 'sequelize';
 import Property from '../db/models/Property.js';
 import Photo from '../db/models/Photo.js';
 import { find } from './globalService.js';
-import NoPropertiesFound from '../errors/propertyErrors/noPropertyFound.js';
 import PropertyNotFound from '../errors/propertyErrors/properyNotFound.js';
 import { validateString, validateInteger, validateBoolean, validatePhone, validatePrice, validateEmail } from '../validators/inputValidators.js';
 
@@ -26,10 +25,6 @@ async function findAll(page) {
     const limit = 5;
     const countTotal = await Property.count();
 
-    if (countTotal === 0) {
-      throw new NoPropertiesFound();
-    }
-
     const lastPage = Math.ceil(countTotal / limit);
     const offset = Number(limit * (page - 1));
 
@@ -39,9 +34,16 @@ async function findAll(page) {
       limit,
     });
 
-    if (props.length === 0) {
-      throw new NoPropertiesFound();
-    }
+    const pagination = {
+      path: '/properties',
+      page,
+      prev_page_url: page - 1 >= 1 ? page - 1 : null,
+      next_page_url: Number(page) + 1 <= lastPage ? Number(page) + 1 : null,
+      lastPage,
+      total: countTotal,
+    };
+
+    if (props.length === 0) return { properties: props, pagination };
 
     const properties = await Promise.all(props.map(async (property) => {
       const editedProperty = property.dataValues;
@@ -56,15 +58,6 @@ async function findAll(page) {
 
       return { ...editedProperty, pictures };
     }));
-
-    const pagination = {
-      path: '/properties',
-      page,
-      prev_page_url: page - 1 >= 1 ? page - 1 : null,
-      next_page_url: Number(page) + 1 <= lastPage ? Number(page) + 1 : null,
-      lastPage,
-      total: countTotal,
-    };
 
     return { properties, pagination };
   } catch (error) {
@@ -307,9 +300,6 @@ async function filter(data, page) {
   where.size = { [Op.between]: [minSize, maxSize] };
 
   const total = await Property.count({ where });
-  if (total === 0) {
-    throw new NoPropertiesFound();
-  }
 
   const lastPage = Math.ceil(total / limit);
 
@@ -323,6 +313,8 @@ async function filter(data, page) {
   };
 
   const result = await Property.findAll({ where, order, limit, offset });
+
+  if (total === 0) return { properties: result, pagination };
 
   const properties = await Promise.all(result.map(async (property) => {
     const editedProperty = property.dataValues;
