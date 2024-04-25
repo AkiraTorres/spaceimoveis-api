@@ -295,8 +295,6 @@ async function filter(data, page) {
 
   where.size = { [Op.between]: [minSize, maxSize] };
 
-  console.log(where);
-
   const total = await Property.count({ where });
 
   const lastPage = Math.ceil(total / limit);
