@@ -293,8 +293,8 @@ async function filter(data, page) {
     if (data.minPrice) minPrice = validatePrice(data.minPrice);
     if (data.maxPrice) maxPrice = validatePrice(data.maxPrice);
 
-    if (data.annoucementType === 'rent') where.rent_price = { [Op.between]: [minPrice, maxPrice] };
-    else if (data.annoucementType === 'sell') where.sell_price = { [Op.between]: [minPrice, maxPrice] };
+    if (data.annoucementType === 'Alugar') where.rent_price = { [Op.between]: [minPrice, maxPrice] };
+    else if (data.annoucementType === 'Venda') where.sell_price = { [Op.between]: [minPrice, maxPrice] };
   }
 
   where.size = { [Op.between]: [minSize, maxSize] };
