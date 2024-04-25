@@ -67,7 +67,7 @@ export const update = asyncHandler(async (req, res) => {
     const { data } = req.body;
     const { files } = req;
 
-    const result = await service.update(id, JSON.parse(data), files);
+    const result = await service.update(id, JSON.parse(data), files, req.email);
     res.status(200).json(result);
   } catch (error) {
     const status = error.status || 500;

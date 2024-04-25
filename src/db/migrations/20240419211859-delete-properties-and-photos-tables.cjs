@@ -36,7 +36,7 @@ module.exports = {
       realstate_email: {
         type: Sequelize.STRING,
         allowNull: true,
-        references: { model: 'realstate', key: 'email' },
+        references: { model: 'realstates', key: 'email' },
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE',
       },

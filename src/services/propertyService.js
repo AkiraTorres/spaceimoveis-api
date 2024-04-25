@@ -185,13 +185,23 @@ async function create(data, files) {
   }
 }
 
-async function update(id, data, files) {
+async function update(id, data, files, sellerEmail) {
   try {
-    const validatedId = validateInteger(id);
+    const validatedId = validateString(id);
 
-    const oldProperProperty = await Property.findByPk(validatedId);
+    console.log('id', id);
+    console.log('validatedId', validatedId);
+
+    // const oldProperProperty = await Property.findOne({ where: { id: validatedId } }, { raw: true }, { attributes: { excludes: ['createdAt', 'updatedAt'] } });
+    const oldProperProperty = await Property.findByPk(validatedId, { raw: true });
     if (!oldProperProperty) {
       throw new PropertyNotFound();
+    }
+
+    if (oldProperProperty.owner_email !== sellerEmail && oldProperProperty.realtor_email !== sellerEmail && oldProperProperty.realstate_email !== sellerEmail) {
+      const error = new Error('Você não tem permissão para alterar este imóvel');
+      error.status = 401;
+      throw error;
     }
 
     const property = oldProperProperty;
@@ -229,21 +239,24 @@ async function update(id, data, files) {
     if (data.sellerEmail && data.sellerType === 'realtor') property.realtor_email = validateEmail(data.sellerEmail);
     if (data.sellerEmail && data.sellerType === 'realstate') property.realstate_email = validateEmail(data.sellerEmail);
 
-    const updatedProperty = await Property.create(property);
+    await Property.update(property, { where: { id: validatedId } });
+    let photos = await Photo.findAll({ where: { property_id: validatedId } });
 
-    await Photo.destroy({ where: { property_id: updatedProperty.id } });
+    if (files.length > 0) {
+      await Photo.destroy({ where: { property_id: validatedId } });
 
-    const photos = await Promise.all(files.map(async (picture) => {
-      const storageRef = ref(storage, `images/properties/${updatedProperty.id}/${picture.fieldname}-${picture.originalname}`);
-      const metadata = { contentType: picture.mimetype };
-      const snapshot = await uploadBytesResumable(storageRef, picture.buffer, metadata);
-      const downloadURL = await getDownloadURL(snapshot.ref);
-      await Photo.create({ property_id: updatedProperty.id, url: downloadURL });
+      photos = await Promise.all(files.map(async (picture) => {
+        const storageRef = ref(storage, `images/properties/${validatedId}/${picture.fieldname}-${picture.originalname}`);
+        const metadata = { contentType: picture.mimetype };
+        const snapshot = await uploadBytesResumable(storageRef, picture.buffer, metadata);
+        const downloadURL = await getDownloadURL(snapshot.ref);
+        await Photo.create({ property_id: validatedId, url: downloadURL });
 
-      return { name: `${picture.fieldname}-${picture.originalname}`, type: picture.mimetype, downloadURL };
-    }));
+        return { name: `${picture.fieldname}-${picture.originalname}`, type: picture.mimetype, downloadURL };
+      }));
+    }
 
-    return { updatedProperty, photos };
+    return { property, photos };
   } catch (error) {
     const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     console.error(message);
@@ -328,11 +341,22 @@ async function filter(data, page) {
 
 async function destroy(id) {
   try {
-    const validatedId = validateInteger(id);
+    const validatedId = validateString(id);
 
     if (!await Property.findByPk(validatedId)) {
       throw new PropertyNotFound();
     }
+
+    const photos = await Photo.findAll({ where: { property_id: validatedId } });
+
+    if (photos.length > 0) {
+      await Promise.all(photos.map(async (photo) => {
+        const storageRef = ref(storage, `images/properties/${validatedId}/${photo.name}`);
+        await storageRef.delete();
+      }));
+    }
+
+    await Photo.destroy({ where: { property_id: validatedId } });
     await Property.destroy({ where: { id: validatedId } });
     return { message: 'Usuário apagado com sucesso' };
   } catch (error) {

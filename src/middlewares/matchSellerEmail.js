@@ -14,8 +14,8 @@ export default async function matchEmail(req, res, next) {
 
     if (
       property.owner_email !== req.email
-      || property.realtor_email !== req.email
-      || property.realstate_email !== req.email) {
+      && property.realtor_email !== req.email
+      && property.realstate_email !== req.email) {
       throw new EmailDontMatch();
     }
 
