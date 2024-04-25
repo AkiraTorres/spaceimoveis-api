@@ -51,9 +51,6 @@ async function findAll(page) {
       if (property.realtor_email) editedProperty.email = editedProperty.realtor_email;
       if (property.realstate_email) editedProperty.email = editedProperty.realstate_email;
 
-      editedProperty.rent_price = parseFloat((property.rent_price / 100)).toFixed(2);
-      editedProperty.sell_price = parseFloat((property.sell_price / 100)).toFixed(2);
-
       const pictures = await Photo.findAll({ where: { property_id: property.id }, order: [['type', 'ASC']] });
 
       return { ...editedProperty, pictures };
@@ -80,9 +77,6 @@ async function findByPk(id) {
     if (property.owner_email) property.email = property.owner_email;
     if (property.realtor_email) property.email = property.realtor_email;
     if (property.realstate_email) property.email = property.realstate_email;
-
-    property.rent_price = parseFloat((property.rent_price / 100)).toFixed(2);
-    property.sell_price = parseFloat((property.sell_price / 100)).toFixed(2);
 
     const pictures = await Photo.findAll({ where: { property_id: property.id }, order: [['type', 'ASC']] });
 
@@ -116,9 +110,6 @@ async function findBySellerEmail(email) {
       if (property.owner_email) editedProperty.email = editedProperty.owner_email;
       if (property.realtor_email) editedProperty.email = editedProperty.realtor_email;
       if (property.realstate_email) editedProperty.email = editedProperty.realstate_email;
-
-      editedProperty.rent_price = parseFloat((property.rent_price / 100)).toFixed(2);
-      editedProperty.sell_price = parseFloat((property.sell_price / 100)).toFixed(2);
 
       const pictures = await Photo.findAll({ where: { property_id: property.id }, order: [['type', 'ASC']] });
 
@@ -292,12 +283,19 @@ async function filter(data, page) {
     if (data.maxSize) maxSize = validateInteger(data.maxSize);
     if (data.minPrice) minPrice = validatePrice(data.minPrice);
     if (data.maxPrice) maxPrice = validatePrice(data.maxPrice);
-
-    if (data.annoucementType === 'Alugar') where.rent_price = { [Op.between]: [minPrice, maxPrice] };
-    else if (data.annoucementType === 'Venda') where.sell_price = { [Op.between]: [minPrice, maxPrice] };
+    if (data.announcementType === 'Aluguel') where.rent_price = { [Op.between]: [minPrice, maxPrice] };
+    else if (data.announcementType === 'Venda') where.sell_price = { [Op.between]: [minPrice, maxPrice] };
+    else if (data.announcementType === 'Ambas') {
+      where[Op.or] = [
+        { rent_price: { [Op.between]: [minPrice, maxPrice] } },
+        { sell_price: { [Op.between]: [minPrice, maxPrice] } },
+      ];
+    }
   }
 
   where.size = { [Op.between]: [minSize, maxSize] };
+
+  console.log(where);
 
   const total = await Property.count({ where });
 
@@ -321,9 +319,6 @@ async function filter(data, page) {
     if (property.owner_email) editedProperty.email = editedProperty.owner_email;
     if (property.realtor_email) editedProperty.email = editedProperty.realtor_email;
     if (property.realstate_email) editedProperty.email = editedProperty.realstate_email;
-
-    editedProperty.rent_price = parseFloat((property.rent_price / 100)).toFixed(2);
-    editedProperty.sell_price = parseFloat((property.sell_price / 100)).toFixed(2);
 
     const pictures = await Photo.findAll({ where: { property_id: property.id }, order: [['type', 'ASC']] });
 

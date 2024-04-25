@@ -57,8 +57,6 @@ export const filter = asyncHandler(async (req, res) => {
   const data = req.body;
   const { page = 1 } = req.query;
 
-  console.log(req.body);
-
   const result = await service.filter(data, page);
   res.status(200).json(result);
 });

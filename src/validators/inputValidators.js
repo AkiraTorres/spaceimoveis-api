@@ -73,7 +73,7 @@ export function validateInteger(integer, msg = '') {
 }
 
 export function validatePrice(price, msg = '') {
-  const sanitizedPrice = parseInt((parseFloat(price.replace('.', ''), 10) * 100), 10);
+  const sanitizedPrice = parseInt(validator.escape(price.replace(/\./g, '')), 10);
 
   if (!sanitizedPrice || !Number.isInteger(sanitizedPrice)) {
     if (msg !== '') {
