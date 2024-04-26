@@ -38,6 +38,26 @@ export const findBySellerEmail = asyncHandler(async (req, res) => {
   }
 });
 
+export const getAllPropertiesIds = asyncHandler(async (req, res) => {
+  try {
+    const result = await service.getAllPropertiesIds(req.email);
+    res.status(200).json(result);
+  } catch (error) {
+    const status = error.status || 500;
+    res.status(status).json({ message: error.message });
+  }
+});
+
+export const getAllPropertiesCities = asyncHandler(async (req, res) => {
+  try {
+    const result = await service.getAllPropertiesCities(req.email);
+    res.status(200).json(result);
+  } catch (error) {
+    const status = error.status || 500;
+    res.status(status).json({ message: error.message });
+  }
+});
+
 export const create = asyncHandler(async (req, res) => {
   try {
     const { data } = req.body;

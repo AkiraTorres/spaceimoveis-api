@@ -123,6 +123,32 @@ async function findBySellerEmail(email) {
   }
 }
 
+async function getAllPropertiesIds(email) {
+  const user = await find(validateEmail(email));
+  if (!user) {
+    const error = new Error('Usuário não encontrado');
+    error.status = 404;
+    throw error;
+  }
+
+  const properties = await Property.findAll({ where: { [`${user.type}_email`]: user.email }, attributes: ['id'] });
+
+  return properties.map((property) => property.id);
+}
+
+async function getAllPropertiesCities(email) {
+  const user = await find(validateEmail(email));
+  if (!user) {
+    const error = new Error('Usuário não encontrado');
+    error.status = 404;
+    throw error;
+  }
+
+  const properties = await Property.findAll({ where: { [`${user.type}_email`]: user.email }, attributes: ['city'] });
+  const cities = properties.map((property) => property.city);
+  return [...new Set(cities)];
+}
+
 async function create(data, files) {
   try {
     const propertyData = {
@@ -367,4 +393,4 @@ async function destroy(id) {
   }
 }
 
-export { findAll, findByPk, findBySellerEmail, filter, create, update, destroy };
+export { findAll, findByPk, findBySellerEmail, getAllPropertiesIds, getAllPropertiesCities, filter, create, update, destroy };
