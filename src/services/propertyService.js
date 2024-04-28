@@ -294,7 +294,7 @@ async function filter(data, page) {
   const limit = 5;
   const offset = Number(limit * (page - 1));
   const where = {};
-  let order = [['updatedAt', 'DESC']];
+  const order = [['updatedAt', 'DESC']];
   let minPrice = 0;
   let maxPrice = 999999999;
   let minSize = 0;
@@ -318,7 +318,8 @@ async function filter(data, page) {
     if (data.eventArea) where.event_area = validateBoolean(data.eventArea);
     if (data.financiable) where.financiable = validateBoolean(data.financiable);
 
-    if (data.order && data.orderType) order = [[`${data.order}`, `${data.orderType}`]];
+    if (data.order) order[0] = validateString(data.order);
+    if (data.orderType) order[1] = validateString(data.orderType);
 
     if (data.email) {
       user = await find(validateEmail(data.email));

@@ -331,6 +331,39 @@ async function elevate(email, data, photo) {
   }
 }
 
+async function filter(data, page = 1) {
+  const limit = 5;
+  const offset = Number(limit * (page - 1));
+  const order = [['name', 'ASC']];
+  const where = {};
+
+  if (data.email) where.email = validateString(data.email);
+  if (data.name) where.name = validateString(data.name);
+  if (data.city) where.city = validateString(data.city);
+  if (data.state) where.state = validateUF(data.state);
+  if (data.order) order[0] = validateString(data.order);
+  if (data.orderType) order[1] = validateString(data.orderType);
+
+  const total = await Realtor.count({ where });
+  const lastPage = Math.ceil(total / limit);
+
+  const pagination = {
+    path: '/realtors/filter',
+    page,
+    prev_page_url: page - 1 >= 1 ? page - 1 : null,
+    next_page_url: Number(page) + 1 <= lastPage ? Number(page) + 1 : null,
+    lastPage,
+    total,
+  };
+
+  const result = await Realtor.findAll({ where, order, offset, limit, raw: true });
+  if (result.length === 0) {
+    throw new NoRealtorsFound();
+  }
+
+  return { result, pagination };
+}
+
 async function destroy(email) {
   try {
     const validatedEmail = validateEmail(email);
@@ -355,4 +388,4 @@ async function destroy(email) {
   }
 }
 
-export { findAll, findByPk, findByCpf, findByRg, create, update, elevate, destroy };
+export { findAll, findByPk, findByCpf, findByRg, create, update, elevate, filter, destroy };

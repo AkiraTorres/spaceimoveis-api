@@ -14,6 +14,7 @@ router.get('/:email', controller.findByPk);
 router.post('/', upload.single('photo'), controller.create);
 router.put('/:email', verifyJwt, matchEmail, upload.single('photo'), controller.update);
 router.put('/elevate/:email', verifyGoogleToken, verifyJwt, matchEmail, upload.single('photo'), controller.elevate);
+router.put('filter', controller.filter);
 router.delete('/:email', verifyJwt, matchEmail, controller.destroy);
 
 export default router;
