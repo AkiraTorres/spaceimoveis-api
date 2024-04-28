@@ -97,8 +97,8 @@ async function findByPk(email, password = false) {
 
     return { ...realtor.dataValues, properties, profile };
   } catch (error) {
-    const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    console.error(message);
+    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
+    error.status = error.status || 500;
     throw error;
   }
 }

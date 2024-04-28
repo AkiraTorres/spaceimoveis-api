@@ -89,8 +89,8 @@ async function findByPk(email, password = false) {
     const profile = await RealstatePhoto.findOne({ where: { email: realstate.email } });
     return { ...realstate.dataValues, profile };
   } catch (error) {
-    const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    console.error(message);
+    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
+    error.status = error.status || 500;
     throw error;
   }
 }

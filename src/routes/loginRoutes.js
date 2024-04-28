@@ -20,6 +20,7 @@ router.post('/login', async (req, res) => {
 
     const user = await find(email, true);
     if (!user) throw error;
+
     const isValid = bcrypt.compareSync(password, user.password);
     if (!isValid) throw error;
 
@@ -37,7 +38,7 @@ router.post('/google', async (req, res) => {
     const { googleToken } = req.body;
     const error = new Error('Email ou senha incorretos');
     error.status = 404;
-    const { email } = await verify.validateGoogleToken(googleToken).catch(console.error);
+    const { email } = await verify.validateGoogleToken(googleToken).catch();
 
     if (!email) throw error;
 

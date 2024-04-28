@@ -88,8 +88,8 @@ async function findByPk(email, password) {
     const profile = await OwnerPhoto.findOne({ where: { email: owner.email } });
     return { ...owner.dataValues, profile };
   } catch (error) {
-    const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    console.error(message);
+    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
+    error.status = error.status || 500;
     throw error;
   }
 }
