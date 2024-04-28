@@ -1,10 +1,16 @@
 import { Sequelize, DataTypes } from 'sequelize';
 import dotenv from 'dotenv';
 
+import { development, test, production } from './config/config.js';
+
 dotenv.config();
 
-const POSTGRES_URL = `postgres://${process.env.DB_USER}:${process.env.DB_PASS}@${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}`;
-const sequelize = new Sequelize(POSTGRES_URL);
+let sequelizeConfig;
+if (process.env.NODE_ENV === 'development') sequelizeConfig = development;
+else if (process.env.NODE_ENV === 'test') sequelizeConfig = test;
+else if (process.env.NODE_ENV === 'production') sequelizeConfig = production;
+
+const sequelize = new Sequelize(sequelizeConfig);
 
 async function connection() {
   try {
