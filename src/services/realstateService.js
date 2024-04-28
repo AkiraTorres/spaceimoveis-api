@@ -341,7 +341,7 @@ async function filter(data, page = 1) {
   const lastPage = Math.ceil(total / limit);
 
   const pagination = {
-    path: '/realtors/filter',
+    path: '/realstate/filter',
     page,
     prev_page_url: page - 1 >= 1 ? page - 1 : null,
     next_page_url: Number(page) + 1 <= lastPage ? Number(page) + 1 : null,
@@ -354,10 +354,10 @@ async function filter(data, page = 1) {
     throw new NoRealstatesFound();
   }
 
-  const result = await Promise.all(realstates.map(async (realtor) => {
-    const profile = await RealstatePhoto.findOne({ where: { email: realtor.email } });
+  const result = await Promise.all(realstates.map(async (realstate) => {
+    const profile = await RealstatePhoto.findOne({ where: { email: realstate.email } });
 
-    return { ...realtor, profile };
+    return { ...realstate, profile };
   }));
 
   return { result, pagination };

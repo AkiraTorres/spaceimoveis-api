@@ -75,7 +75,7 @@ export const elevate = asyncHandler(async (req, res) => {
 export const filter = asyncHandler(async (req, res) => {
   try {
     const { page = 1 } = req.query;
-    const { data } = req.body;
+    const data = req.body;
 
     const result = await service.filter(data, page);
     res.status(200).json(result);
