@@ -390,7 +390,7 @@ async function destroy(id) {
 
     if (photos.length > 0) {
       await Promise.all(photos.map(async (photo) => {
-        const storageRef = ref(storage, `images/properties/${validatedId}/${photo.name}`);
+        const storageRef = ref(storage, `images/properties/${validatedId}/${photo.type}-${photo.name}`);
         await storageRef.delete();
       }));
     }
