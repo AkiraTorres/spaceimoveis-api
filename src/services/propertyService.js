@@ -299,6 +299,7 @@ async function filter(data, page) {
   let maxPrice = 999999999;
   let minSize = 0;
   let maxSize = 999999999;
+  let user;
 
   if (data) {
     if (data.id) where.id = validateString(data.id);
@@ -318,6 +319,17 @@ async function filter(data, page) {
     if (data.financiable) where.financiable = validateBoolean(data.financiable);
 
     if (data.order && data.orderType) order = [[`${data.order}`, `${data.orderType}`]];
+
+    if (data.email) {
+      user = await find(validateEmail(data.email));
+      if (!user) {
+        const error = new Error('Usuário não encontrado');
+        error.status = 404;
+        throw error;
+      }
+
+      where[`${user.type}_email`] = user.email;
+    }
 
     if (data.minSize) minSize = validateInteger(data.minSize);
     if (data.maxSize) maxSize = validateInteger(data.maxSize);
