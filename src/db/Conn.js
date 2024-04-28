@@ -1,14 +1,14 @@
 import { Sequelize, DataTypes } from 'sequelize';
 import dotenv from 'dotenv';
 
-import { development, test, production } from './config/config.js';
+import config from './config/config.js';
 
 dotenv.config();
 
 let sequelizeConfig;
-if (process.env.NODE_ENV === 'development') sequelizeConfig = development;
-else if (process.env.NODE_ENV === 'test') sequelizeConfig = test;
-else if (process.env.NODE_ENV === 'production') sequelizeConfig = production;
+if (process.env.NODE_ENV === 'development') sequelizeConfig = config.development;
+else if (process.env.NODE_ENV === 'test') sequelizeConfig = config.test;
+else if (process.env.NODE_ENV === 'production') sequelizeConfig = config.production;
 
 const sequelize = new Sequelize(sequelizeConfig);
 
