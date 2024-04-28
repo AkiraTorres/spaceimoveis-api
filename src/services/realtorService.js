@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getStorage, ref, getDownloadURL, uploadBytesResumable, deleteObject } from 'firebase/storage';
 import { v4 as uuid } from 'uuid';
+import { Op } from 'sequelize';
 
 import Client from '../db/models/Client.js';
 import Realtor from '../db/models/Realtor.js';
@@ -337,8 +338,10 @@ async function filter(data, page = 1) {
   const order = [['name', 'ASC']];
   const where = {};
 
+  const validatedName = validateString(data.name);
+
+  if (data.name) where.name = { [Op.substring]: validatedName };
   if (data.email) where.email = validateString(data.email);
-  if (data.name) where.name = validateString(data.name);
   if (data.city) where.city = validateString(data.city);
   if (data.state) where.state = validateUF(data.state);
   if (data.order) order[0] = validateString(data.order);
