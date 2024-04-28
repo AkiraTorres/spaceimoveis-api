@@ -1,3 +1,5 @@
+import { Op } from 'sequelize';
+
 import RealtorRating from '../db/models/RealtorRating.js';
 import RealstateRating from '../db/models/RealstateRating.js';
 import { find } from './globalService.js';
@@ -180,6 +182,43 @@ async function setRate(senderEmail, receiverEmail, rating, comment) {
   throw error;
 }
 
+async function filter(data, page = 1) {
+  const { receiverEmail, senderEmail, rating, comment, order, orderType } = data;
+  const limit = 5;
+  const offset = Number(limit * (page - 1));
+  const ordering = [['createdAt', 'DESC']];
+
+  const where = {};
+  if (receiverEmail) where.receiver_email = validateEmail(receiverEmail);
+  if (senderEmail) where.sender_email = validateEmail(senderEmail);
+  if (rating) where.rating = { [Op.substring]: validateString(rating) };
+  if (comment) where.comment = validateString(comment);
+  if (order) ordering[0][0] = validateString(order);
+  if (orderType) ordering[0][1] = validateString(orderType);
+
+  const total = await RealtorRating.count({ where }) + await RealstateRating.count({ where });
+
+  if (total === 0) {
+    const error = new Error('Nenhuma avaliação encontrada.');
+    error.status = 404;
+    throw error;
+  }
+
+  const lastPage = Math.ceil(total / limit);
+
+  const pagination = {
+    path: '/ratings',
+    page,
+    prev_page_url: page - 1 >= 1 ? page - 1 : null,
+    next_page_url: Number(page) + 1 <= lastPage ? Number(page) + 1 : null,
+    lastPage,
+    total,
+  };
+
+  const result = await RealtorRating.findAll({ where, limit, offset, order: ordering });
+  return { result, pagination };
+}
+
 async function deleteRate(id, senderEmail) {
   const validateId = validateString(id);
 
@@ -201,4 +240,4 @@ async function deleteRate(id, senderEmail) {
   return { message: 'Avaliação excluída com sucesso.' };
 }
 
-export { getAllRatesByReceiver, getAllRatesBySender, getAvgRateByReceiver, setRate, deleteRate };
+export { getAllRatesByReceiver, getAllRatesBySender, getAvgRateByReceiver, setRate, filter, deleteRate };

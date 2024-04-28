@@ -9,6 +9,7 @@ const router = Express.Router();
 router.get('/:receiverEmail', controller.getAllRatesByReceiver);
 router.get('/avg/:receiverEmail', controller.getAvgRateByReceiver);
 router.get('/sender/:senderEmail', controller.getAllRatesBySender);
+router.put('/filter', controller.filter);
 router.post('/', verifyGoogleToken, verifyJwt, controller.setRate);
 router.delete('/:id', verifyGoogleToken, verifyJwt, controller.deleteRate);
 

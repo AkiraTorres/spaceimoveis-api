@@ -53,6 +53,19 @@ export const setRate = asyncHandler(async (req, res) => {
   }
 });
 
+export const filter = asyncHandler(async (req, res) => {
+  try {
+    const { page = 1 } = req.query;
+    const data = req.body;
+
+    const result = await service.filter(data, page);
+    res.status(200).json(result);
+  } catch (error) {
+    const status = error.status || 500;
+    res.status(status).json({ message: error.message });
+  }
+});
+
 export const deleteRate = asyncHandler(async (req, res) => {
   try {
     const { id } = req.params;
