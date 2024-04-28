@@ -1,3 +1,8 @@
+import Client from '../db/models/Client.js';
+import Owner from '../db/models/Owner.js';
+import Realtor from '../db/models/Realtor.js';
+import Realstate from '../db/models/Realstate.js';
+
 import * as clientService from './clientService.js';
 import * as ownerService from './ownerService.js';
 import * as realtorService from './realtorService.js';
@@ -22,45 +27,39 @@ export async function findAll() {
 }
 
 export async function find(email, pass = false) {
-  try {
-    if (email) {
-      try {
-        const client = await clientService.findByPk(email, pass);
-        if (client) {
-          return client;
-        }
-      } catch (error) { /* empty */ }
+  if (email) {
+    try {
+      const client = await clientService.findByPk(email, pass);
+      if (client) {
+        return client;
+      }
+    } catch (error) { /* empty */ }
 
-      try {
-        const owner = await ownerService.findByPk(email, pass);
-        if (owner) {
-          return owner;
-        }
-      } catch (error) { /* empty */ }
+    try {
+      const owner = await ownerService.findByPk(email, pass);
+      if (owner) {
+        return owner;
+      }
+    } catch (error) { /* empty */ }
 
-      try {
-        const realtor = await realtorService.findByPk(email, pass);
-        if (realtor) {
-          return realtor;
-        }
-      } catch (error) { /* empty */ }
+    try {
+      const realtor = await realtorService.findByPk(email, pass);
+      if (realtor) {
+        return realtor;
+      }
+    } catch (error) { /* empty */ }
 
-      try {
-        const realstate = await realstateService.findByPk(email, pass);
-        if (realstate) {
-          return realstate;
-        }
-      } catch (error) { /* empty */ }
-    }
-
-    const error = new Error('Email não encontrado');
-    error.status = 404;
-    throw error;
-  } catch (error) {
-    error.status = error.status || 500;
-    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    throw error;
+    try {
+      const realstate = await realstateService.findByPk(email, pass);
+      if (realstate) {
+        return realstate;
+      }
+    } catch (error) { /* empty */ }
   }
+
+  const error = new Error('Email não encontrado');
+  error.status = 404;
+  throw error;
 }
 
 export async function changePassword(email, newPassword) {
@@ -80,14 +79,14 @@ export async function changePassword(email, newPassword) {
 
     let result;
     user.password = validatedPassword;
-    if (clientService.isClient(user)) result = await clientService.update(user.email, user);
-    else if (ownerService.isOwner(user)) result = await ownerService.update(user.email, user);
-    else if (realtorService.isRealtor(user)) result = await realtorService.update(user.email, user);
-    else if (realstateService.isRealstate(user)) result = await realstateService.update(user.email, user);
+    if (user.type === 'client') result = await Client.update(user, { where: { email: validatedEmail } });
+    else if (user.type === 'owner') result = await Owner.update(user, { where: { email: validatedEmail } });
+    else if (user.type === 'realtor') result = await Realtor.update(user, { where: { email: validatedEmail } });
+    else if (user.type === 'realstate') result = await Realstate.update(user, { where: { email: validatedEmail } });
 
     if (result === 0) throw new Error('Erro ao atualizar a senha');
 
-    return user;
+    return find(validatedEmail);
   } catch (error) {
     error.status = error.status || 500;
     error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
