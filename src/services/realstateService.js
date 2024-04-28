@@ -329,13 +329,14 @@ async function filter(data, page = 1) {
 
   const validatedName = validateString(data.name);
 
-  if (data.name) where.company_name = { [Op.substring]: validatedName };
-  if (data.email) where.email = validateString(data.email);
-  if (data.city) where.city = validateString(data.city);
-  if (data.state) where.state = validateUF(data.state);
-  if (data.order) order[0] = validateString(data.order);
-  if (data.orderType) order[1] = validateString(data.orderType);
-
+  if (data) {
+    if (data.name) where.company_name = { [Op.substring]: validatedName };
+    if (data.email) where.email = validateString(data.email);
+    if (data.city) where.city = validateString(data.city);
+    if (data.state) where.state = validateUF(data.state);
+    if (data.order) order[0] = validateString(data.order);
+    if (data.orderType) order[1] = validateString(data.orderType);
+  }
   const total = await Realstate.count({ where });
   const lastPage = Math.ceil(total / limit);
 
