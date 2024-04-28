@@ -349,10 +349,16 @@ async function filter(data, page = 1) {
     total,
   };
 
-  const result = await Realstate.findAll({ where, order: ordering, offset, limit, raw: true, exclude: ['password'] });
-  if (result.length === 0) {
+  const realstates = await Realstate.findAll({ where, order: ordering, offset, limit, raw: true, exclude: ['password'] });
+  if (realstates.length === 0) {
     throw new NoRealstatesFound();
   }
+
+  const result = await Promise.all(realstates.map(async (realtor) => {
+    const profile = await RealstatePhoto.findOne({ where: { email: realtor.email } });
+
+    return { ...realtor, profile };
+  }));
 
   return { result, pagination };
 }

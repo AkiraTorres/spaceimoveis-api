@@ -359,10 +359,16 @@ async function filter(data, page = 1) {
     total,
   };
 
-  const result = await Realtor.findAll({ where, order: ordering, offset, limit, raw: true, exclude: ['password'] });
-  if (result.length === 0) {
+  const realtors = await Realtor.findAll({ where, order: ordering, offset, limit, raw: true, exclude: ['password'] });
+  if (realtors.length === 0) {
     throw new NoRealtorsFound();
   }
+
+  const result = await Promise.all(realtors.map(async (realtor) => {
+    const profile = await RealtorPhoto.findOne({ where: { email: realtor.email } });
+
+    return { ...realtor, profile };
+  }));
 
   return { result, pagination };
 }
