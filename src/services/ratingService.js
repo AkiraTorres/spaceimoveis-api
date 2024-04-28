@@ -183,18 +183,20 @@ async function setRate(senderEmail, receiverEmail, rating, comment) {
 }
 
 async function filter(data, page = 1) {
-  const { receiverEmail, senderEmail, rating, comment, order, orderType } = data;
   const limit = 5;
   const offset = Number(limit * (page - 1));
   const ordering = [['createdAt', 'DESC']];
 
   const where = {};
-  if (receiverEmail) where.receiver_email = validateEmail(receiverEmail);
-  if (senderEmail) where.sender_email = validateEmail(senderEmail);
-  if (rating) where.rating = { [Op.substring]: validateString(rating) };
-  if (comment) where.comment = validateString(comment);
-  if (order) ordering[0][0] = validateString(order);
-  if (orderType) ordering[0][1] = validateString(orderType);
+  if (data) {
+    const { receiverEmail, senderEmail, rating, comment, order, orderType } = data;
+    if (receiverEmail) where.receiver_email = validateEmail(receiverEmail);
+    if (senderEmail) where.sender_email = validateEmail(senderEmail);
+    if (rating) where.rating = { [Op.substring]: validateString(rating) };
+    if (comment) where.comment = validateString(comment);
+    if (order) ordering[0][0] = validateString(order);
+    if (orderType) ordering[0][1] = validateString(orderType);
+  }
 
   const total = await RealtorRating.count({ where }) + await RealstateRating.count({ where });
 

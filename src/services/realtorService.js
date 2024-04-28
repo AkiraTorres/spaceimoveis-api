@@ -333,19 +333,20 @@ async function elevate(email, data, photo) {
 }
 
 async function filter(data, page = 1) {
-  const { name, email, city, state, order, orderType } = data;
   const limit = 5;
   const offset = Number(limit * (page - 1));
   const ordering = [['name', 'ASC']];
   const where = {};
 
-  if (name) where.name = { [Op.substring]: validateString(name) };
-  if (email) where.email = validateEmail(email);
-  if (city) where.city = validateString(city);
-  if (state) where.state = validateUF(state);
-  if (order) order[0][0] = validateString(order);
-  if (orderType) order[0][1] = validateString(orderType);
-
+  if (data) {
+    const { name, email, city, state, order, orderType } = data;
+    if (name) where.name = { [Op.substring]: validateString(name) };
+    if (email) where.email = validateEmail(email);
+    if (city) where.city = validateString(city);
+    if (state) where.state = validateUF(state);
+    if (order) order[0][0] = validateString(order);
+    if (orderType) order[0][1] = validateString(orderType);
+  }
   const total = await Realtor.count({ where });
   const lastPage = Math.ceil(total / limit);
 
@@ -358,7 +359,7 @@ async function filter(data, page = 1) {
     total,
   };
 
-  const result = await Realtor.findAll({ where, order: ordering, offset, limit, raw: true });
+  const result = await Realtor.findAll({ where, order: ordering, offset, limit, raw: true, exclude: ['password'] });
   if (result.length === 0) {
     throw new NoRealtorsFound();
   }
