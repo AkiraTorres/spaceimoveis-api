@@ -4,6 +4,13 @@ import ClientNotFound from '../errors/clientErrors/clientNotFound.js';
 import NoClientsFound from '../errors/clientErrors/noClientsFound.js';
 import { validateEmail, validateString, validatePassword, validatePhone, validateIfUniqueEmail } from '../validators/inputValidators.js';
 
+async function isClient(user) {
+  const client = await Client.findByPk(user.email);
+
+  if (!client) return false;
+  return true;
+}
+
 async function findAll(page) {
   try {
     if (page < 1) {
@@ -142,4 +149,4 @@ async function destroy(email) {
   }
 }
 
-export { findAll, findByPk, create, update, destroy };
+export { isClient, findAll, findByPk, create, update, destroy };

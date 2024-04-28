@@ -12,6 +12,8 @@ import propertyRoutes from './routes/propertyRoutes.js';
 import favoriteRoutes from './routes/favoriteRoutes.js';
 import ratingRoutes from './routes/ratingRoutes.js';
 import * as globalController from './controllers/globalController.js';
+import verifyJwt from './middlewares/verifyJwt.js';
+import { verifyGoogleToken } from './middlewares/verifyGoogle.cjs';
 
 dotenv.config();
 
@@ -33,7 +35,7 @@ app.use('/rating/', ratingRoutes);
 
 app.get('/find/:email', globalController.find);
 app.get('/find', globalController.findAll);
-app.post('/change/password', globalController.changePassword);
+app.post('/change/password', verifyGoogleToken, verifyJwt, globalController.changePassword);
 
 app.all('*', (req, res) => {
   res.status(404).send('Not Found');

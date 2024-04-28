@@ -78,8 +78,15 @@ export async function changePassword(email, newPassword) {
       throw error;
     }
 
+    let result;
     user.password = validatedPassword;
-    await user.save();
+    if (clientService.isClient(user)) result = await clientService.update(user.email, user);
+    else if (ownerService.isOwner(user)) result = await ownerService.update(user.email, user);
+    else if (realtorService.isRealtor(user)) result = await realtorService.update(user.email, user);
+    else if (realstateService.isRealstate(user)) result = await realstateService.update(user.email, user);
+
+    if (result === 0) throw new Error('Erro ao atualizar a senha');
+
     return user;
   } catch (error) {
     error.status = error.status || 500;
