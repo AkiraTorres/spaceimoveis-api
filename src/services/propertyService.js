@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getStorage, ref, getDownloadURL, uploadBytesResumable } from 'firebase/storage';
+import { getStorage, ref, getDownloadURL, uploadBytesResumable, deleteObject } from 'firebase/storage';
 import { v4 as uuid } from 'uuid';
 import { Op } from 'sequelize';
 
@@ -269,7 +269,12 @@ async function update(id, data, files, sellerEmail) {
     let photos = await Photo.findAll({ where: { property_id: validatedId } });
 
     if (files.length > 0) {
-      await Photo.destroy({ where: { property_id: validatedId } });
+      const oldPhotos = await Photo.findAll({ where: { property_id: validatedId } });
+      await Promise.all(oldPhotos.map(async (photo) => {
+        const storageRef = ref(storage, `images/properties/${validatedId}/${photo.name}`);
+        await deleteObject(storageRef);
+        await Photo.destroy({ where: { property_id: validatedId } });
+      }));
 
       photos = await Promise.all(files.map(async (picture) => {
         const storageRef = ref(storage, `images/properties/${validatedId}/${picture.fieldname}-${picture.originalname}`);
@@ -391,14 +396,14 @@ async function destroy(id) {
 
     if (photos.length > 0) {
       await Promise.all(photos.map(async (photo) => {
-        const storageRef = ref(storage, `images/properties/${validatedId}/${photo.type}-${photo.name}`);
-        await storageRef.delete();
+        const storageRef = ref(storage, `images/properties/${validatedId}/${photo.name}`);
+        await deleteObject(storageRef);
       }));
     }
 
     await Photo.destroy({ where: { property_id: validatedId } });
     await Property.destroy({ where: { id: validatedId } });
-    return { message: 'Usuário apagado com sucesso' };
+    return { message: 'Propriedade apagada com sucesso' };
   } catch (error) {
     const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     console.error(message);
