@@ -284,26 +284,33 @@ async function update(id, data, files, sellerEmail) {
     if (data.sellerEmail && data.sellerType === 'realstate') property.realstate_email = validateEmail(data.sellerEmail);
 
     await Property.update(property, { where: { id: validatedId } });
-    let photos = await Photo.findAll({ where: { property_id: validatedId } });
+
+    const oldPhotos = await Photo.findAll({ where: { property_id: validatedId, url: { [Op.not]: oldPhotosUrls } }, raw: true });
+    await Promise.all(oldPhotos.map(async (photo) => {
+      const storageRef = ref(storage, `images/properties/${validatedId}/${photo.name}`);
+      await deleteObject(storageRef);
+      await Photo.destroy({ where: { id: photo.id } });
+    }));
 
     if (files.length > 0) {
-      const oldPhotos = await Photo.findAll({ where: { property_id: validatedId, url: { [Op.not]: oldPhotosUrls } } });
-      await Promise.all(oldPhotos.map(async (photo) => {
-        const storageRef = ref(storage, `images/properties/${validatedId}/${photo.name}`);
-        await deleteObject(storageRef);
-        await Photo.destroy({ where: { property_id: validatedId } });
-      }));
-
-      photos = await Promise.all(files.map(async (picture) => {
+      await Promise.all(files.map(async (picture) => {
         const storageRef = ref(storage, `images/properties/${validatedId}/${picture.fieldname}-${picture.originalname}`);
         const metadata = { contentType: picture.mimetype };
         const snapshot = await uploadBytesResumable(storageRef, picture.buffer, metadata);
         const downloadURL = await getDownloadURL(snapshot.ref);
-        await Photo.create({ property_id: validatedId, url: downloadURL });
+        await Photo.create({
+          id: uuid(),
+          name: `${picture.fieldname}-${picture.originalname}`,
+          property_id: validatedId,
+          url: downloadURL,
+          type: picture.fieldname,
+        });
 
         return { name: `${picture.fieldname}-${picture.originalname}`, type: picture.mimetype, downloadURL };
       }));
     }
+
+    const photos = await Photo.findAll({ where: { property_id: validatedId }, order: [['type', 'ASC']] });
 
     return { property, photos };
   } catch (error) {
