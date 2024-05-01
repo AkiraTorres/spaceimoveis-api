@@ -46,7 +46,6 @@ router.post('/google', async (req, res) => {
     if (!user) throw error;
 
     const loggedUser = { user, token: googleToken };
-    // console.log(JSON.stringify(loggedUser, null, 2));
     res.json(loggedUser);
   } catch (error) {
     const status = error.status || error.code || 500;
