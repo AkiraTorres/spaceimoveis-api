@@ -3,61 +3,61 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.addColumn('iptu', {
+    await queryInterface.addColumn('properties', 'iptu', {
       type: Sequelize.INTEGER,
       allowNull: true,
       defaultValue: null,
     });
 
-    await queryInterface.addColumn('aditional_fees', {
+    await queryInterface.addColumn('properties', 'aditional_fees', {
       type: Sequelize.INTEGER,
       allowNull: true,
       defaultValue: null,
     });
 
-    await queryInterface.addColumn('negotiable', {
+    await queryInterface.addColumn('properties', 'negotiable', {
       type: Sequelize.BOOLEAN,
       allowNull: false,
       defaultValue: false,
     });
 
-    await queryInterface.addColumn('suites', {
+    await queryInterface.addColumn('properties', 'suites', {
       type: Sequelize.INTEGER,
       allowNull: true,
       defaultValue: null,
     });
 
-    await queryInterface.addColumn('furnished', {
+    await queryInterface.addColumn('properties', 'furnished', {
       type: Sequelize.BOOLEAN,
       allowNull: false,
       defaultValue: false,
     });
 
-    await queryInterface.addColumn('gym', {
+    await queryInterface.addColumn('properties', 'gym', {
       type: Sequelize.BOOLEAN,
       allowNull: false,
       defaultValue: false,
     });
 
-    await queryInterface.addColumn('balcony', {
+    await queryInterface.addColumn('properties', 'balcony', {
       type: Sequelize.BOOLEAN,
       allowNull: false,
       defaultValue: false,
     });
 
-    await queryInterface.addColumn('solar_energy', {
+    await queryInterface.addColumn('properties', 'solar_energy', {
       type: Sequelize.BOOLEAN,
       allowNull: false,
       defaultValue: false,
     });
 
-    await queryInterface.addColumn('concierge', {
+    await queryInterface.addColumn('properties', 'concierge', {
       type: Sequelize.BOOLEAN,
       allowNull: false,
       defaultValue: false,
     });
 
-    await queryInterface.addColumn('yard', {
+    await queryInterface.addColumn('properties', 'yard', {
       type: Sequelize.BOOLEAN,
       allowNull: false,
       defaultValue: false,
@@ -65,15 +65,15 @@ module.exports = {
   },
 
   async down(queryInterface) {
-    await queryInterface.removeColumn('iptu');
-    await queryInterface.removeColumn('aditional_fees');
-    await queryInterface.removeColumn('negotiable');
-    await queryInterface.removeColumn('suites');
-    await queryInterface.removeColumn('furnished');
-    await queryInterface.removeColumn('gym');
-    await queryInterface.removeColumn('balcony');
-    await queryInterface.removeColumn('solar_energy');
-    await queryInterface.removeColumn('concierge');
-    await queryInterface.removeColumn('yard');
+    await queryInterface.removeColumn('properties', 'iptu');
+    await queryInterface.removeColumn('properties', 'aditional_fees');
+    await queryInterface.removeColumn('properties', 'negotiable');
+    await queryInterface.removeColumn('properties', 'suites');
+    await queryInterface.removeColumn('properties', 'furnished');
+    await queryInterface.removeColumn('properties', 'gym');
+    await queryInterface.removeColumn('properties', 'balcony');
+    await queryInterface.removeColumn('properties', 'solar_energy');
+    await queryInterface.removeColumn('properties', 'concierge');
+    await queryInterface.removeColumn('properties', 'yard');
   },
 };
