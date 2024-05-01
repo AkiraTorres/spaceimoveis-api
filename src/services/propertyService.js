@@ -182,6 +182,16 @@ async function create(data, files) {
     if (data.sellerType === 'realstate') propertyData.realstate_email = validateEmail(data.sellerEmail);
     if (data.complement) propertyData.complement = validateString(data.complement);
     if (data.floor) propertyData.floor = validateString(data.floor);
+    if (data.iptu) propertyData.iptu = validatePrice(data.iptu);
+    if (data.aditionalFees) propertyData.aditional_fees = validatePrice(data.aditionalFees);
+    if (data.negotiable) propertyData.negotiable = validateBoolean(data.negotiable);
+    if (data.suites) propertyData.suites = validateInteger(data.suites);
+    if (data.furnished) propertyData.furnished = validateBoolean(data.furnished);
+    if (data.gym) propertyData.gym = validateBoolean(data.gym);
+    if (data.balcony) propertyData.balcony = validateBoolean(data.balcony);
+    if (data.solarEnergy) propertyData.solar_energy = validateBoolean(data.solarEnergy);
+    if (data.concierge) propertyData.concierge = validateBoolean(data.concierge);
+    if (data.yard) propertyData.yard = validateBoolean(data.yard);
 
     const property = propertyData;
     const newProperty = await Property.create(property);
@@ -214,12 +224,9 @@ async function create(data, files) {
 async function update(id, data, files, sellerEmail) {
   try {
     const validatedId = validateString(id);
+    let oldPhotosUrls = [];
 
-    console.log('id', id);
-    console.log('validatedId', validatedId);
-
-    // const oldProperProperty = await Property.findOne({ where: { id: validatedId } }, { raw: true }, { attributes: { excludes: ['createdAt', 'updatedAt'] } });
-    const oldProperProperty = await Property.findByPk(validatedId, { raw: true });
+    const oldProperProperty = await Property.findByPk(validatedId, { raw: true }, { attributes: { excludes: ['password'] } });
     if (!oldProperProperty) {
       throw new PropertyNotFound();
     }
@@ -260,6 +267,17 @@ async function update(id, data, files, sellerEmail) {
     if (data.realtorEmail) property.realtor_email = validateEmail(data.realtorEmail);
     if (data.realstateEmail) property.realstate_email = validateEmail(data.realstateEmail);
     if (data.complement) property.complement = validateString(data.complement);
+    if (data.iptu) property.iptu = validatePrice(data.iptu);
+    if (data.aditionalFees) property.aditional_fees = validatePrice(data.aditionalFees);
+    if (data.negotiable) property.negotiable = validateBoolean(data.negotiable);
+    if (data.suites) property.suites = validateInteger(data.suites);
+    if (data.furnished) property.furnished = validateBoolean(data.furnished);
+    if (data.gym) property.gym = validateBoolean(data.gym);
+    if (data.balcony) property.balcony = validateBoolean(data.balcony);
+    if (data.solarEnergy) property.solar_energy = validateBoolean(data.solarEnergy);
+    if (data.concierge) property.concierge = validateBoolean(data.concierge);
+    if (data.yard) property.yard = validateBoolean(data.yard);
+    if (data.oldPhotos) oldPhotosUrls = data.oldPhotos;
 
     if (data.sellerEmail && data.sellerType === 'owner') property.owner_email = validateEmail(data.sellerEmail);
     if (data.sellerEmail && data.sellerType === 'realtor') property.realtor_email = validateEmail(data.sellerEmail);
@@ -269,7 +287,7 @@ async function update(id, data, files, sellerEmail) {
     let photos = await Photo.findAll({ where: { property_id: validatedId } });
 
     if (files.length > 0) {
-      const oldPhotos = await Photo.findAll({ where: { property_id: validatedId } });
+      const oldPhotos = await Photo.findAll({ where: { property_id: validatedId, url: { [Op.not]: oldPhotosUrls } } });
       await Promise.all(oldPhotos.map(async (photo) => {
         const storageRef = ref(storage, `images/properties/${validatedId}/${photo.name}`);
         await deleteObject(storageRef);
@@ -322,6 +340,14 @@ async function filter(data, page) {
     if (data.playground) where.playground = validateBoolean(data.playground);
     if (data.eventArea) where.event_area = validateBoolean(data.eventArea);
     if (data.financiable) where.financiable = validateBoolean(data.financiable);
+    if (data.negotiable) where.negotiable = validateBoolean(data.negotiable);
+    if (data.suites) where.suites = validateInteger(data.suites);
+    if (data.furnished) where.furnished = validateBoolean(data.furnished);
+    if (data.gym) where.gym = validateBoolean(data.gym);
+    if (data.balcony) where.balcony = validateBoolean(data.balcony);
+    if (data.solarEnergy) where.solar_energy = validateBoolean(data.solarEnergy);
+    if (data.concierge) where.concierge = validateBoolean(data.concierge);
+    if (data.yard) where.yard = validateBoolean(data.yard);
 
     if (data.order) order[0] = validateString(data.order);
     if (data.orderType) order[1] = validateString(data.orderType);
