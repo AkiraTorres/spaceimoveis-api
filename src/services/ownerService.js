@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getStorage, ref, getDownloadURL, uploadBytesResumable, deleteObject } from 'firebase/storage';
+import { deleteObject, getDownloadURL, getStorage, ref, uploadBytesResumable } from 'firebase/storage';
 import { v4 as uuid } from 'uuid';
 
 import Client from '../db/models/Client.js';
@@ -10,8 +10,16 @@ import OwnerNotFound from '../errors/ownerErrors/ownerNotFound.js';
 import NoOwnersFound from '../errors/ownerErrors/noOwnersFound.js';
 import ClientNotFound from '../errors/clientErrors/clientNotFound.js';
 import {
-  validateEmail, validateString, validatePassword, validatePhone, validateCpf, validateCep,
-  validateUF, validateIfUniqueEmail, validateIfUniqueCpf, validateIfUniqueRg,
+  validateCep,
+  validateCpf,
+  validateEmail,
+  validateIfUniqueCpf,
+  validateIfUniqueEmail,
+  validateIfUniqueRg,
+  validatePassword,
+  validatePhone,
+  validateString,
+  validateUF,
 } from '../validators/inputValidators.js';
 
 import firebaseConfig from '../config/firebase.js';
@@ -142,7 +150,7 @@ async function findByRg(rg, password = false) {
 
 async function create(data, photo) {
   try {
-    const userData = {
+    const owner = {
       email: validateEmail(data.email),
       name: validateString(data.name, 'O campo nome é obrigatório'),
       password: validatePassword(data.password),
@@ -158,7 +166,6 @@ async function create(data, photo) {
       bio: data.bio ? validateString(data.bio) : null,
     };
 
-    const owner = userData;
     await validateIfUniqueEmail(owner.email);
     await validateIfUniqueCpf(owner.cpf);
     await validateIfUniqueRg(owner.rg);
@@ -204,18 +211,19 @@ async function update(email, data, photo) {
 
     let updatedOwner = oldOwner;
     if (data) {
+      console.log(data);
       const owner = {
-        email: data.email ? validateEmail(oldOwner.email) : oldOwner.email,
-        name: data.name ? validateString(oldOwner.name, 'O campo nome é obrigatório') : oldOwner.name,
-        phone: data.phone ? validatePhone(oldOwner.phone) : oldOwner.phone,
-        cpf: data.cpf ? validateCpf(oldOwner.cpf) : oldOwner.cpf,
-        rg: data.rg ? validateString(oldOwner.rg, 'O campo RG é obrigatório') : oldOwner.rg,
-        address: data.address ? validateString(oldOwner.address, 'O campo endereço é obrigatório') : oldOwner.address,
-        house_number: data.house_number ? validateString(oldOwner.house_number, 'O campo número é obrigatório') : oldOwner.house_number,
-        cep: data.cep ? validateCep(oldOwner.cep) : oldOwner.cep,
-        district: data.district ? validateString(oldOwner.district, 'O campo bairro é obrigatório') : oldOwner.district,
-        city: data.city ? validateString(oldOwner.city, 'O campo cidade é obrigatório') : oldOwner.city,
-        state: data.state ? validateUF(oldOwner.state) : oldOwner.state,
+        email: data.email ? validateEmail(data.email) : oldOwner.email,
+        name: data.name ? validateString(data.name, 'O campo nome é obrigatório') : oldOwner.name,
+        phone: data.phone ? validatePhone(data.phone) : oldOwner.phone,
+        cpf: data.cpf ? validateCpf(data.cpf) : oldOwner.cpf,
+        rg: data.rg ? validateString(data.rg, 'O campo RG é obrigatório') : oldOwner.rg,
+        address: data.address ? validateString(data.address, 'O campo endereço é obrigatório') : oldOwner.address,
+        house_number: data.house_number ? validateString(data.house_number, 'O campo número é obrigatório') : oldOwner.house_number,
+        cep: data.cep ? validateCep(data.cep) : oldOwner.cep,
+        district: data.district ? validateString(data.district, 'O campo bairro é obrigatório') : oldOwner.district,
+        city: data.city ? validateString(data.city, 'O campo cidade é obrigatório') : oldOwner.city,
+        state: data.state ? validateUF(data.state) : oldOwner.state,
         bio: data.bio ? validateString(data.bio) : oldOwner.bio,
       };
 
@@ -223,7 +231,8 @@ async function update(email, data, photo) {
       if (owner.rg !== oldOwner.rg) await validateIfUniqueRg(owner.rg);
       if (owner.cpf !== oldOwner.cpf) await validateIfUniqueCpf(owner.cpf);
 
-      await Owner.update(owner, { where: { email: validatedEmail } });
+      console.log(owner);
+      await Owner.update(owner, { where: { email: owner.email } });
       updatedOwner = owner;
     }
 
@@ -251,8 +260,9 @@ async function update(email, data, photo) {
 
     return { ...updatedOwner, profile };
   } catch (error) {
-    const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    console.error(message);
+    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
+    error.status = error.status || 500;
+    console.error(error.message);
     throw error;
   }
 }
@@ -306,8 +316,8 @@ async function elevate(email, data, photo) {
 
     return { ...newOwner.dataValues, profile };
   } catch (error) {
-    const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    console.error(message);
+    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
+    error.status = error.status || 500;
     throw error;
   }
 }
@@ -330,8 +340,8 @@ async function destroy(email) {
     await Owner.destroy({ where: { email: validatedEmail } });
     return { message: 'Usuário apagado com sucesso' };
   } catch (error) {
-    const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    console.error(message);
+    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
+    error.status = error.status || 500;
     throw error;
   }
 }
