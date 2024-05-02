@@ -1,6 +1,7 @@
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 
+import { where } from 'sequelize';
 import Client from '../db/models/Client.js';
 import Owner from '../db/models/Owner.js';
 import Realtor from '../db/models/Realtor.js';
@@ -61,9 +62,7 @@ export async function find(email, pass = false) {
     } catch (error) { /* empty */ }
   }
 
-  const error = new Error('Email não encontrado');
-  error.status = 404;
-  throw error;
+  return null;
 }
 
 export async function changePassword(email, newPassword) {
@@ -99,10 +98,30 @@ export async function changePassword(email, newPassword) {
 }
 
 export async function rescuePassword(email) {
-  const validatedEmail = validateEmail(email);
+  const receiverEmail = validateEmail(email);
+
+  const user = await find(receiverEmail);
+  if (!user) return { message: 'Email enviado.' };
+
+  const otp = Math.floor(1000 + Math.random() * 9000);
+  const otpTTL = new Date();
+  otpTTL.setMinutes(otpTTL.getMinutes() + 6);
+
+  user.otp = otp.toString();
+  user.otp_ttl = otpTTL;
+
+  if (user.type === 'client') {
+    Client.update(user, { where: { email: receiverEmail } });
+  } else if (user.type === 'owner') {
+    Owner.update(user, { where: { email: receiverEmail } });
+  } else if (user.type === 'realtor') {
+    Realtor.update(user, { where: { email: receiverEmail } });
+  } else if (user.type === 'realstate') {
+    Realstate.update(user, { where: { email: receiverEmail } });
+  }
 
   const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    service: process.env.EMAIL_SERVICE,
     auth: {
       user: process.env.EMAIL_ADDRESS,
       pass: process.env.EMAIL_PASSWORD,
@@ -111,13 +130,30 @@ export async function rescuePassword(email) {
 
   const mailOptions = {
     from: process.env.EMAIL_ADDRESS,
-    to: validatedEmail,
-    subject: 'Redefina sua senha!',
-    text: 'Funcionalidade ainda em fase de implementação',
+    to: receiverEmail,
+    subject: 'Redefinição de Senha',
+    text: `Seu código para redefinição de senha é ${otp} e ele irá se espirar em 6 minutos`,
   };
 
-  transporter.sendMail(mailOptions, (err, info) => {
-    if (err) console.log(err);
-    else console.log(info);
-  });
+  transporter.sendMail(mailOptions);
+  return { message: 'Email Enviado.' };
+}
+
+export async function resetPassword(email, password, otp) {
+  const validatedEmail = validateEmail(email);
+  const user = (await find(validatedEmail, true));
+
+  if (!user) {
+    const error = new Error('Usuário não encontrado');
+    error.status = 404;
+    throw error;
+  }
+
+  if (!(user.otp === otp && user.otp_ttl > new Date())) {
+    const error = new Error('Código inválido ou expirado');
+    error.status = 400;
+    throw error;
+  }
+
+  return changePassword(email, password);
 }

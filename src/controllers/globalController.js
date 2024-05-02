@@ -49,3 +49,15 @@ export async function rescuePassword(req, res) {
     return res.status(status).json({ message: error.message });
   }
 }
+
+export async function resetPassword(req, res) {
+  try {
+    const { email, password, otp } = req.body;
+
+    const result = await globalService.resetPassword(email, password, otp);
+    return res.json(result);
+  } catch (error) {
+    const status = error.status || 500;
+    return res.status(status).json({ message: error.message });
+  }
+}

@@ -36,7 +36,9 @@ app.use('/rating/', ratingRoutes);
 app.get('/find/:email', globalController.find);
 app.get('/find', globalController.findAll);
 app.post('/change/password', verifyGoogleToken, verifyJwt, globalController.changePassword);
+
 app.post('/rescue/password', globalController.rescuePassword);
+app.post('/reset/password', globalController.resetPassword);
 
 app.all('*', (req, res) => {
   res.status(404).send('Not Found');

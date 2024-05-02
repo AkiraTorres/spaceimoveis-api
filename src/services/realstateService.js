@@ -76,7 +76,7 @@ async function findAll(page) {
 async function findByPk(email, password = false) {
   try {
     const validatedEmail = validateEmail(email);
-    const attributes = ['email', 'company_name', 'phone', 'cnpj', 'creci', 'cep', 'address', 'district', 'house_number', 'city', 'state', 'type', 'social_one', 'social_two', 'bio'];
+    const attributes = ['email', 'company_name', 'phone', 'cnpj', 'creci', 'cep', 'address', 'district', 'house_number', 'city', 'state', 'type', 'social_one', 'social_two', 'bio', 'otp', 'otp_ttl'];
     if (password) attributes.push('password');
 
     const realstate = await Realstate.findByPk(validatedEmail, {

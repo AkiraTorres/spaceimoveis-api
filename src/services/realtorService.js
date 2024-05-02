@@ -91,7 +91,7 @@ async function findAll(page) {
 async function findByPk(email, password = false) {
   try {
     const validatedEmail = validateEmail(email);
-    const attributes = ['email', 'name', 'phone', 'cpf', 'rg', 'creci', 'cep', 'address', 'district', 'house_number', 'city', 'state', 'type', 'bio'];
+    const attributes = ['email', 'name', 'phone', 'cpf', 'rg', 'creci', 'cep', 'address', 'district', 'house_number', 'city', 'state', 'type', 'bio', 'otp', 'otp_ttl'];
     if (password) attributes.push('password');
 
     const realtor = await Realtor.findByPk(validatedEmail, {

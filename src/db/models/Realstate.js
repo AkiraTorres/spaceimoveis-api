@@ -68,6 +68,14 @@ const Realstate = sequelize.define('realstates', {
     allowNull: true,
     defaultValue: true,
   },
+  otp: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  otp_ttl: {
+    type: DataTypes.DATE,
+    allowNull: true,
+  },
 });
 
 export default Realstate;
