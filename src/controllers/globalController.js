@@ -37,3 +37,15 @@ export async function changePassword(req, res) {
     return res.status(status).json({ message: error.message });
   }
 }
+
+export async function rescuePassword(req, res) {
+  try {
+    const { email } = req.body;
+
+    const result = await globalService.rescuePassword(email);
+    return res.json(result);
+  } catch (error) {
+    const status = error.status || 500;
+    return res.status(status).json({ message: error.message });
+  }
+}

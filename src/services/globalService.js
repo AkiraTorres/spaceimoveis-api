@@ -1,3 +1,6 @@
+import nodemailer from 'nodemailer';
+import dotenv from 'dotenv';
+
 import Client from '../db/models/Client.js';
 import Owner from '../db/models/Owner.js';
 import Realtor from '../db/models/Realtor.js';
@@ -10,7 +13,8 @@ import * as realstateService from './realstateService.js';
 
 import { validateEmail, validatePassword } from '../validators/inputValidators.js';
 
-// eslint-disable-next-line import/prefer-default-export
+dotenv.config();
+
 export async function findAll() {
   try {
     const clients = await clientService.findAll(0);
@@ -92,4 +96,28 @@ export async function changePassword(email, newPassword) {
     error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     throw error;
   }
+}
+
+export async function rescuePassword(email) {
+  const validatedEmail = validateEmail(email);
+
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_ADDRESS,
+      pass: process.env.EMAIL_PASSWORD,
+    },
+  });
+
+  const mailOptions = {
+    from: process.env.EMAIL_ADDRESS,
+    to: validatedEmail,
+    subject: 'Redefina sua senha!',
+    text: 'Funcionalidade ainda em fase de implementação',
+  };
+
+  transporter.sendMail(mailOptions, (err, info) => {
+    if (err) console.log(err);
+    else console.log(info);
+  });
 }
