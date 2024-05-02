@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getStorage, ref, getDownloadURL, uploadBytesResumable, deleteObject } from 'firebase/storage';
+import { deleteObject, getDownloadURL, getStorage, ref, uploadBytesResumable } from 'firebase/storage';
 import { v4 as uuid } from 'uuid';
 import { Op } from 'sequelize';
 
@@ -12,9 +12,18 @@ import RealtorNotFound from '../errors/realtorErrors/realtorNotFound.js';
 import NoRealtorsFound from '../errors/realtorErrors/noRealtorsFound.js';
 import ClientNotFound from '../errors/clientErrors/clientNotFound.js';
 import {
-  validateEmail, validateString, validatePassword, validatePhone, validateCpf, validateUF,
-  validateCep, validateCreci, validateIfUniqueEmail, validateIfUniqueCpf, validateIfUniqueRg,
+  validateCep,
+  validateCpf,
+  validateCreci,
+  validateEmail,
+  validateIfUniqueCpf,
   validateIfUniqueCreci,
+  validateIfUniqueEmail,
+  validateIfUniqueRg,
+  validatePassword,
+  validatePhone,
+  validateString,
+  validateUF,
 } from '../validators/inputValidators.js';
 
 import firebaseConfig from '../config/firebase.js';
@@ -82,7 +91,7 @@ async function findAll(page) {
 async function findByPk(email, password = false) {
   try {
     const validatedEmail = validateEmail(email);
-    const attributes = ['email', 'name', 'phone', 'cpf', 'rg', 'creci', 'cep', 'address', 'district', 'house_number', 'city', 'state', 'type', 'bio'];
+    const attributes = ['email', 'name', 'phone', 'cpf', 'rg', 'creci', 'cep', 'address', 'district', 'house_number', 'city', 'state', 'type', 'bio', 'otp', 'otp_ttl'];
     if (password) attributes.push('password');
 
     const realtor = await Realtor.findByPk(validatedEmail, {
@@ -110,9 +119,10 @@ async function findByCpf(cpf, password = false) {
     const attributes = ['email', 'name', 'phone', 'cpf', 'rg', 'creci', 'cep', 'address', 'district', 'house_number', 'city', 'state', 'type', 'bio'];
     if (password) attributes.push('password');
 
-    const realtor = await Realtor.findOne({ where: { cpf: validatedCpf } }, {
+    const realtor = await Realtor.findOne(
+      { where: { cpf: validatedCpf } },
       attributes,
-    });
+    );
 
     if (!realtor) {
       throw new RealtorNotFound();
@@ -156,7 +166,7 @@ async function findByRg(rg, password = false) {
 
 async function create(data, photo) {
   try {
-    const userData = {
+    const realtor = {
       email: validateEmail(data.email),
       name: validateString(data.name, 'O campo nome é obrigatório'),
       password: validatePassword(data.password),
@@ -172,8 +182,6 @@ async function create(data, photo) {
       state: validateUF(data.state),
       bio: data.bio ? validateString(data.bio) : null,
     };
-
-    const realtor = userData;
     await validateIfUniqueEmail(realtor.email);
     await validateIfUniqueCpf(realtor.cpf);
     await validateIfUniqueRg(realtor.rg);

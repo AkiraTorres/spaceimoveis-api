@@ -23,6 +23,14 @@ const Client = sequelize.define('clients', {
     allowNull: false,
     defaultValue: 'client',
   },
+  otp: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  otp_ttl: {
+    type: DataTypes.DATE,
+    allowNull: true,
+  },
 });
 
 export default Client;
