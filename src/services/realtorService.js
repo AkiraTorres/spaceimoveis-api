@@ -313,8 +313,8 @@ async function elevate(email, data, photo) {
     await validateIfUniqueCpf(realtor.cpf);
     await validateIfUniqueCreci(realtor.creci);
 
-    await Client.destroy({ where: { email: validatedEmail } });
     const newRealtor = await Realtor.create(realtor);
+    await Client.destroy({ where: { email: validatedEmail } });
 
     let profile = null;
     if (photo) {

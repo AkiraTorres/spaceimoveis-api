@@ -294,8 +294,8 @@ async function elevate(email, data, photo) {
     await validateIfUniqueCnpj(realstate.cnpj);
     await validateIfUniqueCreci(realstate.creci);
 
-    await Client.destroy({ where: { email: validatedEmail } });
     const newRealstate = await Realstate.create(realstate);
+    await Client.destroy({ where: { email: validatedEmail } });
 
     let profile = null;
     if (photo) {
