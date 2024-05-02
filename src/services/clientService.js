@@ -13,7 +13,7 @@ async function findAll(page) {
       });
     }
 
-    const limit = 5;
+    const limit = 6;
     const countTotal = await Client.count();
 
     if (countTotal === 0) {

@@ -22,7 +22,7 @@ async function findAll(page) {
       });
     }
 
-    const limit = 5;
+    const limit = 6;
     const countTotal = await Property.count();
 
     const lastPage = Math.ceil(countTotal / limit);
@@ -321,7 +321,7 @@ async function update(id, data, files, sellerEmail) {
 }
 
 async function filter(data, page) {
-  const limit = 5;
+  const limit = 6;
   const offset = Number(limit * (page - 1));
   const where = {};
   const order = [['updatedAt', 'DESC']];

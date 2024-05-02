@@ -30,7 +30,7 @@ async function findAll(page) {
       });
     }
 
-    const limit = 5;
+    const limit = 6;
     const countTotal = await Realstate.count();
 
     if (countTotal === 0) {
@@ -322,7 +322,7 @@ async function elevate(email, data, photo) {
 }
 
 async function filter(data, page = 1) {
-  const limit = 5;
+  const limit = 6;
   const offset = Number(limit * (page - 1));
   const ordering = [['company_name', 'ASC']];
   const where = {};

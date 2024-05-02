@@ -21,7 +21,7 @@ async function getAllRatesByReceiver(receiverEmail, page = 1) {
     throw error;
   }
 
-  const limit = 5;
+  const limit = 6;
   const where = { receiver_email: validatedReceiverEmail };
 
   const total = receiver.type === 'realtor' ? await RealtorRating.count({ where }) : await RealstateRating.count({ where });
@@ -70,7 +70,7 @@ async function getAllRatesBySender(senderEmail, page = 1) {
     throw error;
   }
 
-  const limit = 5;
+  const limit = 6;
   const where = { sender_email: validatedSenderEmail };
 
   const total = await RealtorRating.count({ where }) + await RealstateRating.count({ where });
@@ -183,7 +183,7 @@ async function setRate(senderEmail, receiverEmail, rating, comment) {
 }
 
 async function filter(data, page = 1) {
-  const limit = 5;
+  const limit = 6;
   const offset = Number(limit * (page - 1));
   const ordering = [['createdAt', 'DESC']];
 

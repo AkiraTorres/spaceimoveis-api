@@ -28,7 +28,7 @@ async function findAll(page) {
       });
     }
 
-    const limit = 5;
+    const limit = 6;
     const countTotal = await Owner.count();
 
     if (countTotal === 0) {
