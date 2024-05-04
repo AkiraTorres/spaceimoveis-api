@@ -1,6 +1,6 @@
 import { DataTypes, sequelize } from '../Conn.js';
 
-const Client = sequelize.define('photos', {
+const Photo = sequelize.define('photos', {
   id: {
     type: DataTypes.UUID,
     primaryKey: true,
@@ -31,4 +31,4 @@ const Client = sequelize.define('photos', {
   },
 });
 
-export default Client;
+export default Photo;

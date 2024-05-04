@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getStorage, ref, getDownloadURL, uploadBytesResumable, deleteObject } from 'firebase/storage';
+import { deleteObject, getDownloadURL, getStorage, ref, uploadBytesResumable } from 'firebase/storage';
 import { v4 as uuid } from 'uuid';
 import { Op } from 'sequelize';
 
@@ -7,7 +7,14 @@ import Property from '../db/models/Property.js';
 import Photo from '../db/models/Photo.js';
 import { find } from './globalService.js';
 import PropertyNotFound from '../errors/propertyErrors/properyNotFound.js';
-import { validateString, validateInteger, validateBoolean, validatePhone, validatePrice, validateEmail } from '../validators/inputValidators.js';
+import {
+  validateBoolean,
+  validateEmail,
+  validateInteger,
+  validatePhone,
+  validatePrice,
+  validateString,
+} from '../validators/inputValidators.js';
 
 import firebaseConfig from '../config/firebase.js';
 
@@ -58,8 +65,8 @@ async function findAll(page) {
 
     return { properties, pagination };
   } catch (error) {
-    const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    console.error(message);
+    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
+    error.status = error.status || 500;
     throw error;
   }
 }
@@ -82,8 +89,8 @@ async function findByPk(id) {
 
     return { property, pictures };
   } catch (error) {
-    const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    console.error(message);
+    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
+    error.status = error.status || 500;
     throw error;
   }
 }
@@ -105,7 +112,7 @@ async function findBySellerEmail(email) {
       },
     });
 
-    const properties = await Promise.all(props.map(async (property) => {
+    return await Promise.all(props.map(async (property) => {
       const editedProperty = property.dataValues;
       if (property.owner_email) editedProperty.email = editedProperty.owner_email;
       if (property.realtor_email) editedProperty.email = editedProperty.realtor_email;
@@ -115,8 +122,6 @@ async function findBySellerEmail(email) {
 
       return { ...editedProperty, pictures };
     }));
-
-    return properties;
   } catch (error) {
     error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     throw error;
@@ -193,11 +198,10 @@ async function create(data, files) {
     if (data.concierge) propertyData.concierge = validateBoolean(data.concierge);
     if (data.yard) propertyData.yard = validateBoolean(data.yard);
 
-    const property = propertyData;
-    const newProperty = await Property.create(property);
+    const newProperty = await Property.create(propertyData);
 
     const photos = await Promise.all(files.map(async (picture) => {
-      const storageRef = ref(storage, `images/properties/${newProperty.id}/${picture.fieldname}-${picture.originalname}`);
+      const storageRef = ref(storage, `images/properties/${newProperty.id}/${picture.originalname}`);
       const metadata = { contentType: picture.mimetype };
       const snapshot = await uploadBytesResumable(storageRef, picture.buffer, metadata);
       const downloadURL = await getDownloadURL(snapshot.ref);
@@ -206,17 +210,17 @@ async function create(data, files) {
         id: uuid(),
         property_id: newProperty.id,
         url: downloadURL,
-        name: `${picture.fieldname}-${picture.originalname}`,
+        name: `${picture.originalname}`,
         type: picture.fieldname,
       });
 
-      return { name: `${picture.fieldname}-${picture.originalname}`, type: picture.mimetype, downloadURL };
+      return { name: `${picture.originalname}`, type: picture.mimetype, downloadURL };
     }));
 
     return { newProperty, photos };
   } catch (error) {
-    const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    console.error(message);
+    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
+    error.status = error.status || 500;
     throw error;
   }
 }
@@ -224,6 +228,7 @@ async function create(data, files) {
 async function update(id, data, files, sellerEmail) {
   try {
     const validatedId = validateString(id);
+    let newCoverUrl;
     let oldPhotosUrls = [];
 
     const oldProperProperty = await Property.findByPk(validatedId, { raw: true }, { attributes: { excludes: ['password'] } });
@@ -283,30 +288,66 @@ async function update(id, data, files, sellerEmail) {
     if (data.sellerEmail && data.sellerType === 'realtor') property.realtor_email = validateEmail(data.sellerEmail);
     if (data.sellerEmail && data.sellerType === 'realstate') property.realstate_email = validateEmail(data.sellerEmail);
 
+    if (data.newCover) newCoverUrl = data.newCover;
+
     await Property.update(property, { where: { id: validatedId } });
 
     const oldPhotos = await Photo.findAll({ where: { property_id: validatedId, url: { [Op.not]: oldPhotosUrls } }, raw: true });
+
+    // delete photos that the user didn't want to keep
     await Promise.all(oldPhotos.map(async (photo) => {
-      const storageRef = ref(storage, `images/properties/${validatedId}/${photo.name}`);
-      await deleteObject(storageRef);
+      try {
+        const storageRef = ref(storage, `images/properties/${validatedId}/${photo.name}`);
+        await deleteObject(storageRef);
+      } catch (error) { /* do nothing */ }
       await Photo.destroy({ where: { id: photo.id } });
     }));
 
+    if (newCoverUrl) {
+      const oldCover = await Photo.findOne({ where: { property_id: validatedId, type: 'cover' }, raw: true });
+      const newCover = await Photo.findOne({ where: { property_id: validatedId, url: newCoverUrl }, raw: true });
+      if (oldCover && !(oldCover.url === newCover.url)) {
+        oldCover.type = 'photo';
+        await Photo.update(oldCover, { where: { id: oldCover.id } });
+
+        newCover.type = 'cover';
+        await Photo.update(newCover, { where: { id: newCover.id } });
+      } else if (!oldCover || oldCover === undefined) {
+        newCover.type = 'cover';
+        await Photo.update(newCover, { where: { id: newCover.id } });
+      }
+    }
+
+    // add new photos send by user
     if (files.length > 0) {
       await Promise.all(files.map(async (picture) => {
-        const storageRef = ref(storage, `images/properties/${validatedId}/${picture.fieldname}-${picture.originalname}`);
+        // change cover photo if send by user
+        const storageRef = ref(storage, `images/properties/${validatedId}/${picture.originalname}`);
         const metadata = { contentType: picture.mimetype };
         const snapshot = await uploadBytesResumable(storageRef, picture.buffer, metadata);
         const downloadURL = await getDownloadURL(snapshot.ref);
-        await Photo.create({
-          id: uuid(),
-          name: `${picture.fieldname}-${picture.originalname}`,
-          property_id: validatedId,
-          url: downloadURL,
-          type: picture.fieldname,
-        });
 
-        return { name: `${picture.fieldname}-${picture.originalname}`, type: picture.mimetype, downloadURL };
+        const exists = await Photo.findOne({ where: { property_id: validatedId, url: downloadURL }, raw: true });
+        if (!exists) {
+          if (picture.fieldname === 'cover') {
+            const oldCover = await Photo.findOne({ where: { property_id: validatedId, type: 'cover' }, raw: true });
+            if (oldCover) {
+              oldCover.type = 'photo';
+              await Photo.update(oldCover, { where: { id: oldCover.id } });
+            }
+          }
+
+          await Photo.create({
+            id: uuid(),
+            name: `${picture.originalname}`,
+            property_id: validatedId,
+            url: downloadURL,
+            type: picture.fieldname,
+          });
+          return { name: `${picture.originalname}`, type: picture.mimetype, downloadURL };
+        }
+
+        return null;
       }));
     }
 
@@ -314,8 +355,8 @@ async function update(id, data, files, sellerEmail) {
 
     return { property, photos };
   } catch (error) {
-    const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    console.error(message);
+    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
+    error.status = error.status || 500;
     throw error;
   }
 }
@@ -438,8 +479,8 @@ async function destroy(id) {
     await Property.destroy({ where: { id: validatedId } });
     return { message: 'Propriedade apagada com sucesso' };
   } catch (error) {
-    const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    console.error(message);
+    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
+    error.status = error.status || 500;
     throw error;
   }
 }
