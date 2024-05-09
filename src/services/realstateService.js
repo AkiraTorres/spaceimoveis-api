@@ -16,6 +16,7 @@ import {
 } from '../validators/inputValidators.js';
 
 import firebaseConfig from '../config/firebase.js';
+import Property from '../db/models/Property.js';
 
 const app = initializeApp(firebaseConfig);
 const storage = getStorage(app);
@@ -52,8 +53,12 @@ async function findAll(page) {
     }
 
     const result = await Promise.all(realstates.map(async (realstate) => {
-      const profile = await RealstatePhoto.findOne({ where: { email: realstate.email } });
-      return { ...realstate.dataValues, profile };
+      const editedRealstate = realstate;
+
+      editedRealstate.profile = await RealstatePhoto.findOne({ where: { email: realstate.email } });
+      editedRealstate.totalProperties = await Property.count({ where: { realstate_email: realstate.email } });
+
+      return editedRealstate;
     }));
 
     const pagination = {
@@ -88,6 +93,8 @@ async function findByPk(email, password = false, otp = false) {
       throw new RealstateNotFound();
     }
 
+    realstate.totalProperties = await Property.count({ where: { realstate_email: realstate.email } });
+
     const profile = await RealstatePhoto.findOne({ where: { email: realstate.email } });
     return { ...realstate.dataValues, profile };
   } catch (error) {
@@ -112,6 +119,8 @@ async function findByCnpj(cnpj, password = false, otp = false) {
       throw new RealstateNotFound();
     }
 
+    realstate.totalProperties = await Property.count({ where: { realstate_email: realstate.email } });
+
     const profile = await RealstatePhoto.findOne({ where: { email: realstate.email } });
     return { ...realstate.dataValues, profile };
   } catch (error) {
@@ -135,6 +144,8 @@ async function findByCreci(creci, password = false, otp = false) {
     if (!realstate) {
       throw new RealstateNotFound();
     }
+
+    realstate.totalProperties = await Property.count({ where: { realstate_email: realstate.email } });
 
     const profile = await RealstatePhoto.findOne({ where: { email: realstate.email } });
     return { ...realstate.dataValues, profile };
@@ -356,9 +367,12 @@ async function filter(data, page = 1) {
   }
 
   const result = await Promise.all(realstates.map(async (realstate) => {
-    const profile = await RealstatePhoto.findOne({ where: { email: realstate.email } });
+    const filteredRealstate = realstate;
 
-    return { ...realstate, profile };
+    filteredRealstate.profile = await RealstatePhoto.findOne({ where: { email: realstate.email } });
+    filteredRealstate.totalProperties = await Property.count({ where: { email: realstate.email } });
+
+    return filteredRealstate;
   }));
 
   return { result, pagination };

@@ -103,6 +103,8 @@ async function findByPk(email, password = false, otp = false) {
       throw new RealtorNotFound();
     }
 
+    realtor.totalProperties = await Property.count({ where: { email: realtor.email } });
+
     const properties = await Property.findAll({ where: { realtor_email: realtor.email } });
     const profile = await RealtorPhoto.findOne({ where: { email: realtor.email } });
 
@@ -130,6 +132,8 @@ async function findByCpf(cpf, password = false, otp = false) {
       throw new RealtorNotFound();
     }
 
+    realtor.totalProperties = await Property.count({ where: { email: realtor.email } });
+
     const properties = await Property.findAll({ where: { realtor_email: realtor.email } });
     const profile = await RealtorPhoto.findOne({ where: { email: realtor.email } });
 
@@ -155,6 +159,8 @@ async function findByRg(rg, password = false, otp = false) {
     if (!realtor) {
       throw new RealtorNotFound();
     }
+
+    realtor.totalProperties = await Property.count({ where: { email: realtor.email } });
 
     const properties = await Property.findAll({ where: { realtor_email: realtor.email } });
     const profile = await RealtorPhoto.findOne({ where: { email: realtor.email } });
@@ -384,9 +390,12 @@ async function filter(data, page = 1) {
   }
 
   const result = await Promise.all(realtors.map(async (realtor) => {
-    const profile = await RealtorPhoto.findOne({ where: { email: realtor.email } });
+    const filteredRealtor = realtor;
 
-    return { ...realtor, profile };
+    filteredRealtor.profile = await RealtorPhoto.findOne({ where: { email: realtor.email } });
+    filteredRealtor.totalProperties = await Property.count({ where: { email: realtor.email } });
+
+    return filteredRealtor;
   }));
 
   return { result, pagination };
