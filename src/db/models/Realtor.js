@@ -64,6 +64,14 @@ const Realtor = sequelize.define('realtors', {
     allowNull: true,
     defaultValue: true,
   },
+  social_one: {
+    type: DataTypes.STRING(512),
+    allowNull: true,
+  },
+  social_two: {
+    type: DataTypes.STRING(512),
+    allowNull: true,
+  },
   otp: {
     type: DataTypes.STRING,
     allowNull: true,

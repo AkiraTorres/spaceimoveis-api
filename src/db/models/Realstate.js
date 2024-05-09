@@ -56,11 +56,11 @@ const Realstate = sequelize.define('realstates', {
     defaultValue: 'realstate',
   },
   social_one: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING(512),
     allowNull: true,
   },
   social_two: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING(512),
     allowNull: true,
   },
   bio: {
