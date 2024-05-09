@@ -1,5 +1,5 @@
 services:
-    db-spaceimoveis:
+    postgres:
         container_name: 'db-spaceimoveis'
         image: postgres
         volumes:
@@ -10,7 +10,8 @@ services:
             POSTGRES_USER: ${DB_USER}
             POSTGRES_PASSWORD: ${DB_PASS}
             POSTGRES_DB: ${DB_NAME}
-    pgadmin-spaceimoveis:
+
+    pgadmin:
         container_name: pgadmin4_container-spaceimoveis
         image: dpage/pgadmin4
         restart: always
@@ -19,6 +20,17 @@ services:
             PGADMIN_DEFAULT_PASSWORD: ${DB_PASS}
         ports:
             - "5050:80"
+
+    node:
+        container_name: node
+        build: ./
+        restart: always
+        ports:
+            -   "3000:3000"
+        depends_on:
+            -   postgres
+        env_file:
+            -   ./.env
 
 volumes:
   storage_db:
