@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getStorage, ref, getDownloadURL, uploadBytesResumable, deleteObject } from 'firebase/storage';
+import { deleteObject, getDownloadURL, getStorage, ref, uploadBytesResumable } from 'firebase/storage';
 import { v4 as uuid } from 'uuid';
 import { Op } from 'sequelize';
 
@@ -169,9 +169,7 @@ async function create(data, photo) {
     await validateIfUniqueCnpj(userData.cnpj);
     await validateIfUniqueCreci(userData.creci);
 
-    const realstate = userData;
-
-    const newRealstate = await Realstate.create(realstate);
+    const newRealstate = await Realstate.create(userData);
     let profile = null;
 
     if (photo) {
