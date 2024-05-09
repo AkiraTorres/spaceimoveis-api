@@ -37,6 +37,11 @@ const Property = sequelize.define('properties', {
     type: DataTypes.STRING,
     allowNull: false,
   },
+  is_highlighted: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false,
+  },
   property_type: {
     type: DataTypes.STRING,
     allowNull: false,
