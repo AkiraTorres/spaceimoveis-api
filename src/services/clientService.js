@@ -8,7 +8,7 @@ async function findAll(page) {
   try {
     if (page < 1) {
       return await Client.findAll({
-        attributes: ['email', 'name', 'phone', 'type'],
+        attributes: { exclude: ['otp', 'otp_ttl', 'password'] },
         order: [['name', 'ASC']],
       });
     }
@@ -24,7 +24,7 @@ async function findAll(page) {
     const offset = Number(limit * (page - 1));
 
     const clients = await Client.findAll({
-      attributes: ['email', 'name', 'phone', 'type'],
+      attributes: { exclude: ['otp', 'otp_ttl', 'password'] },
       order: [['name', 'ASC']],
       offset,
       limit,
@@ -51,11 +51,12 @@ async function findAll(page) {
   }
 }
 
-async function findByPk(email, password) {
+async function findByPk(email, password = false, otp = false) {
   try {
     const validatedEmail = validateEmail(email);
-    const attributes = ['email', 'name', 'phone', 'type', 'otp', 'otp_ttl'];
-    if (password) attributes.push('password');
+    const attributes = { exclude: [] };
+    if (!otp) attributes.exclude.push('otp', 'otp_ttl');
+    if (!password) attributes.exclude.push('password');
 
     const client = await Client.findByPk(validatedEmail, {
       attributes,

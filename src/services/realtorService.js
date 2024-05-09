@@ -33,7 +33,7 @@ const storage = getStorage(app);
 
 async function findAll(page) {
   try {
-    const attributes = ['email', 'name', 'phone', 'cpf', 'rg', 'creci', 'cep', 'address', 'district', 'house_number', 'city', 'state', 'type', 'bio'];
+    const attributes = { exclude: ['otp', 'otp_ttl', 'password'] };
     if (page < 1) {
       return await Realtor.findAll({
         attributes,
@@ -88,11 +88,12 @@ async function findAll(page) {
   }
 }
 
-async function findByPk(email, password = false) {
+async function findByPk(email, password = false, otp = false) {
   try {
     const validatedEmail = validateEmail(email);
-    const attributes = ['email', 'name', 'phone', 'cpf', 'rg', 'creci', 'cep', 'address', 'district', 'house_number', 'city', 'state', 'type', 'bio', 'otp', 'otp_ttl'];
-    if (password) attributes.push('password');
+    const attributes = { exclude: [] };
+    if (!otp) attributes.exclude.push('otp', 'otp_ttl');
+    if (!password) attributes.exclude.push('password');
 
     const realtor = await Realtor.findByPk(validatedEmail, {
       attributes,
@@ -113,11 +114,12 @@ async function findByPk(email, password = false) {
   }
 }
 
-async function findByCpf(cpf, password = false) {
+async function findByCpf(cpf, password = false, otp = false) {
   try {
     const validatedCpf = validateCpf(cpf);
-    const attributes = ['email', 'name', 'phone', 'cpf', 'rg', 'creci', 'cep', 'address', 'district', 'house_number', 'city', 'state', 'type', 'bio'];
-    if (password) attributes.push('password');
+    const attributes = { exclude: [] };
+    if (!otp) attributes.exclude.push('otp', 'otp_ttl');
+    if (!password) attributes.exclude.push('password');
 
     const realtor = await Realtor.findOne(
       { where: { cpf: validatedCpf } },
@@ -139,11 +141,12 @@ async function findByCpf(cpf, password = false) {
   }
 }
 
-async function findByRg(rg, password = false) {
+async function findByRg(rg, password = false, otp = false) {
   try {
     const validatedRg = validateString(rg);
-    const attributes = ['email', 'name', 'phone', 'cpf', 'rg', 'creci', 'cep', 'address', 'district', 'house_number', 'city', 'state', 'type', 'bio'];
-    if (password) attributes.push('password');
+    const attributes = { exclude: [] };
+    if (!otp) attributes.exclude.push('otp', 'otp_ttl');
+    if (!password) attributes.exclude.push('password');
 
     const realtor = await Realtor.findOne({ where: { rg: validatedRg } }, {
       attributes,
@@ -166,6 +169,7 @@ async function findByRg(rg, password = false) {
 
 async function create(data, photo) {
   try {
+    console.log(data);
     const realtor = {
       email: validateEmail(data.email),
       name: validateString(data.name, 'O campo nome é obrigatório'),
@@ -181,7 +185,10 @@ async function create(data, photo) {
       city: validateString(data.city, 'O campo cidade é obrigatório'),
       state: validateUF(data.state),
       bio: data.bio ? validateString(data.bio) : null,
+      social_one: data.socialOne ? validateString(data.socialOne) : null,
+      social_two: data.socialTwo ? validateString(data.socialTwo) : null,
     };
+
     await validateIfUniqueEmail(realtor.email);
     await validateIfUniqueCpf(realtor.cpf);
     await validateIfUniqueRg(realtor.rg);
@@ -242,6 +249,8 @@ async function update(email, data, photo) {
         city: data.city ? validateString(data.city, 'O campo cidade é obrigatório') : oldRealtor.city,
         state: data.state ? validateUF(data.state) : oldRealtor.state,
         bio: data.bio ? validateString(data.bio) : oldRealtor.bio,
+        social_one: data.socialOne ? validateString(data.socialOne) : oldRealtor.social_one,
+        social_two: data.socialTwo ? validateString(data.socialTwo) : oldRealtor.social_two,
       };
 
       if (realtor.email !== oldRealtor.email) await validateIfUniqueEmail(realtor.email);
@@ -307,6 +316,8 @@ async function elevate(email, data, photo) {
       city: validateString(data.city, 'O campo cidade é obrigatório'),
       state: validateUF(data.state),
       bio: data.bio ? validateString(data.bio) : null,
+      social_one: data.socialOne ? validateString(data.socialOne) : null,
+      social_two: data.socialTwo ? validateString(data.socialTwo) : null,
     };
 
     await validateIfUniqueRg(realtor.rg);

@@ -22,7 +22,7 @@ const storage = getStorage(app);
 
 async function findAll(page) {
   try {
-    const attributes = ['email', 'company_name', 'phone', 'cnpj', 'creci', 'cep', 'address', 'district', 'house_number', 'city', 'state', 'type', 'social_one', 'social_two', 'bio'];
+    const attributes = { exclude: ['password', 'otp', 'otp_ttl'] };
     if (page < 1) {
       return await Realstate.findAll({
         attributes,
@@ -73,11 +73,12 @@ async function findAll(page) {
   }
 }
 
-async function findByPk(email, password = false) {
+async function findByPk(email, password = false, otp = false) {
   try {
     const validatedEmail = validateEmail(email);
-    const attributes = ['email', 'company_name', 'phone', 'cnpj', 'creci', 'cep', 'address', 'district', 'house_number', 'city', 'state', 'type', 'social_one', 'social_two', 'bio', 'otp', 'otp_ttl'];
-    if (password) attributes.push('password');
+    const attributes = { exclude: [] };
+    if (!otp) attributes.exclude.push('email');
+    if (!password) attributes.exclude.push('password');
 
     const realstate = await Realstate.findByPk(validatedEmail, {
       attributes,
@@ -96,11 +97,12 @@ async function findByPk(email, password = false) {
   }
 }
 
-async function findByCnpj(cnpj, password = false) {
+async function findByCnpj(cnpj, password = false, otp = false) {
   try {
     const validatedCnpj = validateCnpj(cnpj);
-    const attributes = ['email', 'company_name', 'phone', 'cnpj', 'creci', 'cep', 'address', 'district', 'house_number', 'city', 'state', 'type', 'social_one', 'social_two', 'bio'];
-    if (password) attributes.push('password');
+    const attributes = { exclude: [] };
+    if (!otp) attributes.exclude.push('email');
+    if (!password) attributes.exclude.push('password');
 
     const realstate = await Realstate.findOne({ where: { cnpj: validatedCnpj } }, {
       attributes,
@@ -119,11 +121,12 @@ async function findByCnpj(cnpj, password = false) {
   }
 }
 
-async function findByCreci(creci, password = false) {
+async function findByCreci(creci, password = false, otp = false) {
   try {
     const validatedCreci = validateCreci(creci);
-    const attributes = ['email', 'company_name', 'phone', 'cnpj', 'creci', 'cep', 'address', 'district', 'house_number', 'city', 'state', 'type', 'social_one', 'social_two'];
-    if (password) attributes.push('password');
+    const attributes = { exclude: [] };
+    if (!otp) attributes.exclude.push('email');
+    if (!password) attributes.exclude.push('password');
 
     const realstate = await Realstate.findOne({ where: { creci: validatedCreci } }, {
       attributes,

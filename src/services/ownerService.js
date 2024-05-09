@@ -31,7 +31,7 @@ async function findAll(page) {
   try {
     if (page < 1) {
       return await Owner.findAll({
-        attributes: ['email', 'name', 'phone', 'cpf', 'rg', 'address', 'house_number', 'cep', 'district', 'city', 'state', 'type', 'bio'],
+        attributes: { exclude: ['otp', 'otp_ttl', 'password'] },
         order: [['name', 'ASC']],
       });
     }
@@ -47,7 +47,7 @@ async function findAll(page) {
     const offset = Number(limit * (page - 1));
 
     const owners = await Owner.findAll({
-      attributes: ['email', 'name', 'phone', 'cpf', 'rg', 'address', 'house_number', 'cep', 'district', 'city', 'state', 'type', 'bio'],
+      attributes: { exclude: ['otp', 'otp_ttl', 'password'] },
       order: [['name', 'ASC']],
       offset,
       limit,
@@ -79,11 +79,12 @@ async function findAll(page) {
   }
 }
 
-async function findByPk(email, password) {
+async function findByPk(email, password, otp = false) {
   try {
     const validatedEmail = validateEmail(email);
-    const attributes = ['email', 'name', 'phone', 'cpf', 'rg', 'address', 'house_number', 'cep', 'district', 'city', 'state', 'type', 'bio', 'otp', 'otp_ttl'];
-    if (password) attributes.push('password');
+    const attributes = { exclude: [] };
+    if (!otp) attributes.exclude.push('otp', 'otp_ttl');
+    if (!password) attributes.exclude.push('password');
 
     const owner = await Owner.findByPk(validatedEmail, {
       attributes,
@@ -102,11 +103,12 @@ async function findByPk(email, password) {
   }
 }
 
-async function findByCpf(cpf, password = false) {
+async function findByCpf(cpf, password = false, otp = false) {
   try {
     const validatedCpf = validateCpf(cpf);
-    const attributes = ['email', 'name', 'phone', 'cpf', 'rg', 'address', 'house_number', 'cep', 'district', 'city', 'state', 'type', 'bio'];
-    if (password) attributes.push('password');
+    const attributes = { exclude: [] };
+    if (!otp) attributes.exclude.push('otp', 'otp_ttl');
+    if (!password) attributes.exclude.push('password');
 
     const realtor = await Owner.findOne({ where: { cpf: validatedCpf } }, {
       attributes,
@@ -125,11 +127,12 @@ async function findByCpf(cpf, password = false) {
   }
 }
 
-async function findByRg(rg, password = false) {
+async function findByRg(rg, password = false, otp = false) {
   try {
     const validatedRg = validateString(rg);
-    const attributes = ['email', 'name', 'phone', 'cpf', 'rg', 'address', 'house_number', 'cep', 'district', 'city', 'state', 'type', 'bio'];
-    if (password) attributes.push('password');
+    const attributes = { exclude: [] };
+    if (!otp) attributes.exclude.push('otp', 'otp_ttl');
+    if (!password) attributes.exclude.push('password');
 
     const realtor = await Owner.findOne({ where: { rg: validatedRg } }, {
       attributes,
