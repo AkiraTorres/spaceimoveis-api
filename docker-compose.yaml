@@ -1,9 +1,11 @@
 services:
     postgres:
-        container_name: 'db-spaceimoveis'
+        container_name: postgres
         image: postgres
         volumes:
             - storage_db:/var/lib/postgres/data
+        networks:
+            - app
         ports:
             - ${DB_PORT}:${DB_PORT}
         environment:
@@ -12,9 +14,11 @@ services:
             POSTGRES_DB: ${DB_NAME}
 
     pgadmin:
-        container_name: pgadmin4_container-spaceimoveis
+        container_name: pgadmin4
         image: dpage/pgadmin4
         restart: always
+        networks:
+            - app
         environment:
             PGADMIN_DEFAULT_EMAIL: ${DB_USER}@admin.com
             PGADMIN_DEFAULT_PASSWORD: ${DB_PASS}
@@ -25,6 +29,8 @@ services:
         container_name: node
         build: ./
         restart: always
+        networks:
+            - app
         ports:
             -   "3000:3000"
         depends_on:
@@ -34,3 +40,7 @@ services:
 
 volumes:
   storage_db:
+
+networks:
+    app:
+        driver: bridge

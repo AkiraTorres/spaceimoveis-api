@@ -8,7 +8,10 @@ dotenv.config();
 let sequelizeConfig;
 if (process.env.NODE_ENV === 'development') sequelizeConfig = config.development;
 else if (process.env.NODE_ENV === 'test') sequelizeConfig = config.test;
-else if (process.env.NODE_ENV === 'production') sequelizeConfig = config.production;
+else if (process.env.NODE_ENV === 'production') {
+  sequelizeConfig = config.production;
+  sequelizeConfig.host = process.env.DB_HOST_DOCKER;
+}
 
 const sequelize = new Sequelize(sequelizeConfig);
 
