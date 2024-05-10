@@ -370,7 +370,7 @@ async function filter(data, page = 1) {
     const filteredRealstate = realstate;
 
     filteredRealstate.profile = await RealstatePhoto.findOne({ where: { email: realstate.email } });
-    filteredRealstate.totalProperties = await Property.count({ where: { email: realstate.email } });
+    filteredRealstate.totalProperties = await Property.count({ where: { realstate_email: realstate.email } });
 
     return filteredRealstate;
   }));
