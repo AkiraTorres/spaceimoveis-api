@@ -21,10 +21,11 @@ import firebaseConfig from '../config/firebase.js';
 const app = initializeApp(firebaseConfig);
 const storage = getStorage(app);
 
-async function findAll(page) {
+async function findAll(page = 1, isHighlighted = false) {
   try {
     if (page < 1) {
       return await Property.findAll({
+        where: { is_highlighted: isHighlighted },
         order: [['cep', 'ASC']],
       });
     }
@@ -36,6 +37,7 @@ async function findAll(page) {
     const offset = Number(limit * (page - 1));
 
     const props = await Property.findAll({
+      where: { is_highlighted: isHighlighted },
       order: [['cep', 'ASC']],
       offset,
       limit,
@@ -361,7 +363,7 @@ async function update(id, data, files, sellerEmail) {
   }
 }
 
-async function filter(data, page) {
+async function filter(data, page = 1, isHighlighted = false) {
   const limit = 6;
   const offset = Number(limit * (page - 1));
   const where = {};
@@ -424,6 +426,8 @@ async function filter(data, page) {
       ];
     }
   }
+
+  where.is_highlighted = isHighlighted;
 
   where.size = { [Op.between]: [minSize, maxSize] };
 
