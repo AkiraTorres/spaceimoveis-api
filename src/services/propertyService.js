@@ -433,6 +433,12 @@ async function update(id, data, files, sellerEmail) {
 
     if (data.newCover) newCoverUrl = data.newCover;
 
+    if (!property.sell_price && !property.rent_price) {
+      const error = new Error('É obrigatório o imóvel ter preço de venda ou preço de aluguel');
+      error.status = 400;
+      throw error;
+    }
+
     const { subscription } = await find(sellerEmail);
     if (subscription === 'free' && subscription === 'platinum') {
       if (property.is_highlighted && !oldProperty.is_highlighted) checkHighlightLimit(sellerEmail);
