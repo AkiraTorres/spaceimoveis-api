@@ -66,7 +66,7 @@ async function findAll(page = 1, isHighlighted = false, isPublished = true) {
     }
 
     const limit = 6;
-    const countTotal = await Property.count();
+    const countTotal = await Property.count({ where: { is_highlighted: isHighlighted, is_published: isPublished } });
 
     const lastPage = Math.ceil(countTotal / limit);
     const offset = Number(limit * (page - 1));
