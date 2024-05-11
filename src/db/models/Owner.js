@@ -60,6 +60,11 @@ const Owner = sequelize.define('owners', {
     allowNull: true,
     defaultValue: true,
   },
+  subscription: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    defaultValue: 'free',
+  },
   otp: {
     type: DataTypes.STRING,
     allowNull: true,
