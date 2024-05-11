@@ -14,6 +14,8 @@ router.get('/:id', controller.findByPk);
 router.get('/seller/:email', controller.findBySellerEmail);
 router.get('/get/ids', verifyJwt, controller.getAllPropertiesIds);
 router.get('/get/cities', verifyJwt, controller.getAllPropertiesCities);
+router.get('/get/times-seen', controller.getTimesSeen);
+router.post('/add/times-seen', controller.addTimesSeen);
 router.put('/filter', controller.filter);
 router.post('/', verifyJwt, upload.any(), controller.create);
 router.put('/:id', verifyJwt, matchSellerEmail, upload.any(), controller.update);

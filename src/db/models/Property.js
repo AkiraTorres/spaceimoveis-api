@@ -192,6 +192,11 @@ const Property = sequelize.define('properties', {
     allowNull: false,
     defaultValue: false,
   },
+  times_seen: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 0,
+  },
 });
 
 export default Property;

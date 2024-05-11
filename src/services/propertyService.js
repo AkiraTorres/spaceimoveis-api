@@ -190,6 +190,26 @@ async function getAllPropertiesCities(email) {
   return [...new Set(cities)];
 }
 
+async function getTimesSeen(id) {
+  const validatedId = validateString(id);
+  const property = await Property.findByPk(validatedId);
+  if (!property) {
+    throw new PropertyNotFound();
+  }
+
+  return property.times_seen;
+}
+
+async function addTimesSeen(id) {
+  const validatedId = validateString(id);
+  const property = await Property.findByPk(validatedId);
+  if (!property) {
+    throw new PropertyNotFound();
+  }
+
+  return Property.update({ times_seen: property.times_seen + 1 }, { where: { id: validatedId } });
+}
+
 async function create(data, files) {
   try {
     const { sellerEmail } = data;
@@ -541,4 +561,4 @@ async function destroy(id) {
   }
 }
 
-export { findAll, findByPk, findBySellerEmail, getAllPropertiesIds, getAllPropertiesCities, filter, create, update, destroy };
+export { findAll, findByPk, findBySellerEmail, getAllPropertiesIds, getAllPropertiesCities, getTimesSeen, addTimesSeen, filter, create, update, destroy };
