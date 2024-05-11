@@ -300,6 +300,12 @@ async function create(data, files) {
     if (data.isHighlighted) propertyData.is_highlighted = validateBoolean(data.isHighlighted);
     if (data.isPublished) propertyData.is_published = validateBoolean(data.isPublished);
 
+    if (!propertyData.sell_price && !propertyData.rent_price) {
+      const error = new Error('É obrigatório o imóvel ter preço de venda ou preço de aluguel');
+      error.status = 400;
+      throw error;
+    }
+
     const { subscription } = await find(sellerEmail);
     if (subscription === 'free' && subscription === 'platinum') {
       if (propertyData.is_highlighted) checkHighlightLimit(sellerEmail);
