@@ -41,8 +41,9 @@ export const findByPk = asyncHandler(async (req, res) => {
 export const findBySellerEmail = asyncHandler(async (req, res) => {
   try {
     const { email } = req.params;
+    const { page = 1 } = req.query;
 
-    const result = await service.findBySellerEmail(email);
+    const result = await service.findBySellerEmail(email, page);
     res.status(200).json(result);
   } catch (error) {
     const status = error.status || 500;

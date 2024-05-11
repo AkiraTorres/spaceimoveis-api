@@ -102,6 +102,11 @@ async function findAll(page = 1, isHighlighted = false, isPublished = true) {
       return { ...editedProperty, totalFavorites, pictures };
     }));
 
+    properties.sort((a, b) => {
+      if (a.totalFavorites !== b.totalFavorites) return b.totalFavorites - a.totalFavorites;
+      return b.times_seen - a.times_seen;
+    });
+
     return { properties, pagination };
   } catch (error) {
     error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
@@ -114,7 +119,7 @@ async function recomendedProperties(page = 1, isHighlighted = true) {
   const limit = 6;
   const offset = Number(limit * (page - 1));
   const where = { is_highlighted: isHighlighted, is_published: true };
-  const order = [['times_seen', 'DESC']];
+  const order = [['updatedAt', 'DESC']];
   const total = await Property.count({ where });
   const lastPage = Math.ceil(total / limit);
 
@@ -174,7 +179,7 @@ async function findByPk(id) {
   }
 }
 
-async function findBySellerEmail(email) {
+async function findBySellerEmail(email, page = 1) {
   try {
     const validatedEmail = validateEmail(email);
 
@@ -185,13 +190,28 @@ async function findBySellerEmail(email) {
       error.status = 404;
     }
 
+    const limit = 6;
+    const total = await Property.count({ where: { [`${user.type}_email`]: validatedEmail } });
+    const lastPage = Math.ceil(total / limit);
+    const offset = Number(limit * (page - 1));
+
+    const pagination = {
+      path: '/properties',
+      page,
+      prev_page_url: page - 1 >= 1 ? page - 1 : null,
+      next_page_url: Number(page) + 1 <= lastPage ? Number(page) + 1 : null,
+      lastPage,
+      total,
+    };
+
     const props = await Property.findAll({
-      where: {
-        [`${user.type}_email`]: validatedEmail,
-      },
+      where: { [`${user.type}_email`]: validatedEmail },
+      order: [['updatedAt', 'DESC']],
+      limit,
+      offset,
     });
 
-    return await Promise.all(props.map(async (property) => {
+    const properties = await Promise.all(props.map(async (property) => {
       const editedProperty = property.dataValues;
       if (property.owner_email) editedProperty.email = editedProperty.owner_email;
       if (property.realtor_email) editedProperty.email = editedProperty.realtor_email;
@@ -201,6 +221,13 @@ async function findBySellerEmail(email) {
 
       return { ...editedProperty, pictures };
     }));
+
+    properties.sort((a, b) => {
+      if (a.totalFavorites !== b.totalFavorites) return b.totalFavorites - a.totalFavorites;
+      return b.times_seen - a.times_seen;
+    });
+
+    return { properties, pagination };
   } catch (error) {
     error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     throw error;
