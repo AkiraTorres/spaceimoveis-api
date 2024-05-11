@@ -21,11 +21,11 @@ import firebaseConfig from '../config/firebase.js';
 const app = initializeApp(firebaseConfig);
 const storage = getStorage(app);
 
-async function findAll(page = 1, isHighlighted = false) {
+async function findAll(page = 1, isHighlighted = false, isPublished = true) {
   try {
     if (page < 1) {
       return await Property.findAll({
-        where: { is_highlighted: isHighlighted },
+        where: { is_highlighted: isHighlighted, is_published: isPublished },
         order: [['cep', 'ASC']],
       });
     }
@@ -37,7 +37,7 @@ async function findAll(page = 1, isHighlighted = false) {
     const offset = Number(limit * (page - 1));
 
     const props = await Property.findAll({
-      where: { is_highlighted: isHighlighted },
+      where: { is_highlighted: isHighlighted, is_published: isPublished },
       order: [['cep', 'ASC']],
       offset,
       limit,
@@ -199,6 +199,8 @@ async function create(data, files) {
     if (data.solarEnergy) propertyData.solar_energy = validateBoolean(data.solarEnergy);
     if (data.concierge) propertyData.concierge = validateBoolean(data.concierge);
     if (data.yard) propertyData.yard = validateBoolean(data.yard);
+    if (data.isHighlighted) propertyData.is_highlighted = validateBoolean(data.isHighlighted);
+    if (data.isPublished) propertyData.is_published = validateBoolean(data.isPublished);
 
     const newProperty = await Property.create(propertyData);
 
@@ -284,6 +286,8 @@ async function update(id, data, files, sellerEmail) {
     if (data.solarEnergy) property.solar_energy = validateBoolean(data.solarEnergy);
     if (data.concierge) property.concierge = validateBoolean(data.concierge);
     if (data.yard) property.yard = validateBoolean(data.yard);
+    if (data.isHighlighted) property.is_highlighted = validateBoolean(data.isHighlighted);
+    if (data.isPublished) property.is_published = validateBoolean(data.isPublished);
     if (data.oldPhotos) oldPhotosUrls = data.oldPhotos;
 
     if (data.sellerEmail && data.sellerType === 'owner') property.owner_email = validateEmail(data.sellerEmail);
@@ -363,7 +367,7 @@ async function update(id, data, files, sellerEmail) {
   }
 }
 
-async function filter(data, page = 1, isHighlighted = false) {
+async function filter(data, page = 1, isHighlighted = false, isPublished = true) {
   const limit = 6;
   const offset = Number(limit * (page - 1));
   const where = {};
@@ -428,6 +432,7 @@ async function filter(data, page = 1, isHighlighted = false) {
   }
 
   where.is_highlighted = isHighlighted;
+  where.is_published = isPublished;
 
   where.size = { [Op.between]: [minSize, maxSize] };
 

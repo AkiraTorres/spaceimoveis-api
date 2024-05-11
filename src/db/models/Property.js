@@ -42,6 +42,11 @@ const Property = sequelize.define('properties', {
     allowNull: false,
     defaultValue: false,
   },
+  is_published: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false,
+  },
   property_type: {
     type: DataTypes.STRING,
     allowNull: false,

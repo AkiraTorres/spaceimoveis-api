@@ -4,9 +4,9 @@ import * as service from '../services/propertyService.js';
 
 export const findAll = asyncHandler(async (req, res) => {
   try {
-    const { page = 1, isHighlighted = false } = req.query;
+    const { page = 1, isHighlighted = false, isPublished = true } = req.query;
 
-    const result = await service.findAll(page, isHighlighted);
+    const result = await service.findAll(page, isHighlighted, isPublished);
     res.status(200).json(result);
   } catch (error) {
     const status = error.status || 500;
@@ -75,9 +75,9 @@ export const create = asyncHandler(async (req, res) => {
 
 export const filter = asyncHandler(async (req, res) => {
   const data = req.body;
-  const { page = 1, isHighlighted = false } = req.query;
+  const { page = 1, isHighlighted = false, isPublished = true } = req.query;
 
-  const result = await service.filter(data, page, isHighlighted);
+  const result = await service.filter(data, page, isHighlighted, isPublished);
   res.status(200).json(result);
 });
 
