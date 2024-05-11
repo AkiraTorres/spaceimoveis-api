@@ -42,10 +42,10 @@ export const getAvgRateByReceiver = asyncHandler(async (req, res) => {
 
 export const setRate = asyncHandler(async (req, res) => {
   try {
-    const { email, rate, comment } = req.body;
-    const senderEmail = req.email;
+    const { senderEmail, receiverEmail, rate, comment } = req.body;
+    // const senderEmail = req.email;
 
-    const result = await service.setRate(senderEmail, email, rate, comment);
+    const result = await service.setRate(senderEmail, receiverEmail, rate, comment);
     res.status(201).json(result);
   } catch (error) {
     const status = error.status || 500;
