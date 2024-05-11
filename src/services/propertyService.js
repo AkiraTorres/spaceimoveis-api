@@ -21,6 +21,40 @@ import firebaseConfig from '../config/firebase.js';
 const app = initializeApp(firebaseConfig);
 const storage = getStorage(app);
 
+async function checkHighlightLimit(email) {
+  let highlighLimit;
+  const { subscription, type } = await find(email);
+  if (subscription === 'free') highlighLimit = 1;
+  if (subscription === 'platinum') highlighLimit = 5;
+  if (subscription === 'gold') highlighLimit = 9999;
+  if (subscription === 'diamond') highlighLimit = 9999;
+
+  const highlightedProperties = await Property.count({ where: { [`${type}_email`]: email, is_highlighted: true } });
+
+  if (highlightedProperties >= highlighLimit) {
+    const error = new Error('Limite de imóveis em destaque atingido');
+    error.status = 400;
+    throw error;
+  }
+}
+
+async function checkAnnouncementLimit(email) {
+  let highlighLimit;
+  const { subscription, type } = await find(email);
+  if (subscription === 'free') highlighLimit = 3;
+  if (subscription === 'platinum') highlighLimit = 10;
+  if (subscription === 'gold') highlighLimit = 9999;
+  if (subscription === 'diamond') highlighLimit = 9999;
+
+  const highlightedProperties = await Property.count({ where: { [`${type}_email`]: email, is_highlighted: true } });
+
+  if (highlightedProperties >= highlighLimit) {
+    const error = new Error('Limite de imóveis em destaque atingido');
+    error.status = 400;
+    throw error;
+  }
+}
+
 async function findAll(page = 1, isHighlighted = false, isPublished = true) {
   try {
     if (page < 1) {
@@ -158,6 +192,7 @@ async function getAllPropertiesCities(email) {
 
 async function create(data, files) {
   try {
+    const { sellerEmail } = data;
     const propertyData = {
       id: uuid(),
       announcement_type: validateString(data.announcementType, 'O campo "tipo do anúncio" é obrigatório'),
@@ -184,9 +219,9 @@ async function create(data, files) {
 
     if (data.rentPrice) propertyData.rent_price = validatePrice(data.rentPrice, 'O campo "preço de aluguel" é obrigatório');
     if (data.sellPrice) propertyData.sell_price = validatePrice(data.sellPrice, 'O campo "preço de venda" é obrigatório');
-    if (data.sellerType === 'owner') propertyData.owner_email = validateEmail(data.sellerEmail);
-    if (data.sellerType === 'realtor') propertyData.realtor_email = validateEmail(data.sellerEmail);
-    if (data.sellerType === 'realstate') propertyData.realstate_email = validateEmail(data.sellerEmail);
+    if (data.sellerType === 'owner') propertyData.owner_email = validateEmail(sellerEmail);
+    if (data.sellerType === 'realtor') propertyData.realtor_email = validateEmail(sellerEmail);
+    if (data.sellerType === 'realstate') propertyData.realstate_email = validateEmail(sellerEmail);
     if (data.complement) propertyData.complement = validateString(data.complement);
     if (data.floor) propertyData.floor = validateString(data.floor);
     if (data.iptu) propertyData.iptu = validatePrice(data.iptu);
@@ -201,6 +236,12 @@ async function create(data, files) {
     if (data.yard) propertyData.yard = validateBoolean(data.yard);
     if (data.isHighlighted) propertyData.is_highlighted = validateBoolean(data.isHighlighted);
     if (data.isPublished) propertyData.is_published = validateBoolean(data.isPublished);
+
+    const { subscription } = await find(sellerEmail);
+    if (subscription === 'free' && subscription === 'platinum') {
+      if (propertyData.is_highlighted) checkHighlightLimit(sellerEmail);
+      else checkAnnouncementLimit(sellerEmail);
+    }
 
     const newProperty = await Property.create(propertyData);
 
@@ -235,18 +276,18 @@ async function update(id, data, files, sellerEmail) {
     let newCoverUrl;
     let oldPhotosUrls = [];
 
-    const oldProperProperty = await Property.findByPk(validatedId, { raw: true }, { attributes: { excludes: ['password'] } });
-    if (!oldProperProperty) {
+    const oldProperty = await Property.findByPk(validatedId, { raw: true }, { attributes: { excludes: ['password'] } });
+    if (!oldProperty) {
       throw new PropertyNotFound();
     }
 
-    if (oldProperProperty.owner_email !== sellerEmail && oldProperProperty.realtor_email !== sellerEmail && oldProperProperty.realstate_email !== sellerEmail) {
+    if (oldProperty.owner_email !== sellerEmail && oldProperty.realtor_email !== sellerEmail && oldProperty.realstate_email !== sellerEmail) {
       const error = new Error('Você não tem permissão para alterar este imóvel');
       error.status = 401;
       throw error;
     }
 
-    const property = oldProperProperty;
+    const property = oldProperty;
 
     if (data.announcementType) property.announcement_type = validateString(data.announcementType, 'O campo "tipo do anúncio" é obrigatório');
     if (data.propertyType) property.property_type = validateString(data.propertyType, 'O campo "tipo do imóvel" é obrigatório');
@@ -295,6 +336,12 @@ async function update(id, data, files, sellerEmail) {
     if (data.sellerEmail && data.sellerType === 'realstate') property.realstate_email = validateEmail(data.sellerEmail);
 
     if (data.newCover) newCoverUrl = data.newCover;
+
+    const { subscription } = await find(sellerEmail);
+    if (subscription === 'free' && subscription === 'platinum') {
+      if (property.is_highlighted && !oldProperty.is_highlighted) checkHighlightLimit(sellerEmail);
+      else if (!property.is_highlighted && oldProperty.is_highlighted) checkAnnouncementLimit(sellerEmail);
+    }
 
     await Property.update(property, { where: { id: validatedId } });
 
