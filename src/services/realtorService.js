@@ -7,6 +7,9 @@ import Client from '../db/models/Client.js';
 import Realtor from '../db/models/Realtor.js';
 import Property from '../db/models/Property.js';
 import RealtorPhoto from '../db/models/RealtorPhoto.js';
+import RealtorRating from '../db/models/RealtorRating.js';
+
+// import { getAvgRateByReceiver } from './ratingService.js';
 
 import RealtorNotFound from '../errors/realtorErrors/realtorNotFound.js';
 import NoRealtorsFound from '../errors/realtorErrors/noRealtorsFound.js';
@@ -30,6 +33,65 @@ import firebaseConfig from '../config/firebase.js';
 
 const app = initializeApp(firebaseConfig);
 const storage = getStorage(app);
+
+async function findByPk(email, password = false, otp = false) {
+  try {
+    const validatedEmail = validateEmail(email);
+    const attributes = { exclude: [] };
+    if (!otp) attributes.exclude.push('otp', 'otp_ttl');
+    if (!password) attributes.exclude.push('password');
+
+    const realtor = await Realtor.findByPk(validatedEmail, {
+      attributes,
+    });
+
+    if (!realtor) {
+      throw new RealtorNotFound();
+    }
+
+    realtor.totalProperties = await Property.count({ where: { realtor_email: realtor.email } });
+
+    const properties = await Property.findAll({ where: { realtor_email: realtor.email } });
+    const profile = await RealtorPhoto.findOne({ where: { email: realtor.email } });
+
+    return { ...realtor.dataValues, properties, profile };
+  } catch (error) {
+    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
+    error.status = error.status || 500;
+    throw error;
+  }
+}
+
+async function getAvgRateByReceiver(receiverEmail) {
+  const validatedReceiverEmail = validateEmail(receiverEmail);
+
+  const receiver = await findByPk(validatedReceiverEmail);
+  if (!receiver) {
+    const error = new Error('Usuário não encontrado.');
+    error.status = 404;
+    throw error;
+  }
+
+  if (receiver.type !== 'realtor') {
+    const error = new Error('Usuário a receber a avaliação deve ser um corretor.');
+    error.status = 400;
+    throw error;
+  }
+
+  const where = { receiver_email: validatedReceiverEmail };
+  const order = [['createdAt', 'DESC']];
+
+  const ratings = await RealtorRating.findAll({ where, order });
+
+  if (ratings === 0) {
+    return 0;
+  }
+
+  const total = ratings.length;
+  const sum = ratings.reduce((acc, curr) => acc + curr.rating, 0);
+  const avg = ((sum / total) / 2).toFixed(2);
+  return avg;
+}
 
 async function findAll(page) {
   try {
@@ -80,38 +142,12 @@ async function findAll(page) {
       total: countTotal,
     };
 
+    result.sort(async (a, b) => (await getAvgRateByReceiver(a.email) < await getAvgRateByReceiver(b.email) ? 1 : -1));
+
     return { result, pagination };
   } catch (error) {
     const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     console.error(message);
-    throw error;
-  }
-}
-
-async function findByPk(email, password = false, otp = false) {
-  try {
-    const validatedEmail = validateEmail(email);
-    const attributes = { exclude: [] };
-    if (!otp) attributes.exclude.push('otp', 'otp_ttl');
-    if (!password) attributes.exclude.push('password');
-
-    const realtor = await Realtor.findByPk(validatedEmail, {
-      attributes,
-    });
-
-    if (!realtor) {
-      throw new RealtorNotFound();
-    }
-
-    realtor.totalProperties = await Property.count({ where: { realtor_email: realtor.email } });
-
-    const properties = await Property.findAll({ where: { realtor_email: realtor.email } });
-    const profile = await RealtorPhoto.findOne({ where: { email: realtor.email } });
-
-    return { ...realtor.dataValues, properties, profile };
-  } catch (error) {
-    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    error.status = error.status || 500;
     throw error;
   }
 }
@@ -400,6 +436,8 @@ async function filter(data, page = 1) {
 
     return filteredRealtor;
   }));
+
+  result.sort(async (a, b) => (await getAvgRateByReceiver(a.email) < await getAvgRateByReceiver(b.email) ? 1 : -1));
 
   return { result, pagination };
 }
