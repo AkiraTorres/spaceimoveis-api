@@ -14,6 +14,18 @@ export const findAll = asyncHandler(async (req, res) => {
   }
 });
 
+export const recomendedProperties = asyncHandler(async (req, res) => {
+  try {
+    const { page = 1 } = req.query;
+
+    const result = await service.recomendedProperties(page);
+    res.status(200).json(result);
+  } catch (error) {
+    const status = error.status || 500;
+    res.status(status).json({ message: error.message });
+  }
+});
+
 export const findByPk = asyncHandler(async (req, res) => {
   try {
     const { id } = req.params;

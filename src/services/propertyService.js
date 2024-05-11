@@ -6,6 +6,7 @@ import { Op } from 'sequelize';
 import Property from '../db/models/Property.js';
 import Photo from '../db/models/Photo.js';
 import { find } from './globalService.js';
+import { getPropertyTotalFavorites } from './favoriteService.js';
 import PropertyNotFound from '../errors/propertyErrors/properyNotFound.js';
 import {
   validateBoolean,
@@ -60,7 +61,7 @@ async function findAll(page = 1, isHighlighted = false, isPublished = true) {
     if (page < 1) {
       return await Property.findAll({
         where: { is_highlighted: isHighlighted, is_published: isPublished },
-        order: [['cep', 'ASC']],
+        order: [['updatedAt', 'DESC']],
       });
     }
 
@@ -72,7 +73,7 @@ async function findAll(page = 1, isHighlighted = false, isPublished = true) {
 
     const props = await Property.findAll({
       where: { is_highlighted: isHighlighted, is_published: isPublished },
-      order: [['cep', 'ASC']],
+      order: [['updatedAt', 'DESC']],
       offset,
       limit,
     });
@@ -94,9 +95,11 @@ async function findAll(page = 1, isHighlighted = false, isPublished = true) {
       if (property.realtor_email) editedProperty.email = editedProperty.realtor_email;
       if (property.realstate_email) editedProperty.email = editedProperty.realstate_email;
 
+      const totalFavorites = await getPropertyTotalFavorites(property.id);
+
       const pictures = await Photo.findAll({ where: { property_id: property.id }, order: [['type', 'ASC']] });
 
-      return { ...editedProperty, pictures };
+      return { ...editedProperty, totalFavorites, pictures };
     }));
 
     return { properties, pagination };
@@ -105,6 +108,46 @@ async function findAll(page = 1, isHighlighted = false, isPublished = true) {
     error.status = error.status || 500;
     throw error;
   }
+}
+
+async function recomendedProperties(page = 1, isHighlighted = true) {
+  const limit = 6;
+  const offset = Number(limit * (page - 1));
+  const where = { is_highlighted: isHighlighted, is_published: true };
+  const order = [['times_seen', 'DESC']];
+  const total = await Property.count({ where });
+  const lastPage = Math.ceil(total / limit);
+
+  const pagination = {
+    path: '/properties',
+    page,
+    prev_page_url: page - 1 >= 1 ? page - 1 : null,
+    next_page_url: Number(page) + 1 <= lastPage ? Number(page) + 1 : null,
+    lastPage,
+    total,
+  };
+
+  const props = await Property.findAll({ where, order, limit, offset });
+
+  const properties = await Promise.all(props.map(async (property) => {
+    const editedProperty = property.dataValues;
+    if (property.owner_email) editedProperty.email = editedProperty.owner_email;
+    if (property.realtor_email) editedProperty.email = editedProperty.realtor_email;
+    if (property.realstate_email) editedProperty.email = editedProperty.realstate_email;
+
+    const totalFavorites = await getPropertyTotalFavorites(property.id);
+
+    const pictures = await Photo.findAll({ where: { property_id: property.id }, order: [['type', 'ASC']] });
+
+    return { ...editedProperty, totalFavorites, pictures };
+  }));
+
+  properties.sort((a, b) => {
+    if (a.totalFavorites !== b.totalFavorites) return b.totalFavorites - a.totalFavorites;
+    return b.times_seen - a.times_seen;
+  });
+
+  return { properties, pagination };
 }
 
 async function findByPk(id) {
@@ -561,4 +604,4 @@ async function destroy(id) {
   }
 }
 
-export { findAll, findByPk, findBySellerEmail, getAllPropertiesIds, getAllPropertiesCities, getTimesSeen, addTimesSeen, filter, create, update, destroy };
+export { findAll, recomendedProperties, findByPk, findBySellerEmail, getAllPropertiesIds, getAllPropertiesCities, getTimesSeen, addTimesSeen, filter, create, update, destroy };
