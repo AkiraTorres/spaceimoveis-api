@@ -174,6 +174,7 @@ async function create(data, photo) {
       social_one: data.socialOne ? validateString(data.socialOne) : null,
       social_two: data.socialTwo ? validateString(data.socialTwo) : null,
       bio: data.bio ? validateString(data.bio) : null,
+      subscription: data.subscription ? validateString(data.subscription) : 'free',
     };
 
     await validateIfUniqueEmail(userData.email);
@@ -236,6 +237,7 @@ async function update(email, data, photo) {
         bio: data.bio ? validateString(data.bio) : oldRealstate.bio,
         social_one: data.socialOne ? validateString(data.socialOne) : oldRealstate.social_one,
         social_two: data.socialTwo ? validateString(data.socialTwo) : oldRealstate.social_two,
+        subscription: data.subscription ? validateString(data.subscription) : oldRealstate.subscription,
       };
 
       if (realstate.email !== oldRealstate.email) await validateIfUniqueEmail(realstate.email);
@@ -301,6 +303,7 @@ async function elevate(email, data, photo) {
       bio: data.bio ? validateString(data.bio) : null,
       social_one: data.socialOne ? validateString(data.socialOne) : null,
       social_two: data.socialTwo ? validateString(data.socialTwo) : null,
+      subscription: data.subscription ? validateString(data.subscription) : 'free',
     };
 
     await validateIfUniqueCnpj(realstate.cnpj);

@@ -68,6 +68,11 @@ const Realstate = sequelize.define('realstates', {
     allowNull: true,
     defaultValue: true,
   },
+  subscription: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    defaultValue: 'free',
+  },
   otp: {
     type: DataTypes.STRING,
     allowNull: true,

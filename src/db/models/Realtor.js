@@ -72,6 +72,11 @@ const Realtor = sequelize.define('realtors', {
     type: DataTypes.STRING(512),
     allowNull: true,
   },
+  subscription: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    defaultValue: 'free',
+  },
   otp: {
     type: DataTypes.STRING,
     allowNull: true,
