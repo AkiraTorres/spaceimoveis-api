@@ -26,6 +26,18 @@ export const getFavorites = asyncHandler(async (req, res) => {
   }
 });
 
+export const getPropertyTotalFavorites = asyncHandler(async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await service.getPropertyTotalFavorites(id);
+    res.status(200).json(result);
+  } catch (error) {
+    const status = error.status || 500;
+    res.status(status).json({ message: error.message });
+  }
+});
+
 export const removeFavorite = asyncHandler(async (req, res) => {
   try {
     const { email, propertyId } = req.params;

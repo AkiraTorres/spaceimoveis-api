@@ -44,6 +44,14 @@ async function getFavorites(clientEmail) {
   return favoritesIds;
 }
 
+async function getPropertyTotalFavorites(propertyId) {
+  const validatedId = validateString(propertyId);
+
+  const totalFavorites = await Favorite.count({ where: { property_id: validatedId } });
+
+  return totalFavorites;
+}
+
 async function removeFavorite(clientEmail, propertyId) {
   const validatedEmail = validateString(clientEmail);
   const validatedPropertyId = validateString(propertyId);
@@ -69,4 +77,4 @@ async function removeFavorite(clientEmail, propertyId) {
   return destroyed;
 }
 
-export { setFavorite, getFavorites, removeFavorite };
+export { setFavorite, getFavorites, getPropertyTotalFavorites, removeFavorite };
