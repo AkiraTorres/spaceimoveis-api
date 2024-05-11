@@ -574,8 +574,10 @@ async function filter(data, page = 1, isHighlighted = false, isPublished = true)
     }
   }
 
-  where.is_highlighted = isHighlighted;
-  where.is_published = isPublished;
+  if (!data.allProperties) {
+    where.is_highlighted = isHighlighted;
+    where.is_published = isPublished;
+  }
 
   where.size = { [Op.between]: [minSize, maxSize] };
 
