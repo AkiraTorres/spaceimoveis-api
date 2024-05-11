@@ -6,6 +6,7 @@ import { Op } from 'sequelize';
 import Client from '../db/models/Client.js';
 import Realstate from '../db/models/Realstate.js';
 import RealstatePhoto from '../db/models/RealstatePhoto.js';
+import RealstateRating from '../db/models/RealstateRating.js';
 
 import RealstateNotFound from '../errors/realstateErrors/realstateNotFound.js';
 import NoRealstatesFound from '../errors/realstateErrors/noRealstatesFound.js';
@@ -20,6 +21,63 @@ import Property from '../db/models/Property.js';
 
 const app = initializeApp(firebaseConfig);
 const storage = getStorage(app);
+
+async function findByPk(email, password = false, otp = false) {
+  try {
+    const validatedEmail = validateEmail(email);
+    const attributes = { exclude: [] };
+    if (!otp) attributes.exclude.push('email');
+    if (!password) attributes.exclude.push('password');
+
+    const realstate = await Realstate.findByPk(validatedEmail, {
+      attributes,
+    });
+
+    if (!realstate) {
+      throw new RealstateNotFound();
+    }
+
+    realstate.totalProperties = await Property.count({ where: { realstate_email: realstate.email } });
+
+    const profile = await RealstatePhoto.findOne({ where: { email: realstate.email } });
+    return { ...realstate.dataValues, profile };
+  } catch (error) {
+    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
+    error.status = error.status || 500;
+    throw error;
+  }
+}
+
+async function getAvgRateByReceiver(receiverEmail) {
+  const validatedReceiverEmail = validateEmail(receiverEmail);
+
+  const receiver = await findByPk(validatedReceiverEmail);
+  if (!receiver) {
+    const error = new Error('Usuário não encontrado.');
+    error.status = 404;
+    throw error;
+  }
+
+  if (receiver.type !== 'realstate') {
+    const error = new Error('Usuário a receber a avaliação deve ser uma imobiliária.');
+    error.status = 400;
+    throw error;
+  }
+
+  const where = { receiver_email: validatedReceiverEmail };
+  const order = [['createdAt', 'DESC']];
+
+  const ratings = await RealstateRating.findAll({ where, order });
+
+  if (ratings === 0) {
+    return 0;
+  }
+
+  const total = ratings.length;
+  const sum = ratings.reduce((acc, curr) => acc + curr.rating, 0);
+  const avg = ((sum / total) / 2).toFixed(2);
+  return avg;
+}
 
 async function findAll(page) {
   try {
@@ -70,36 +128,12 @@ async function findAll(page) {
       total: countTotal,
     };
 
+    result.sort(async (a, b) => (await getAvgRateByReceiver(a.email) < await getAvgRateByReceiver(b.email) ? 1 : -1));
+
     return { result, pagination };
   } catch (error) {
     const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     console.error(message);
-    throw error;
-  }
-}
-
-async function findByPk(email, password = false, otp = false) {
-  try {
-    const validatedEmail = validateEmail(email);
-    const attributes = { exclude: [] };
-    if (!otp) attributes.exclude.push('email');
-    if (!password) attributes.exclude.push('password');
-
-    const realstate = await Realstate.findByPk(validatedEmail, {
-      attributes,
-    });
-
-    if (!realstate) {
-      throw new RealstateNotFound();
-    }
-
-    realstate.totalProperties = await Property.count({ where: { realstate_email: realstate.email } });
-
-    const profile = await RealstatePhoto.findOne({ where: { email: realstate.email } });
-    return { ...realstate.dataValues, profile };
-  } catch (error) {
-    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    error.status = error.status || 500;
     throw error;
   }
 }
@@ -377,6 +411,8 @@ async function filter(data, page = 1) {
 
     return filteredRealstate;
   }));
+
+  result.sort(async (a, b) => (await getAvgRateByReceiver(a.email) < await getAvgRateByReceiver(b.email) ? 1 : -1));
 
   return { result, pagination };
 }
