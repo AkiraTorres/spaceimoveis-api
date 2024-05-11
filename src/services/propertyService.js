@@ -316,16 +316,16 @@ async function create(data, files) {
     if (data.floor) propertyData.floor = validateString(data.floor);
     if (data.iptu) propertyData.iptu = validatePrice(data.iptu);
     if (data.aditionalFees) propertyData.aditional_fees = validatePrice(data.aditionalFees);
-    if (data.negotiable) propertyData.negotiable = validateBoolean(data.negotiable);
+    if (data.negotiable !== undefined) propertyData.negotiable = validateBoolean(data.negotiable);
     if (data.suites) propertyData.suites = validateInteger(data.suites);
-    if (data.furnished) propertyData.furnished = validateBoolean(data.furnished);
-    if (data.gym) propertyData.gym = validateBoolean(data.gym);
-    if (data.balcony) propertyData.balcony = validateBoolean(data.balcony);
-    if (data.solarEnergy) propertyData.solar_energy = validateBoolean(data.solarEnergy);
-    if (data.concierge) propertyData.concierge = validateBoolean(data.concierge);
-    if (data.yard) propertyData.yard = validateBoolean(data.yard);
-    if (data.isHighlighted) propertyData.is_highlighted = validateBoolean(data.isHighlighted);
-    if (data.isPublished) propertyData.is_published = validateBoolean(data.isPublished);
+    if (data.furnished !== undefined) propertyData.furnished = validateBoolean(data.furnished);
+    if (data.gym !== undefined) propertyData.gym = validateBoolean(data.gym);
+    if (data.balcony !== undefined) propertyData.balcony = validateBoolean(data.balcony);
+    if (data.solarEnergy !== undefined) propertyData.solar_energy = validateBoolean(data.solarEnergy);
+    if (data.concierge !== undefined) propertyData.concierge = validateBoolean(data.concierge);
+    if (data.yard !== undefined) propertyData.yard = validateBoolean(data.yard);
+    if (data.isHighlighted !== undefined) propertyData.is_highlighted = validateBoolean(data.isHighlighted);
+    if (data.isPublished !== undefined) propertyData.is_published = validateBoolean(data.isPublished);
 
     if (!propertyData.sell_price && !propertyData.rent_price) {
       const error = new Error('É obrigatório o imóvel ter preço de venda ou preço de aluguel');
@@ -401,30 +401,30 @@ async function update(id, data, files, sellerEmail) {
     if (data.bedrooms) property.bedrooms = validateInteger(data.bedrooms, 'O campo "quartos" é obrigatório');
     if (data.bathrooms) property.bathrooms = validateInteger(data.bathrooms, 'O campo "banheiros" é obrigatório');
     if (data.parkingSpaces) property.parking_spaces = validateInteger(data.parkingSpaces, 'O campo "vagas" é obrigatório');
-    if (data.pool) property.pool = validateBoolean(data.pool, 'O campo "piscina" é obrigatório');
-    if (data.grill) property.grill = validateBoolean(data.grill, 'O campo "churrasqueira" é obrigatório');
-    if (data.airConditioning) property.air_conditioning = validateBoolean(data.airConditioning, 'O campo "ar condicionado" é obrigatório');
-    if (data.playground) property.playground = validateBoolean(data.playground, 'O campo "playground" é obrigatório');
-    if (data.eventArea) property.event_area = validateBoolean(data.eventArea, 'O campo "sala de eventos" é obrigatório');
+    if (data.pool !== undefined) property.pool = validateBoolean(data.pool, 'O campo "piscina" é obrigatório');
+    if (data.grill !== undefined) property.grill = validateBoolean(data.grill, 'O campo "churrasqueira" é obrigatório');
+    if (data.airConditioning !== undefined) property.air_conditioning = validateBoolean(data.airConditioning, 'O campo "ar condicionado" é obrigatório');
+    if (data.playground !== undefined) property.playground = validateBoolean(data.playground, 'O campo "playground" é obrigatório');
+    if (data.eventArea !== undefined) property.event_area = validateBoolean(data.eventArea, 'O campo "sala de eventos" é obrigatório');
     if (data.description) property.description = validateString(data.description, 'O campo "descrição" é obrigatório');
     if (data.contact) property.contact = validatePhone(data.contact, 'O campo "telefone" é obrigatório');
-    if (data.financiable) property.financiable = validateBoolean(data.financiable, 'O campo "aceita financiamento" é obrigatório');
+    if (data.financiable !== undefined) property.financiable = validateBoolean(data.financiable, 'O campo "aceita financiamento" é obrigatório');
     if (data.ownerEmail) property.owner_email = validateEmail(data.ownerEmail);
     if (data.realtorEmail) property.realtor_email = validateEmail(data.realtorEmail);
     if (data.realstateEmail) property.realstate_email = validateEmail(data.realstateEmail);
     if (data.complement) property.complement = validateString(data.complement);
     if (data.iptu) property.iptu = validatePrice(data.iptu);
     if (data.aditionalFees) property.aditional_fees = validatePrice(data.aditionalFees);
-    if (data.negotiable) property.negotiable = validateBoolean(data.negotiable);
+    if (data.negotiable !== undefined) property.negotiable = validateBoolean(data.negotiable);
     if (data.suites) property.suites = validateInteger(data.suites);
-    if (data.furnished) property.furnished = validateBoolean(data.furnished);
-    if (data.gym) property.gym = validateBoolean(data.gym);
-    if (data.balcony) property.balcony = validateBoolean(data.balcony);
-    if (data.solarEnergy) property.solar_energy = validateBoolean(data.solarEnergy);
-    if (data.concierge) property.concierge = validateBoolean(data.concierge);
-    if (data.yard) property.yard = validateBoolean(data.yard);
-    if (data.isHighlighted) property.is_highlighted = validateBoolean(data.isHighlighted);
-    if (data.isPublished) property.is_published = validateBoolean(data.isPublished);
+    if (data.furnished !== undefined) property.furnished = validateBoolean(data.furnished);
+    if (data.gym !== undefined) property.gym = validateBoolean(data.gym);
+    if (data.balcony !== undefined) property.balcony = validateBoolean(data.balcony);
+    if (data.solarEnergy !== undefined) property.solar_energy = validateBoolean(data.solarEnergy);
+    if (data.concierge !== undefined) property.concierge = validateBoolean(data.concierge);
+    if (data.yard !== undefined) property.yard = validateBoolean(data.yard);
+    if (data.isHighlighted !== undefined) property.is_highlighted = validateBoolean(data.isHighlighted);
+    if (data.isPublished !== undefined) property.is_published = validateBoolean(data.isPublished);
     if (data.oldPhotos) oldPhotosUrls = data.oldPhotos;
 
     if (data.sellerEmail && data.sellerType === 'owner') property.owner_email = validateEmail(data.sellerEmail);
@@ -441,8 +441,8 @@ async function update(id, data, files, sellerEmail) {
 
     const { subscription } = await find(sellerEmail);
     if (subscription === 'free' && subscription === 'platinum') {
-      if (property.is_highlighted && !oldProperty.is_highlighted) checkHighlightLimit(sellerEmail);
-      else if (!property.is_highlighted && oldProperty.is_highlighted) checkAnnouncementLimit(sellerEmail);
+      if (property.is_highlighted && !oldProperty.is_highlighted) await checkHighlightLimit(sellerEmail);
+      else if (!property.is_highlighted && oldProperty.is_published) await checkAnnouncementLimit(sellerEmail);
     }
 
     await Property.update(property, { where: { id: validatedId } });
@@ -537,20 +537,20 @@ async function filter(data, page = 1, isHighlighted = false, isPublished = true)
     if (data.bedrooms) where.bedrooms = validateInteger(data.bedrooms);
     if (data.bathrooms) where.bathrooms = validateInteger(data.bathrooms);
     if (data.parkingSpaces) where.parking_spaces = validateInteger(data.parkingSpaces);
-    if (data.pool) where.pool = validateBoolean(data.pool);
-    if (data.grill) where.grill = validateBoolean(data.grill);
-    if (data.airConditioning) where.air_conditioning = validateBoolean(data.airConditioning);
-    if (data.playground) where.playground = validateBoolean(data.playground);
-    if (data.eventArea) where.event_area = validateBoolean(data.eventArea);
-    if (data.financiable) where.financiable = validateBoolean(data.financiable);
-    if (data.negotiable) where.negotiable = validateBoolean(data.negotiable);
+    if (data.pool !== undefined) where.pool = validateBoolean(data.pool);
+    if (data.grill !== undefined) where.grill = validateBoolean(data.grill);
+    if (data.airConditioning !== undefined) where.air_conditioning = validateBoolean(data.airConditioning);
+    if (data.playground !== undefined) where.playground = validateBoolean(data.playground);
+    if (data.eventArea !== undefined) where.event_area = validateBoolean(data.eventArea);
+    if (data.financiable !== undefined) where.financiable = validateBoolean(data.financiable);
+    if (data.negotiable !== undefined) where.negotiable = validateBoolean(data.negotiable);
     if (data.suites) where.suites = validateInteger(data.suites);
-    if (data.furnished) where.furnished = validateBoolean(data.furnished);
-    if (data.gym) where.gym = validateBoolean(data.gym);
-    if (data.balcony) where.balcony = validateBoolean(data.balcony);
-    if (data.solarEnergy) where.solar_energy = validateBoolean(data.solarEnergy);
-    if (data.concierge) where.concierge = validateBoolean(data.concierge);
-    if (data.yard) where.yard = validateBoolean(data.yard);
+    if (data.furnished !== undefined) where.furnished = validateBoolean(data.furnished);
+    if (data.gym !== undefined) where.gym = validateBoolean(data.gym);
+    if (data.balcony !== undefined) where.balcony = validateBoolean(data.balcony);
+    if (data.solarEnergy !== undefined) where.solar_energy = validateBoolean(data.solarEnergy);
+    if (data.concierge !== undefined) where.concierge = validateBoolean(data.concierge);
+    if (data.yard !== undefined) where.yard = validateBoolean(data.yard);
 
     if (data.order) order[0] = validateString(data.order);
     if (data.orderType) order[1] = validateString(data.orderType);
