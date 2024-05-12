@@ -1,7 +1,6 @@
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 
-import { where } from 'sequelize';
 import Client from '../db/models/Client.js';
 import Owner from '../db/models/Owner.js';
 import Realtor from '../db/models/Realtor.js';
