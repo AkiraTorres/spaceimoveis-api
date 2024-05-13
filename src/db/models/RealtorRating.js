@@ -24,7 +24,7 @@ const RealtorRating = sequelize.define('realtors_ratings', {
     onUpdate: 'CASCADE',
     onDelete: 'CASCADE',
   },
-  sender_name: {
+  sender_email: {
     type: DataTypes.STRING,
     allowNull: false,
   },
