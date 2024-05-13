@@ -48,18 +48,20 @@ async function getAllRatesByReceiver(receiverEmail, page = 1) {
 
   let rates = null;
   if (receiver.type === 'realtor') {
-    rates = await RealtorRating.findAll({ where, limit, offset, order });
+    rates = await RealtorRating.findAll({ where, limit, offset, order, raw: true });
   } else if (receiver.type === 'realstate') {
-    rates = await RealstateRating.findAll({ where, limit, offset, order });
+    rates = await RealstateRating.findAll({ where, limit, offset, order, raw: true });
   } else {
     const error = new Error('Usuário a receber a avaliação deve ser um corretor ou imobiliária.');
     error.status = 400;
     throw error;
   }
 
+  console.log(rates);
+
   const result = Promise.all(rates.map(async (rate) => {
     const sender = await find(rate.sender_email);
-    return { ...rate.dataValues, sender };
+    return { ...rate, sender };
   }));
 
   return { result, pagination };
@@ -173,7 +175,7 @@ async function setRate(senderEmail, receiverEmail, rating, comment) {
     rating: validatedRating,
     comment: validatedComment,
     receiver_email: validatedReceiverEmail,
-    sender_name: sender.name,
+    sender_email: sender.email,
   };
 
   if (receiver.type === 'realtor') {
