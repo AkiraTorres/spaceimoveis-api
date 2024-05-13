@@ -64,7 +64,8 @@ async function getAvgRateByReceiver(receiverEmail) {
     throw error;
   }
 
-  const where = { receiver_email: validatedReceiverEmail };
+  console.log('receiverEmail', validatedReceiverEmail);
+  const where = { realstate_email: validatedReceiverEmail };
   const order = [['createdAt', 'DESC']];
 
   const ratings = await RealstateRating.findAll({ where, order });
@@ -128,7 +129,7 @@ async function findAll(page) {
       total: countTotal,
     };
 
-    result.sort(async (a, b) => (await getAvgRateByReceiver(a.email) < await getAvgRateByReceiver(b.email) ? 1 : -1));
+    // result.sort(async (a, b) => (await getAvgRateByReceiver(a.email) < await getAvgRateByReceiver(b.email) ? 1 : -1));
 
     return { result, pagination };
   } catch (error) {
@@ -406,8 +407,10 @@ async function filter(data, page = 1) {
   const result = await Promise.all(realstates.map(async (realstate) => {
     const filteredRealstate = realstate;
 
-    filteredRealstate.profile = await RealstatePhoto.findOne({ where: { email: realstate.email } });
-    filteredRealstate.totalProperties = await Property.count({ where: { realstate_email: realstate.email } });
+    console.log(filteredRealstate.email);
+
+    filteredRealstate.profile = await RealstatePhoto.findOne({ where: { email: filteredRealstate.email } });
+    filteredRealstate.totalProperties = await Property.count();
 
     return filteredRealstate;
   }));
