@@ -62,7 +62,7 @@ async function findByPk(email, password = false, otp = false) {
   }
 }
 
-async function getAvgRateByReceiver(receiverEmail) {
+async function getAvgRateByRealtor(receiverEmail) {
   const validatedReceiverEmail = validateEmail(receiverEmail);
 
   const receiver = await findByPk(validatedReceiverEmail);
@@ -142,7 +142,7 @@ async function findAll(page) {
       total: countTotal,
     };
 
-    result.sort(async (a, b) => (await getAvgRateByReceiver(a.email) < await getAvgRateByReceiver(b.email) ? 1 : -1));
+    result.sort(async (a, b) => (await getAvgRateByRealtor(a.email) < await getAvgRateByRealtor(b.email) ? 1 : -1));
 
     return { result, pagination };
   } catch (error) {
@@ -437,7 +437,7 @@ async function filter(data, page = 1) {
     return filteredRealtor;
   }));
 
-  result.sort(async (a, b) => (await getAvgRateByReceiver(a.email) < await getAvgRateByReceiver(b.email) ? 1 : -1));
+  result.sort(async (a, b) => (await getAvgRateByRealtor(a.email) < await getAvgRateByRealtor(b.email) ? 1 : -1));
 
   return { result, pagination };
 }

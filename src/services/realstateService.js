@@ -26,7 +26,7 @@ async function findByPk(email, password = false, otp = false) {
   try {
     const validatedEmail = validateEmail(email);
     const attributes = { exclude: [] };
-    if (!otp) attributes.exclude.push('email');
+    if (!otp) attributes.exclude.push(['otp', 'otp_ttl']);
     if (!password) attributes.exclude.push('password');
 
     const realstate = await Realstate.findByPk(validatedEmail, {
@@ -64,8 +64,7 @@ async function getAvgRateByReceiver(receiverEmail) {
     throw error;
   }
 
-  console.log('receiverEmail', validatedReceiverEmail);
-  const where = { realstate_email: validatedReceiverEmail };
+  const where = { receiver_email: validatedReceiverEmail };
   const order = [['createdAt', 'DESC']];
 
   const ratings = await RealstateRating.findAll({ where, order });
@@ -406,8 +405,6 @@ async function filter(data, page = 1) {
 
   const result = await Promise.all(realstates.map(async (realstate) => {
     const filteredRealstate = realstate;
-
-    console.log(filteredRealstate.email);
 
     filteredRealstate.profile = await RealstatePhoto.findOne({ where: { email: filteredRealstate.email } });
     filteredRealstate.totalProperties = await Property.count();

@@ -61,7 +61,6 @@ async function getAllRatesByReceiver(receiverEmail, page = 1) {
     const editedRate = rate;
     const sender = await find(rate.sender_email);
     editedRate.sender = sender;
-    console.log(editedRate);
     return editedRate;
   }));
 
