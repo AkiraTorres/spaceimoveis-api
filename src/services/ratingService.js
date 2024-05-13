@@ -57,11 +57,12 @@ async function getAllRatesByReceiver(receiverEmail, page = 1) {
     throw error;
   }
 
-  console.log(rates);
-
-  const result = Promise.all(rates.map(async (rate) => {
+  const result = await Promise.all(rates.map(async (rate) => {
+    const editedRate = rate;
     const sender = await find(rate.sender_email);
-    return { ...rate, sender };
+    editedRate.sender = sender;
+    console.log(editedRate);
+    return editedRate;
   }));
 
   return { result, pagination };
