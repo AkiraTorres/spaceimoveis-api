@@ -336,7 +336,7 @@ async function create(data, files) {
     const { subscription } = await find(sellerEmail);
     if (subscription === 'free' && subscription === 'platinum') {
       if (propertyData.is_highlighted) checkHighlightLimit(sellerEmail);
-      else checkAnnouncementLimit(sellerEmail);
+      else if (propertyData.is_published) checkAnnouncementLimit(sellerEmail);
     }
 
     const newProperty = await Property.create(propertyData);
@@ -442,7 +442,7 @@ async function update(id, data, files, sellerEmail) {
     const { subscription } = await find(sellerEmail);
     if (subscription === 'free' && subscription === 'platinum') {
       if (property.is_highlighted && !oldProperty.is_highlighted) await checkHighlightLimit(sellerEmail);
-      else if (!property.is_highlighted && oldProperty.is_published) await checkAnnouncementLimit(sellerEmail);
+      else if (!property.is_published && oldProperty.is_published) await checkAnnouncementLimit(sellerEmail);
     }
 
     await Property.update(property, { where: { id: validatedId } });
@@ -514,6 +514,46 @@ async function update(id, data, files, sellerEmail) {
     error.status = error.status || 500;
     throw error;
   }
+}
+
+async function shelve(id, email) {
+  const validatedId = validateString(id);
+  const property = await Property.findByPk(validatedId);
+  if (!property) {
+    throw new PropertyNotFound();
+  }
+
+  if (property.owner_email !== email && property.realtor_email !== email && property.realstate_email !== email) {
+    const error = new Error('Você não tem permissão para arquivar este imóvel');
+    error.status = 401;
+    throw error;
+  }
+
+  await Property.update({ is_published: false, is_highlighted: false }, { where: { id: validatedId } });
+
+  return { message: 'Imóvel arquivado com sucesso' };
+}
+
+async function publish(id, email) {
+  const validatedId = validateString(id);
+  const property = await Property.findByPk(validatedId);
+  if (!property) {
+    throw new PropertyNotFound();
+  }
+
+  if (property.owner_email !== email && property.realtor_email !== email && property.realstate_email !== email) {
+    const error = new Error('Você não tem permissão para arquivar este imóvel');
+    error.status = 401;
+    throw error;
+  }
+
+  const { subscription } = await find(email);
+  if (subscription === 'free' && subscription === 'platinum') {
+    if (property.is_highlighted && !property.is_highlighted) await checkHighlightLimit(email);
+    else if (!property.is_published && property.is_published) await checkAnnouncementLimit(email);
+  }
+
+  return { message: 'Imóvel publicado com sucesso' };
 }
 
 async function filter(data, page = 1, isHighlighted = false, isPublished = true) {
