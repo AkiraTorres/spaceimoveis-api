@@ -23,6 +23,7 @@ import {
 } from '../validators/inputValidators.js';
 
 import firebaseConfig from '../config/firebase.js';
+import Property from '../db/models/Property.js';
 
 const app = initializeApp(firebaseConfig);
 const storage = getStorage(app);
@@ -59,7 +60,9 @@ async function findAll(page) {
 
     const result = await Promise.all(owners.map(async (owner) => {
       const profile = await OwnerPhoto.findOne({ where: { email: owner.email } });
-      return { ...owner.dataValues, profile };
+      const properties = await Property.findAll({ where: { owner_email: owner.email } });
+
+      return { ...owner.dataValues, profile, properties };
     }));
 
     const pagination = {
@@ -95,7 +98,9 @@ async function findByPk(email, password, otp = false) {
     }
 
     const profile = await OwnerPhoto.findOne({ where: { email: owner.email } });
-    return { ...owner.dataValues, profile };
+    const properties = await Property.findAll({ where: { owner_email: owner.email } });
+
+    return { ...owner.dataValues, profile, properties };
   } catch (error) {
     error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     error.status = error.status || 500;
@@ -119,7 +124,9 @@ async function findByCpf(cpf, password = false, otp = false) {
     }
 
     const profile = await OwnerPhoto.findOne({ where: { email: realtor.email } });
-    return { ...realtor.dataValues, profile };
+    const properties = await Property.findAll({ where: { owner_email: realtor.email } });
+
+    return { ...realtor.dataValues, profile, properties };
   } catch (error) {
     error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     error.status = error.status || 500;
@@ -143,7 +150,9 @@ async function findByRg(rg, password = false, otp = false) {
     }
 
     const profile = await OwnerPhoto.findOne({ where: { email: realtor.email } });
-    return { ...realtor.dataValues, profile };
+    const properties = await Property.findAll({ where: { owner_email: realtor.email } });
+
+    return { ...realtor.dataValues, profile, properties };
   } catch (error) {
     error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     error.status = error.status || 500;
