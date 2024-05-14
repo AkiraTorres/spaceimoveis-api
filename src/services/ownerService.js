@@ -295,7 +295,7 @@ async function elevate(email, data, photo) {
     await validateIfUniqueRg(owner.rg);
     await validateIfUniqueCpf(owner.cpf);
 
-    const newOwner = await Owner.update(owner, { where: { email: validatedEmail } });
+    const newOwner = await Owner.create(owner);
     await Client.destroy({ where: { email: validatedEmail } });
 
     let profile = null;
