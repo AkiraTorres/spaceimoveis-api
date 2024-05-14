@@ -34,7 +34,7 @@ import firebaseConfig from '../config/firebase.js';
 const app = initializeApp(firebaseConfig);
 const storage = getStorage(app);
 
-async function getAvgRateByRealtor(receiverEmail) {
+async function getAvgRateByReceiver(receiverEmail) {
   const validatedReceiverEmail = validateEmail(receiverEmail);
 
   const receiver = await Realtor.findByPk(validatedReceiverEmail);
@@ -66,33 +66,27 @@ async function getAvgRateByRealtor(receiverEmail) {
 }
 
 async function findByPk(email, password = false, otp = false) {
-  try {
-    const validatedEmail = validateEmail(email);
-    const attributes = { exclude: [] };
-    if (!otp) attributes.exclude.push('otp', 'otp_ttl');
-    if (!password) attributes.exclude.push('password');
+  const validatedEmail = validateEmail(email);
+  const attributes = { exclude: [] };
+  if (!otp) attributes.exclude.push('otp', 'otp_ttl');
+  if (!password) attributes.exclude.push('password');
 
-    const realtor = await Realtor.findByPk(validatedEmail, {
-      attributes,
-      raw: true,
-    });
+  const realtor = await Realtor.findByPk(validatedEmail, {
+    attributes,
+    raw: true,
+  });
 
-    if (!realtor) {
-      throw new RealtorNotFound();
-    }
-
-    realtor.totalProperties = await Property.count({ where: { realtor_email: realtor.email } });
-    realtor.avgRate = await getAvgRateByRealtor(realtor.email);
-    realtor.properties = await Property.findAll({ where: { realtor_email: realtor.email } });
-    realtor.profile = await RealtorPhoto.findOne({ where: { email: realtor.email } });
-    realtor.totalRatings = await RealtorRating.count({ where: { receiver_email: realtor.email } });
-
-    return realtor;
-  } catch (error) {
-    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    error.status = error.status || 500;
-    throw error;
+  if (!realtor) {
+    throw new RealtorNotFound();
   }
+
+  realtor.totalProperties = await Property.count({ where: { realtor_email: realtor.email } });
+  realtor.avgRate = await getAvgRateByReceiver(realtor.email);
+  realtor.properties = await Property.findAll({ where: { realtor_email: realtor.email } });
+  realtor.profile = await RealtorPhoto.findOne({ where: { email: realtor.email } });
+  realtor.totalRatings = await RealtorRating.count({ where: { receiver_email: realtor.email } });
+
+  return realtor;
 }
 
 async function findAll(page) {
@@ -132,7 +126,7 @@ async function findAll(page) {
       editRealtor.totalProperties = await Property.count({
         where: { realtor_email: realtor.email },
       });
-      editRealtor.avgRate = await getAvgRateByRealtor(realtor.email);
+      editRealtor.avgRate = await getAvgRateByReceiver(realtor.email);
       editRealtor.profile = await RealtorPhoto.findOne({ where: { email: realtor.email } });
       editRealtor.properties = await Property.findAll({ where: { realtor_email: realtor.email } });
       editRealtor.totalRatings = await RealtorRating.count({
@@ -152,7 +146,7 @@ async function findAll(page) {
     };
 
     result.sort(async (a, b) => (
-      await getAvgRateByRealtor(a.email) < await getAvgRateByRealtor(b.email) ? 1 : -1
+      await getAvgRateByReceiver(a.email) < await getAvgRateByReceiver(b.email) ? 1 : -1
     ));
 
     return { result, pagination };
@@ -180,7 +174,7 @@ async function findByCpf(cpf, password = false, otp = false) {
     }
 
     realtor.totalProperties = await Property.count({ where: { realtor_email: realtor.email } });
-    realtor.avgRate = await getAvgRateByRealtor(realtor.email);
+    realtor.avgRate = await getAvgRateByReceiver(realtor.email);
     realtor.profile = await RealtorPhoto.findOne({ where: { email: realtor.email } });
     realtor.properties = await Property.findAll({ where: { realtor_email: realtor.email } });
     realtor.totalRatings = await RealtorRating.count({ where: { receiver_email: realtor.email } });
@@ -209,7 +203,7 @@ async function findByRg(rg, password = false, otp = false) {
     }
 
     realtor.totalProperties = await Property.count({ where: { realtor_email: realtor.email } });
-    realtor.avgRate = await getAvgRateByRealtor(realtor.email);
+    realtor.avgRate = await getAvgRateByReceiver(realtor.email);
     realtor.profile = await RealtorPhoto.findOne({ where: { email: realtor.email } });
     realtor.properties = await Property.findAll({ where: { realtor_email: realtor.email } });
     realtor.totalRatings = await RealtorRating.count({ where: { receiver_email: realtor.email } });
@@ -451,14 +445,14 @@ async function filter(data, page = 1) {
       where: { realtor_email: realtor.email },
     });
     filtered.totalRatings = await RealtorRating.count({ where: { receiver_email: realtor.email } });
-    filtered.avgRate = await getAvgRateByRealtor(realtor.email);
+    filtered.avgRate = await getAvgRateByReceiver(realtor.email);
     filtered.properties = await Property.findAll({ where: { realtor_email: realtor.email } });
 
     return filtered;
   }));
 
   result.sort(async (a, b) => (
-    await getAvgRateByRealtor(a.email) < await getAvgRateByRealtor(b.email) ? 1 : -1
+    await getAvgRateByReceiver(a.email) < await getAvgRateByReceiver(b.email) ? 1 : -1
   ));
 
   return { result, pagination };

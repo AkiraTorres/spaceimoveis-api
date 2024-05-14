@@ -29,7 +29,7 @@ import Property from '../db/models/Property.js';
 const app = initializeApp(firebaseConfig);
 const storage = getStorage(app);
 
-async function getAvgRateByReceiver(receiverEmail) {
+export async function getAvgRateByRealstate(receiverEmail) {
   const validatedReceiverEmail = validateEmail(receiverEmail);
 
   const receiver = await Realstate.findByPk(validatedReceiverEmail);
@@ -80,7 +80,7 @@ async function findByPk(email, password = false, otp = false) {
       where: { realstate_email: realstate.email },
     });
 
-    realstate.avgRate = await getAvgRateByReceiver(realstate.email);
+    realstate.avgRate = await getAvgRateByRealstate(realstate.email);
     realstate.properties = await Property.findAll({ where: { realstate_email: realstate.email } });
     realstate.profile = await RealstatePhoto.findOne({ where: { email: realstate.email } });
     realstate.totalRatings = await RealstateRating.count({
@@ -96,74 +96,68 @@ async function findByPk(email, password = false, otp = false) {
 }
 
 async function findAll(page) {
-  try {
-    const attributes = { exclude: ['password', 'otp', 'otp_ttl'] };
-    if (page < 1) {
-      return await Realstate.findAll({
-        attributes,
-        order: [['company_name', 'ASC']],
-      });
-    }
-
-    const limit = 6;
-    const countTotal = await Realstate.count();
-
-    if (countTotal === 0) {
-      throw new NoRealstatesFound();
-    }
-
-    const lastPage = Math.ceil(countTotal / limit);
-    const offset = Number(limit * (page - 1));
-
-    const realstates = await Realstate.findAll({
+  const attributes = { exclude: ['password', 'otp', 'otp_ttl'] };
+  if (page < 1) {
+    return Realstate.findAll({
       attributes,
       order: [['company_name', 'ASC']],
-      offset,
-      limit,
-      raw: true,
+    });
+  }
+
+  const limit = 6;
+  const countTotal = await Realstate.count();
+
+  if (countTotal === 0) {
+    throw new NoRealstatesFound();
+  }
+
+  const lastPage = Math.ceil(countTotal / limit);
+  const offset = Number(limit * (page - 1));
+
+  const realstates = await Realstate.findAll({
+    attributes,
+    order: [['company_name', 'ASC']],
+    offset,
+    limit,
+    raw: true,
+  });
+
+  if (realstates.length === 0) {
+    throw new NoRealstatesFound();
+  }
+
+  const result = await Promise.all(realstates.map(async (realstate) => {
+    const editedRealstate = realstate;
+
+    editedRealstate.profile = await RealstatePhoto.findOne({ where: { email: realstate.email } });
+    editedRealstate.totalProperties = await Property.count({
+      where: { realstate_email: realstate.email },
+    });
+    editedRealstate.avgRate = await getAvgRateByRealstate(realstate.email);
+    editedRealstate.properties = await Property.findAll({
+      where: { realstate_email: realstate.email },
+    });
+    editedRealstate.totalRatings = await RealstateRating.count({
+      where: { receiver_email: realstate.email },
     });
 
-    if (realstates.length === 0) {
-      throw new NoRealstatesFound();
-    }
+    return editedRealstate;
+  }));
 
-    const result = await Promise.all(realstates.map(async (realstate) => {
-      const editedRealstate = realstate;
+  const pagination = {
+    path: '/realstates',
+    page,
+    prev_page_url: page - 1 >= 1 ? page - 1 : null,
+    next_page_url: Number(page) + 1 <= lastPage ? Number(page) + 1 : null,
+    lastPage,
+    total: countTotal,
+  };
 
-      editedRealstate.profile = await RealstatePhoto.findOne({ where: { email: realstate.email } });
-      editedRealstate.totalProperties = await Property.count({
-        where: { realstate_email: realstate.email },
-      });
-      editedRealstate.avgRate = await getAvgRateByReceiver(realstate.email);
-      editedRealstate.properties = await Property.findAll({
-        where: { realstate_email: realstate.email },
-      });
-      editedRealstate.totalRatings = await RealstateRating.count({
-        where: { receiver_email: realstate.email },
-      });
+  result.sort(async (a, b) => (
+    await getAvgRateByRealstate(a.email) < await getAvgRateByRealstate(b.email) ? 1 : -1
+  ));
 
-      return editedRealstate;
-    }));
-
-    const pagination = {
-      path: '/realstates',
-      page,
-      prev_page_url: page - 1 >= 1 ? page - 1 : null,
-      next_page_url: Number(page) + 1 <= lastPage ? Number(page) + 1 : null,
-      lastPage,
-      total: countTotal,
-    };
-
-    result.sort(async (a, b) => (
-      await getAvgRateByReceiver(a.email) < await getAvgRateByReceiver(b.email) ? 1 : -1
-    ));
-
-    return { result, pagination };
-  } catch (error) {
-    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    error.status = error.status || 500;
-    throw error;
-  }
+  return { result, pagination };
 }
 
 async function findByCnpj(cnpj, password = false, otp = false) {
@@ -188,7 +182,7 @@ async function findByCnpj(cnpj, password = false, otp = false) {
 
     realstate.profile = await RealstatePhoto.findOne({ where: { email: realstate.email } });
     realstate.properties = await Property.findAll({ where: { realstate_email: realstate.email } });
-    realstate.avgRate = await getAvgRateByReceiver(realstate.email);
+    realstate.avgRate = await getAvgRateByRealstate(realstate.email);
     realstate.totalRatings = await RealstateRating.count({
       where: { receiver_email: realstate.email },
     });
@@ -223,7 +217,7 @@ async function findByCreci(creci, password = false, otp = false) {
 
     realstate.profile = await RealstatePhoto.findOne({ where: { email: realstate.email } });
     realstate.properties = await Property.findAll({ where: { realstate_email: realstate.email } });
-    realstate.avgRate = await getAvgRateByReceiver(realstate.email);
+    realstate.avgRate = await getAvgRateByRealstate(realstate.email);
     realstate.totalRatings = await RealstateRating.count({
       where: { receiver_email: realstate.email },
     });
@@ -459,7 +453,7 @@ async function filter(data, page = 1) {
       where: { email: filteredRealstate.email },
     });
     filteredRealstate.totalProperties = await Property.count();
-    filteredRealstate.avgRate = await getAvgRateByReceiver(filteredRealstate.email);
+    filteredRealstate.avgRate = await getAvgRateByRealstate(filteredRealstate.email);
     filteredRealstate.properties = await Property.findAll({
       where: { realstate_email: filteredRealstate.email },
     });
@@ -471,7 +465,7 @@ async function filter(data, page = 1) {
   }));
 
   result.sort(async (a, b) => (
-    await getAvgRateByReceiver(a.email) < await getAvgRateByReceiver(b.email) ? 1 : -1
+    await getAvgRateByRealstate(a.email) < await getAvgRateByRealstate(b.email) ? 1 : -1
   ));
 
   return { result, pagination };
