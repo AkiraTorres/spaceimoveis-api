@@ -132,9 +132,7 @@ export async function getAvgRateByReceiver(receiverEmail) {
   }
 
   if (ratings === 0) {
-    const error = new Error('Nenhuma avaliação encontrada.');
-    error.status = 404;
-    throw error;
+    return 0;
   }
 
   const total = ratings.length;
