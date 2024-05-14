@@ -29,38 +29,10 @@ import Property from '../db/models/Property.js';
 const app = initializeApp(firebaseConfig);
 const storage = getStorage(app);
 
-async function findByPk(email, password = false, otp = false) {
-  try {
-    const validatedEmail = validateEmail(email);
-    const attributes = { exclude: [] };
-    if (!otp) attributes.exclude.push(['otp', 'otp_ttl']);
-    if (!password) attributes.exclude.push('password');
-
-    const realstate = await Realstate.findByPk(validatedEmail, {
-      attributes,
-    });
-
-    if (!realstate) {
-      throw new RealstateNotFound();
-    }
-
-    realstate.totalProperties = await Property.count({
-      where: { realstate_email: realstate.email },
-    });
-
-    const profile = await RealstatePhoto.findOne({ where: { email: realstate.email } });
-    return { ...realstate.dataValues, profile };
-  } catch (error) {
-    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    error.status = error.status || 500;
-    throw error;
-  }
-}
-
 async function getAvgRateByReceiver(receiverEmail) {
   const validatedReceiverEmail = validateEmail(receiverEmail);
 
-  const receiver = await findByPk(validatedReceiverEmail);
+  const receiver = await Realstate.findByPk(validatedReceiverEmail);
   if (!receiver) {
     const error = new Error('Usuário não encontrado.');
     error.status = 404;
@@ -86,6 +58,37 @@ async function getAvgRateByReceiver(receiverEmail) {
   const sum = ratings.reduce((acc, curr) => acc + curr.rating, 0);
   const avg = ((sum / total) / 2).toFixed(2);
   return avg;
+}
+
+async function findByPk(email, password = false, otp = false) {
+  try {
+    const validatedEmail = validateEmail(email);
+    const attributes = { exclude: [] };
+    if (!otp) attributes.exclude.push(['otp', 'otp_ttl']);
+    if (!password) attributes.exclude.push('password');
+
+    const realstate = await Realstate.findByPk(validatedEmail, {
+      attributes,
+    });
+
+    if (!realstate) {
+      throw new RealstateNotFound();
+    }
+
+    realstate.totalProperties = await Property.count({
+      where: { realstate_email: realstate.email },
+    });
+
+    const profile = await RealstatePhoto.findOne({ where: { email: realstate.email } });
+    const properties = await Property.findAll({ where: { realstate_email: realstate.email } });
+    const avgRate = await getAvgRateByReceiver(realstate.email);
+
+    return { ...realstate.dataValues, avgRate, profile, properties };
+  } catch (error) {
+    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
+    error.status = error.status || 500;
+    throw error;
+  }
 }
 
 async function findAll(page) {
@@ -126,8 +129,10 @@ async function findAll(page) {
       editedRealstate.totalProperties = await Property.count({
         where: { realstate_email: realstate.email },
       });
+      const properties = await Property.findAll({ where: { realstate_email: realstate.email } });
+      const avgRate = await getAvgRateByReceiver(realstate.email);
 
-      return editedRealstate;
+      return { ...editedRealstate, avgRate, properties };
     }));
 
     const pagination = {
@@ -171,7 +176,10 @@ async function findByCnpj(cnpj, password = false, otp = false) {
     });
 
     const profile = await RealstatePhoto.findOne({ where: { email: realstate.email } });
-    return { ...realstate.dataValues, profile };
+    const properties = await Property.findAll({ where: { realstate_email: realstate.email } });
+    const avgRate = await getAvgRateByReceiver(realstate.email);
+
+    return { ...realstate.dataValues, avgRate, profile, properties };
   } catch (error) {
     error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     error.status = error.status || 500;
@@ -199,7 +207,10 @@ async function findByCreci(creci, password = false, otp = false) {
     });
 
     const profile = await RealstatePhoto.findOne({ where: { email: realstate.email } });
-    return { ...realstate.dataValues, profile };
+    const properties = await Property.findAll({ where: { realstate_email: realstate.email } });
+    const avgRate = await getAvgRateByReceiver(realstate.email);
+
+    return { ...realstate.dataValues, avgRate, profile, properties };
   } catch (error) {
     error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     error.status = error.status || 500;
@@ -430,6 +441,10 @@ async function filter(data, page = 1) {
       where: { email: filteredRealstate.email },
     });
     filteredRealstate.totalProperties = await Property.count();
+    filteredRealstate.avgRate = await getAvgRateByReceiver(filteredRealstate.email);
+    filteredRealstate.properties = await Property.findAll({
+      where: { realstate_email: filteredRealstate.email },
+    });
 
     return filteredRealstate;
   }));
