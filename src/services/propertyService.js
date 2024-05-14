@@ -56,7 +56,7 @@ async function checkAnnouncementLimit(email) {
   }
 }
 
-export async function findAll(page = 1, isHighlighted = false, isPublished = true) {
+export async function findAll(page = 1, isHighlighted = false, isPublished = true, limit = 6) {
   try {
     if (page < 1) {
       return await Property.findAll({
@@ -65,7 +65,6 @@ export async function findAll(page = 1, isHighlighted = false, isPublished = tru
       });
     }
 
-    const limit = 6;
     const countTotal = await Property.count({
       where: { is_highlighted: isHighlighted, is_published: isPublished },
     });
@@ -117,8 +116,7 @@ export async function findAll(page = 1, isHighlighted = false, isPublished = tru
   }
 }
 
-export async function recommendedProperties(page = 1, isHighlighted = true) {
-  const limit = 6;
+export async function recommendedProperties(page = 1, isHighlighted = true, limit = 6) {
   const offset = Number(limit * (page - 1));
   const where = { is_highlighted: isHighlighted, is_published: true };
   const order = [['updatedAt', 'DESC']];
@@ -181,7 +179,7 @@ export async function findByPk(id) {
   }
 }
 
-export async function findBySellerEmail(email, page = 1) {
+export async function findBySellerEmail(email, page = 1, limit = 6) {
   try {
     const validatedEmail = validateEmail(email);
 
@@ -192,7 +190,6 @@ export async function findBySellerEmail(email, page = 1) {
       error.status = 404;
     }
 
-    const limit = 6;
     const total = await Property.count({ where: { [`${user.type}_email`]: validatedEmail } });
     const lastPage = Math.ceil(total / limit);
     const offset = Number(limit * (page - 1));
@@ -595,8 +592,7 @@ export async function publish(id, email) {
   return { message: 'Imóvel publicado com sucesso' };
 }
 
-export async function filter(data, page = 1, isHighlighted = false, isPublished = true) {
-  const limit = 6;
+export async function filter(data, page = 1, isHighlighted = false, isPublished = true, limit = 6) {
   const offset = Number(limit * (page - 1));
   const where = {};
   const order = [['updatedAt', 'DESC']];

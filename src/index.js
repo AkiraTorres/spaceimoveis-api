@@ -44,6 +44,13 @@ app.all('*', (req, res) => {
   res.status(404).send('Not Found');
 });
 
+// eslint-disable-next-line no-unused-vars
+app.use((error, req, res, next) => {
+  const status = error.status || 500;
+  const message = error.message || 'Internal server error';
+  res.status(status).json({ message });
+});
+
 app.listen(port, () => {
   // eslint-disable-next-line no-console
   console.log(`\u001B[32mServer is running on http://localhost:${port}\u001B[0m`);
