@@ -52,26 +52,20 @@ async function findAll(page) {
 }
 
 async function findByPk(email, password = false, otp = false) {
-  try {
-    const validatedEmail = validateEmail(email);
-    const attributes = { exclude: [] };
-    if (!otp) attributes.exclude.push('otp', 'otp_ttl');
-    if (!password) attributes.exclude.push('password');
+  const validatedEmail = validateEmail(email);
+  const attributes = { exclude: [] };
+  if (!otp) attributes.exclude.push('otp', 'otp_ttl');
+  if (!password) attributes.exclude.push('password');
 
-    const client = await Client.findByPk(validatedEmail, {
-      attributes,
-    });
+  const client = await Client.findByPk(validatedEmail, {
+    attributes,
+  });
 
-    if (!client) {
-      throw new ClientNotFound();
-    }
-
-    return client;
-  } catch (error) {
-    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    error.status = error.status || 500;
-    throw error;
+  if (!client) {
+    throw new ClientNotFound();
   }
+
+  return client;
 }
 
 async function create(data) {
