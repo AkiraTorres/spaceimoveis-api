@@ -55,6 +55,14 @@ export const addTimesSeen = asyncHandler(async (req, res) => {
   res.status(200).json(result);
 });
 
+export const getMostSeenPropertiesBySeller = asyncHandler(async (req, res) => {
+  const { email } = req.params;
+  const { limit = 6 } = req.query;
+
+  const result = await service.getMostSeenPropertiesBySeller(email, limit);
+  res.status(200).json(result);
+});
+
 export const create = asyncHandler(async (req, res) => {
   const { data } = req.body;
   const { files } = req;

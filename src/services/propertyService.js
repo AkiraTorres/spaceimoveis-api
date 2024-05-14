@@ -287,6 +287,23 @@ export async function addTimesSeen(id) {
   return Property.update({ times_seen: property.times_seen + 1 }, { where: { id: validatedId } });
 }
 
+export async function getMostSeenPropertiesBySeller(email, limit = 6) {
+  const user = await find(validateEmail(email));
+  if (!user) {
+    const error = new Error('Usuário não encontrado');
+    error.status = 404;
+    throw error;
+  }
+
+  const properties = await Property.findAll({
+    where: { [`${user.type}_email`]: user.email },
+    order: [['times_seen', 'DESC']],
+    limit,
+  });
+
+  return properties;
+}
+
 export async function create(data, files) {
   try {
     const { sellerEmail } = data;
