@@ -1,19 +1,26 @@
 import { initializeApp } from 'firebase/app';
 import { deleteObject, getDownloadURL, getStorage, ref, uploadBytesResumable } from 'firebase/storage';
-import { v4 as uuid } from 'uuid';
 import { Op } from 'sequelize';
+import { v4 as uuid } from 'uuid';
 
 import Client from '../db/models/Client.js';
 import Realstate from '../db/models/Realstate.js';
 import RealstatePhoto from '../db/models/RealstatePhoto.js';
 import RealstateRating from '../db/models/RealstateRating.js';
 
-import RealstateNotFound from '../errors/realstateErrors/realstateNotFound.js';
-import NoRealstatesFound from '../errors/realstateErrors/noRealstatesFound.js';
 import ClientNotFound from '../errors/clientErrors/clientNotFound.js';
+import NoRealstatesFound from '../errors/realstateErrors/noRealstatesFound.js';
+import RealstateNotFound from '../errors/realstateErrors/realstateNotFound.js';
 import {
-  validateEmail, validateString, validatePassword, validatePhone, validateCnpj, validateUF,
-  validateCep, validateCreci, validateIfUniqueEmail, validateIfUniqueCnpj, validateIfUniqueCreci,
+  validateCep,
+  validateCnpj,
+  validateCreci,
+  validateEmail,
+  validateIfUniqueCnpj, validateIfUniqueCreci,
+  validateIfUniqueEmail,
+  validatePassword, validatePhone,
+  validateString,
+  validateUF,
 } from '../validators/inputValidators.js';
 
 import firebaseConfig from '../config/firebase.js';
@@ -37,7 +44,9 @@ async function findByPk(email, password = false, otp = false) {
       throw new RealstateNotFound();
     }
 
-    realstate.totalProperties = await Property.count({ where: { realstate_email: realstate.email } });
+    realstate.totalProperties = await Property.count({
+      where: { realstate_email: realstate.email },
+    });
 
     const profile = await RealstatePhoto.findOne({ where: { email: realstate.email } });
     return { ...realstate.dataValues, profile };
@@ -114,7 +123,9 @@ async function findAll(page) {
       const editedRealstate = realstate;
 
       editedRealstate.profile = await RealstatePhoto.findOne({ where: { email: realstate.email } });
-      editedRealstate.totalProperties = await Property.count({ where: { realstate_email: realstate.email } });
+      editedRealstate.totalProperties = await Property.count({
+        where: { realstate_email: realstate.email },
+      });
 
       return editedRealstate;
     }));
@@ -128,12 +139,14 @@ async function findAll(page) {
       total: countTotal,
     };
 
-    // result.sort(async (a, b) => (await getAvgRateByReceiver(a.email) < await getAvgRateByReceiver(b.email) ? 1 : -1));
+    result.sort(async (a, b) => (
+      await getAvgRateByReceiver(a.email) < await getAvgRateByReceiver(b.email) ? 1 : -1
+    ));
 
     return { result, pagination };
   } catch (error) {
-    const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    console.error(message);
+    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
+    error.status = error.status || 500;
     throw error;
   }
 }
@@ -153,13 +166,15 @@ async function findByCnpj(cnpj, password = false, otp = false) {
       throw new RealstateNotFound();
     }
 
-    realstate.totalProperties = await Property.count({ where: { realstate_email: realstate.email } });
+    realstate.totalProperties = await Property.count({
+      where: { realstate_email: realstate.email },
+    });
 
     const profile = await RealstatePhoto.findOne({ where: { email: realstate.email } });
     return { ...realstate.dataValues, profile };
   } catch (error) {
-    const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    console.error(message);
+    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
+    error.status = error.status || 500;
     throw error;
   }
 }
@@ -179,13 +194,15 @@ async function findByCreci(creci, password = false, otp = false) {
       throw new RealstateNotFound();
     }
 
-    realstate.totalProperties = await Property.count({ where: { realstate_email: realstate.email } });
+    realstate.totalProperties = await Property.count({
+      where: { realstate_email: realstate.email },
+    });
 
     const profile = await RealstatePhoto.findOne({ where: { email: realstate.email } });
     return { ...realstate.dataValues, profile };
   } catch (error) {
-    const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    console.error(message);
+    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
+    error.status = error.status || 500;
     throw error;
   }
 }
@@ -235,8 +252,8 @@ async function create(data, photo) {
 
     return { ...newRealstate.dataValues, profile };
   } catch (error) {
-    const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    console.error(message);
+    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
+    error.status = error.status || 500;
     throw error;
   }
 }
@@ -271,7 +288,10 @@ async function update(email, data, photo) {
         bio: data.bio ? validateString(data.bio) : oldRealstate.bio,
         social_one: data.socialOne ? validateString(data.socialOne) : oldRealstate.social_one,
         social_two: data.socialTwo ? validateString(data.socialTwo) : oldRealstate.social_two,
-        subscription: data.subscription ? validateString(data.subscription) : oldRealstate.subscription,
+
+        subscription: data.subscription
+          ? validateString(data.subscription)
+          : oldRealstate.subscription,
       };
 
       if (realstate.email !== oldRealstate.email) await validateIfUniqueEmail(realstate.email);
@@ -306,8 +326,8 @@ async function update(email, data, photo) {
 
     return { ...updatedRealstate.dataValues, profile };
   } catch (error) {
-    const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    console.error(message);
+    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
+    error.status = error.status || 500;
     throw error;
   }
 }
@@ -364,8 +384,8 @@ async function elevate(email, data, photo) {
 
     return { ...newRealstate.dataValues, profile };
   } catch (error) {
-    const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    console.error(message);
+    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
+    error.status = error.status || 500;
     throw error;
   }
 }
@@ -406,13 +426,17 @@ async function filter(data, page = 1) {
   const result = await Promise.all(realstates.map(async (realstate) => {
     const filteredRealstate = realstate;
 
-    filteredRealstate.profile = await RealstatePhoto.findOne({ where: { email: filteredRealstate.email } });
+    filteredRealstate.profile = await RealstatePhoto.findOne({
+      where: { email: filteredRealstate.email },
+    });
     filteredRealstate.totalProperties = await Property.count();
 
     return filteredRealstate;
   }));
 
-  result.sort(async (a, b) => (await getAvgRateByReceiver(a.email) < await getAvgRateByReceiver(b.email) ? 1 : -1));
+  result.sort(async (a, b) => (
+    await getAvgRateByReceiver(a.email) < await getAvgRateByReceiver(b.email) ? 1 : -1
+  ));
 
   return { result, pagination };
 }
@@ -435,10 +459,10 @@ async function destroy(email) {
     await Realstate.destroy({ where: { email: validatedEmail } });
     return { message: 'Usuário apagado com sucesso' };
   } catch (error) {
-    const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    console.error(message);
+    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
+    error.status = error.status || 500;
     throw error;
   }
 }
 
-export { findAll, findByPk, findByCnpj, findByCreci, create, update, elevate, filter, destroy };
+export { create, destroy, elevate, filter, findAll, findByCnpj, findByCreci, findByPk, update };

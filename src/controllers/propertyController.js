@@ -14,11 +14,11 @@ export const findAll = asyncHandler(async (req, res) => {
   }
 });
 
-export const recomendedProperties = asyncHandler(async (req, res) => {
+export const recommendedProperties = asyncHandler(async (req, res) => {
   try {
     const { page = 1 } = req.query;
 
-    const result = await service.recomendedProperties(page);
+    const result = await service.recommendedProperties(page);
     res.status(200).json(result);
   } catch (error) {
     const status = error.status || 500;

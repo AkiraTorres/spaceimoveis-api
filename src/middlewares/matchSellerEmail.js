@@ -1,6 +1,6 @@
 import Property from '../db/models/Property.js';
 import EmailDontMatch from '../errors/emailDontMatch.js';
-import PropertyNotFound from '../errors/propertyErrors/properyNotFound.js';
+import PropertyNotFound from '../errors/propertyErrors/propertyNotFound.js';
 
 export default async function matchEmail(req, res, next) {
   try {

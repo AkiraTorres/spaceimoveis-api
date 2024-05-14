@@ -6,9 +6,9 @@ import Client from '../db/models/Client.js';
 import Owner from '../db/models/Owner.js';
 import OwnerPhoto from '../db/models/OwnerPhoto.js';
 
-import OwnerNotFound from '../errors/ownerErrors/ownerNotFound.js';
-import NoOwnersFound from '../errors/ownerErrors/noOwnersFound.js';
 import ClientNotFound from '../errors/clientErrors/clientNotFound.js';
+import NoOwnersFound from '../errors/ownerErrors/noOwnersFound.js';
+import OwnerNotFound from '../errors/ownerErrors/ownerNotFound.js';
 import {
   validateCep,
   validateCpf,
@@ -73,8 +73,8 @@ async function findAll(page) {
 
     return { result, pagination };
   } catch (error) {
-    const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    console.error(message);
+    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
+    error.status = error.status || 500;
     throw error;
   }
 }
@@ -121,8 +121,8 @@ async function findByCpf(cpf, password = false, otp = false) {
     const profile = await OwnerPhoto.findOne({ where: { email: realtor.email } });
     return { ...realtor.dataValues, profile };
   } catch (error) {
-    const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    console.error(message);
+    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
+    error.status = error.status || 500;
     throw error;
   }
 }
@@ -145,8 +145,8 @@ async function findByRg(rg, password = false, otp = false) {
     const profile = await OwnerPhoto.findOne({ where: { email: realtor.email } });
     return { ...realtor.dataValues, profile };
   } catch (error) {
-    const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    console.error(message);
+    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
+    error.status = error.status || 500;
     throw error;
   }
 }
@@ -193,8 +193,8 @@ async function create(data, photo) {
 
     return { ...newOwner.dataValues, profile };
   } catch (error) {
-    const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    console.error(message);
+    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
+    error.status = error.status || 500;
     throw error;
   }
 }
@@ -214,7 +214,6 @@ async function update(email, data, photo) {
 
     let updatedOwner = oldOwner;
     if (data) {
-      console.log(data);
       const owner = {
         email: data.email ? validateEmail(data.email) : oldOwner.email,
         name: data.name ? validateString(data.name, 'O campo nome é obrigatório') : oldOwner.name,
@@ -234,7 +233,6 @@ async function update(email, data, photo) {
       if (owner.rg !== oldOwner.rg) await validateIfUniqueRg(owner.rg);
       if (owner.cpf !== oldOwner.cpf) await validateIfUniqueCpf(owner.cpf);
 
-      console.log(owner);
       await Owner.update(owner, { where: { email: owner.email } });
       updatedOwner = owner;
     }
@@ -265,7 +263,6 @@ async function update(email, data, photo) {
   } catch (error) {
     error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     error.status = error.status || 500;
-    console.error(error.message);
     throw error;
   }
 }
@@ -349,4 +346,4 @@ async function destroy(email) {
   }
 }
 
-export { findAll, findByPk, findByCpf, findByRg, create, update, elevate, destroy };
+export { create, destroy, elevate, findAll, findByCpf, findByPk, findByRg, update };

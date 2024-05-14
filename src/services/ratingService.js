@@ -1,11 +1,11 @@
 import { Op } from 'sequelize';
 
-import RealtorRating from '../db/models/RealtorRating.js';
 import RealstateRating from '../db/models/RealstateRating.js';
-import { find } from './globalService.js';
+import RealtorRating from '../db/models/RealtorRating.js';
 import { validateEmail, validateInteger, validateString } from '../validators/inputValidators.js';
+import { find } from './globalService.js';
 
-async function getAllRatesByReceiver(receiverEmail, page = 1) {
+export async function getAllRatesByReceiver(receiverEmail, page = 1) {
   const validatedReceiverEmail = validateEmail(receiverEmail);
 
   const receiver = await find(validatedReceiverEmail);
@@ -65,7 +65,7 @@ async function getAllRatesByReceiver(receiverEmail, page = 1) {
   return { result, pagination };
 }
 
-async function getAllRatesBySender(senderEmail, page = 1) {
+export async function getAllRatesBySender(senderEmail, page = 1) {
   const validatedSenderEmail = validateEmail(senderEmail);
 
   const user = await find(validatedSenderEmail);
@@ -105,7 +105,7 @@ async function getAllRatesBySender(senderEmail, page = 1) {
   return { result, pagination };
 }
 
-async function getAvgRateByReceiver(receiverEmail) {
+export async function getAvgRateByReceiver(receiverEmail) {
   const validatedReceiverEmail = validateEmail(receiverEmail);
 
   const receiver = await find(validatedReceiverEmail);
@@ -143,7 +143,7 @@ async function getAvgRateByReceiver(receiverEmail) {
   return { avg, total, receiver };
 }
 
-async function setRate(senderEmail, receiverEmail, rating, comment) {
+export async function setRate(senderEmail, receiverEmail, rating, comment) {
   const validatedSenderEmail = validateEmail(senderEmail);
   const validatedReceiverEmail = validateEmail(receiverEmail);
   const validatedRating = validateInteger(rating);
@@ -188,7 +188,7 @@ async function setRate(senderEmail, receiverEmail, rating, comment) {
   throw error;
 }
 
-async function filter(data, page = 1) {
+export async function filter(data, page = 1) {
   const limit = 6;
   const offset = Number(limit * (page - 1));
   const ordering = [['createdAt', 'DESC']];
@@ -226,7 +226,7 @@ async function filter(data, page = 1) {
   return { result, pagination };
 }
 
-async function deleteRate(id, senderEmail) {
+export async function deleteRate(id, senderEmail) {
   const validateId = validateString(id);
 
   let rate = await RealtorRating.findByPk(validateId);
@@ -246,5 +246,3 @@ async function deleteRate(id, senderEmail) {
   await rate.destroy();
   return { message: 'Avaliação excluída com sucesso.' };
 }
-
-export { getAllRatesByReceiver, getAllRatesBySender, getAvgRateByReceiver, setRate, filter, deleteRate };

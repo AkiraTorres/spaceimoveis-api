@@ -2,7 +2,7 @@ import Client from '../db/models/Client.js';
 
 import ClientNotFound from '../errors/clientErrors/clientNotFound.js';
 import NoClientsFound from '../errors/clientErrors/noClientsFound.js';
-import { validateEmail, validateString, validatePassword, validatePhone, validateIfUniqueEmail } from '../validators/inputValidators.js';
+import { validateEmail, validateIfUniqueEmail, validatePassword, validatePhone, validateString } from '../validators/inputValidators.js';
 
 async function findAll(page) {
   try {
@@ -45,8 +45,8 @@ async function findAll(page) {
 
     return { clients, pagination };
   } catch (error) {
-    const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    console.error(message);
+    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
+    error.status = error.status || 500;
     throw error;
   }
 }
@@ -93,8 +93,8 @@ async function create(data) {
 
     return await Client.create(client);
   } catch (error) {
-    const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    console.error(message);
+    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
+    error.status = error.status || 500;
     throw error;
   }
 }
@@ -121,8 +121,8 @@ async function update(email, data) {
 
     return await Client.update(client, { where: { email: validatedEmail } });
   } catch (error) {
-    const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    console.error(message);
+    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
+    error.status = error.status || 500;
     throw error;
   }
 }
@@ -137,10 +137,10 @@ async function destroy(email) {
     await Client.destroy({ where: { email: validatedEmail } });
     return { message: 'Usuário apagado com sucesso' };
   } catch (error) {
-    const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    console.error(message);
+    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
+    error.status = error.status || 500;
     throw error;
   }
 }
 
-export { findAll, findByPk, create, update, destroy };
+export { create, destroy, findAll, findByPk, update };

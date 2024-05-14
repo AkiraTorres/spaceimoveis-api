@@ -23,12 +23,11 @@ module.exports = {
   },
   rules: {
     'import/extensions': 'off',
-    'no-console': 'off',
     'object-curly-newline': 'off',
     strict: 'off',
     'no-plusplus': 'off',
     'import/no-extraneous-dependencies': 'off',
-    'max-len': 'off',
+    // 'max-len': 'off',
     // endOfLine: 'auto',
   },
 };

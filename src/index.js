@@ -1,19 +1,19 @@
-import Express from 'express';
 import bodyParser from 'body-parser';
-import dotenv from 'dotenv';
 import cors from 'cors';
+import dotenv from 'dotenv';
+import Express from 'express';
 
-import clientRoutes from './routes/clientRoutes.js';
-import ownerRoutes from './routes/ownerRoutes.js';
-import loginRoutes from './routes/loginRoutes.js';
-import realtorRoutes from './routes/realtorRoutes.js';
-import realstateRoutes from './routes/realstateRoutes.js';
-import propertyRoutes from './routes/propertyRoutes.js';
-import favoriteRoutes from './routes/favoriteRoutes.js';
-import ratingRoutes from './routes/ratingRoutes.js';
 import * as globalController from './controllers/globalController.js';
-import verifyJwt from './middlewares/verifyJwt.js';
 import { verifyGoogleToken } from './middlewares/verifyGoogle.cjs';
+import verifyJwt from './middlewares/verifyJwt.js';
+import clientRoutes from './routes/clientRoutes.js';
+import favoriteRoutes from './routes/favoriteRoutes.js';
+import loginRoutes from './routes/loginRoutes.js';
+import ownerRoutes from './routes/ownerRoutes.js';
+import propertyRoutes from './routes/propertyRoutes.js';
+import ratingRoutes from './routes/ratingRoutes.js';
+import realstateRoutes from './routes/realstateRoutes.js';
+import realtorRoutes from './routes/realtorRoutes.js';
 
 dotenv.config();
 
@@ -45,5 +45,6 @@ app.all('*', (req, res) => {
 });
 
 app.listen(port, () => {
+  // eslint-disable-next-line no-console
   console.log(`\u001B[32mServer is running on http://localhost:${port}\u001B[0m`);
 });

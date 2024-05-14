@@ -1,13 +1,11 @@
 import { initializeApp } from 'firebase/app';
 import { deleteObject, getDownloadURL, getStorage, ref, uploadBytesResumable } from 'firebase/storage';
-import { v4 as uuid } from 'uuid';
 import { Op } from 'sequelize';
+import { v4 as uuid } from 'uuid';
 
-import Property from '../db/models/Property.js';
 import Photo from '../db/models/Photo.js';
-import { find } from './globalService.js';
-import { getPropertyTotalFavorites } from './favoriteService.js';
-import PropertyNotFound from '../errors/propertyErrors/properyNotFound.js';
+import Property from '../db/models/Property.js';
+import PropertyNotFound from '../errors/propertyErrors/propertyNotFound.js';
 import {
   validateBoolean,
   validateEmail,
@@ -16,6 +14,8 @@ import {
   validatePrice,
   validateString,
 } from '../validators/inputValidators.js';
+import { getPropertyTotalFavorites } from './favoriteService.js';
+import { find } from './globalService.js';
 
 import firebaseConfig from '../config/firebase.js';
 
@@ -56,7 +56,7 @@ async function checkAnnouncementLimit(email) {
   }
 }
 
-async function findAll(page = 1, isHighlighted = false, isPublished = true) {
+export async function findAll(page = 1, isHighlighted = false, isPublished = true) {
   try {
     if (page < 1) {
       return await Property.findAll({
@@ -66,7 +66,9 @@ async function findAll(page = 1, isHighlighted = false, isPublished = true) {
     }
 
     const limit = 6;
-    const countTotal = await Property.count({ where: { is_highlighted: isHighlighted, is_published: isPublished } });
+    const countTotal = await Property.count({
+      where: { is_highlighted: isHighlighted, is_published: isPublished },
+    });
 
     const lastPage = Math.ceil(countTotal / limit);
     const offset = Number(limit * (page - 1));
@@ -115,7 +117,7 @@ async function findAll(page = 1, isHighlighted = false, isPublished = true) {
   }
 }
 
-async function recomendedProperties(page = 1, isHighlighted = true) {
+export async function recommendedProperties(page = 1, isHighlighted = true) {
   const limit = 6;
   const offset = Number(limit * (page - 1));
   const where = { is_highlighted: isHighlighted, is_published: true };
@@ -155,7 +157,7 @@ async function recomendedProperties(page = 1, isHighlighted = true) {
   return { properties, pagination };
 }
 
-async function findByPk(id) {
+export async function findByPk(id) {
   try {
     const validatedId = validateString(id);
 
@@ -179,7 +181,7 @@ async function findByPk(id) {
   }
 }
 
-async function findBySellerEmail(email, page = 1) {
+export async function findBySellerEmail(email, page = 1) {
   try {
     const validatedEmail = validateEmail(email);
 
@@ -234,7 +236,7 @@ async function findBySellerEmail(email, page = 1) {
   }
 }
 
-async function getAllPropertiesIds(email) {
+export async function getAllPropertiesIds(email) {
   const user = await find(validateEmail(email));
   if (!user) {
     const error = new Error('Usuário não encontrado');
@@ -247,7 +249,7 @@ async function getAllPropertiesIds(email) {
   return properties.map((property) => property.id);
 }
 
-async function getAllPropertiesCities(email) {
+export async function getAllPropertiesCities(email) {
   const user = await find(validateEmail(email));
   if (!user) {
     const error = new Error('Usuário não encontrado');
@@ -260,7 +262,7 @@ async function getAllPropertiesCities(email) {
   return [...new Set(cities)];
 }
 
-async function getTimesSeen(id) {
+export async function getTimesSeen(id) {
   const validatedId = validateString(id);
   const property = await Property.findByPk(validatedId);
   if (!property) {
@@ -270,7 +272,7 @@ async function getTimesSeen(id) {
   return property.times_seen;
 }
 
-async function addTimesSeen(id) {
+export async function addTimesSeen(id) {
   const validatedId = validateString(id);
   const property = await Property.findByPk(validatedId);
   if (!property) {
@@ -280,7 +282,7 @@ async function addTimesSeen(id) {
   return Property.update({ times_seen: property.times_seen + 1 }, { where: { id: validatedId } });
 }
 
-async function create(data, files) {
+export async function create(data, files) {
   try {
     const { sellerEmail } = data;
     const propertyData = {
@@ -321,11 +323,20 @@ async function create(data, files) {
     if (data.furnished !== undefined) propertyData.furnished = validateBoolean(data.furnished);
     if (data.gym !== undefined) propertyData.gym = validateBoolean(data.gym);
     if (data.balcony !== undefined) propertyData.balcony = validateBoolean(data.balcony);
-    if (data.solarEnergy !== undefined) propertyData.solar_energy = validateBoolean(data.solarEnergy);
     if (data.concierge !== undefined) propertyData.concierge = validateBoolean(data.concierge);
     if (data.yard !== undefined) propertyData.yard = validateBoolean(data.yard);
-    if (data.isHighlighted !== undefined) propertyData.is_highlighted = validateBoolean(data.isHighlighted);
-    if (data.isPublished !== undefined) propertyData.is_published = validateBoolean(data.isPublished);
+
+    if (data.solarEnergy !== undefined) {
+      propertyData.solar_energy = validateBoolean(data.solarEnergy);
+    }
+
+    if (data.isHighlighted !== undefined) {
+      propertyData.is_highlighted = validateBoolean(data.isHighlighted);
+    }
+
+    if (data.isPublished !== undefined) {
+      propertyData.is_published = validateBoolean(data.isPublished);
+    }
 
     if (!propertyData.sell_price && !propertyData.rent_price) {
       const error = new Error('É obrigatório o imóvel ter preço de venda ou preço de aluguel');
@@ -366,7 +377,7 @@ async function create(data, files) {
   }
 }
 
-async function update(id, data, files, sellerEmail) {
+export async function update(id, data, files, sellerEmail) {
   try {
     const validatedId = validateString(id);
     let newCoverUrl;
@@ -377,7 +388,9 @@ async function update(id, data, files, sellerEmail) {
       throw new PropertyNotFound();
     }
 
-    if (oldProperty.owner_email !== sellerEmail && oldProperty.realtor_email !== sellerEmail && oldProperty.realstate_email !== sellerEmail) {
+    if (oldProperty.owner_email !== sellerEmail
+      && oldProperty.realtor_email !== sellerEmail
+      && oldProperty.realstate_email !== sellerEmail) {
       const error = new Error('Você não tem permissão para alterar este imóvel');
       error.status = 401;
       throw error;
@@ -423,9 +436,12 @@ async function update(id, data, files, sellerEmail) {
     if (data.solarEnergy !== undefined) property.solar_energy = validateBoolean(data.solarEnergy);
     if (data.concierge !== undefined) property.concierge = validateBoolean(data.concierge);
     if (data.yard !== undefined) property.yard = validateBoolean(data.yard);
-    if (data.isHighlighted !== undefined) property.is_highlighted = validateBoolean(data.isHighlighted);
     if (data.isPublished !== undefined) property.is_published = validateBoolean(data.isPublished);
     if (data.oldPhotos) oldPhotosUrls = data.oldPhotos;
+
+    if (data.isHighlighted !== undefined) {
+      property.is_highlighted = validateBoolean(data.isHighlighted);
+    }
 
     if (data.sellerEmail && data.sellerType === 'owner') property.owner_email = validateEmail(data.sellerEmail);
     if (data.sellerEmail && data.sellerType === 'realtor') property.realtor_email = validateEmail(data.sellerEmail);
@@ -441,13 +457,19 @@ async function update(id, data, files, sellerEmail) {
 
     const { subscription } = await find(sellerEmail);
     if (subscription === 'free' && subscription === 'platinum') {
-      if (property.is_highlighted && !oldProperty.is_highlighted) await checkHighlightLimit(sellerEmail);
-      else if (!property.is_published && oldProperty.is_published) await checkAnnouncementLimit(sellerEmail);
+      if (property.is_highlighted && !oldProperty.is_highlighted) {
+        await checkHighlightLimit(sellerEmail);
+      } else if (!property.is_published && oldProperty.is_published) {
+        await checkAnnouncementLimit(sellerEmail);
+      }
     }
 
     await Property.update(property, { where: { id: validatedId } });
 
-    const oldPhotos = await Photo.findAll({ where: { property_id: validatedId, url: { [Op.not]: oldPhotosUrls } }, raw: true });
+    const oldPhotos = await Photo.findAll({
+      where: { property_id: validatedId, url: { [Op.not]: oldPhotosUrls } },
+      raw: true,
+    });
 
     // delete photos that the user didn't want to keep
     await Promise.all(oldPhotos.map(async (photo) => {
@@ -459,8 +481,15 @@ async function update(id, data, files, sellerEmail) {
     }));
 
     if (newCoverUrl) {
-      const oldCover = await Photo.findOne({ where: { property_id: validatedId, type: 'cover' }, raw: true });
-      const newCover = await Photo.findOne({ where: { property_id: validatedId, url: newCoverUrl }, raw: true });
+      const oldCover = await Photo.findOne({
+        where: { property_id: validatedId, type: 'cover' },
+        raw: true,
+      });
+      const newCover = await Photo.findOne({
+        where: { property_id: validatedId, url: newCoverUrl },
+        raw: true,
+      });
+
       if (oldCover && !(oldCover.url === newCover.url)) {
         oldCover.type = 'photo';
         await Photo.update(oldCover, { where: { id: oldCover.id } });
@@ -482,7 +511,11 @@ async function update(id, data, files, sellerEmail) {
         const snapshot = await uploadBytesResumable(storageRef, picture.buffer, metadata);
         const downloadURL = await getDownloadURL(snapshot.ref);
 
-        const exists = await Photo.findOne({ where: { property_id: validatedId, url: downloadURL }, raw: true });
+        const exists = await Photo.findOne({
+          where: { property_id: validatedId, url: downloadURL },
+          raw: true,
+        });
+
         if (!exists) {
           if (picture.fieldname === 'cover') {
             const oldCover = await Photo.findOne({ where: { property_id: validatedId, type: 'cover' }, raw: true });
@@ -516,32 +549,38 @@ async function update(id, data, files, sellerEmail) {
   }
 }
 
-async function shelve(id, email) {
+export async function shelve(id, email) {
   const validatedId = validateString(id);
   const property = await Property.findByPk(validatedId);
   if (!property) {
     throw new PropertyNotFound();
   }
 
-  if (property.owner_email !== email && property.realtor_email !== email && property.realstate_email !== email) {
+  if (property.owner_email !== email
+    && property.realtor_email !== email
+    && property.realstate_email !== email) {
     const error = new Error('Você não tem permissão para arquivar este imóvel');
     error.status = 401;
     throw error;
   }
 
-  await Property.update({ is_published: false, is_highlighted: false }, { where: { id: validatedId } });
+  await Property.update({ is_published: false, is_highlighted: false }, {
+    where: { id: validatedId },
+  });
 
   return { message: 'Imóvel arquivado com sucesso' };
 }
 
-async function publish(id, email) {
+export async function publish(id, email) {
   const validatedId = validateString(id);
   const property = await Property.findByPk(validatedId);
   if (!property) {
     throw new PropertyNotFound();
   }
 
-  if (property.owner_email !== email && property.realtor_email !== email && property.realstate_email !== email) {
+  if (property.owner_email !== email
+    && property.realtor_email !== email
+    && property.realstate_email !== email) {
     const error = new Error('Você não tem permissão para arquivar este imóvel');
     error.status = 401;
     throw error;
@@ -556,7 +595,7 @@ async function publish(id, email) {
   return { message: 'Imóvel publicado com sucesso' };
 }
 
-async function filter(data, page = 1, isHighlighted = false, isPublished = true) {
+export async function filter(data, page = 1, isHighlighted = false, isPublished = true) {
   const limit = 6;
   const offset = Number(limit * (page - 1));
   const where = {};
@@ -579,7 +618,6 @@ async function filter(data, page = 1, isHighlighted = false, isPublished = true)
     if (data.parkingSpaces) where.parking_spaces = validateInteger(data.parkingSpaces);
     if (data.pool !== undefined) where.pool = validateBoolean(data.pool);
     if (data.grill !== undefined) where.grill = validateBoolean(data.grill);
-    if (data.airConditioning !== undefined) where.air_conditioning = validateBoolean(data.airConditioning);
     if (data.playground !== undefined) where.playground = validateBoolean(data.playground);
     if (data.eventArea !== undefined) where.event_area = validateBoolean(data.eventArea);
     if (data.financiable !== undefined) where.financiable = validateBoolean(data.financiable);
@@ -591,6 +629,10 @@ async function filter(data, page = 1, isHighlighted = false, isPublished = true)
     if (data.solarEnergy !== undefined) where.solar_energy = validateBoolean(data.solarEnergy);
     if (data.concierge !== undefined) where.concierge = validateBoolean(data.concierge);
     if (data.yard !== undefined) where.yard = validateBoolean(data.yard);
+
+    if (data.airConditioning !== undefined) {
+      where.air_conditioning = validateBoolean(data.airConditioning);
+    }
 
     if (data.order) order[0] = validateString(data.order);
     if (data.orderType) order[1] = validateString(data.orderType);
@@ -658,7 +700,7 @@ async function filter(data, page = 1, isHighlighted = false, isPublished = true)
   return { properties, pagination };
 }
 
-async function destroy(id) {
+export async function destroy(id) {
   try {
     const validatedId = validateString(id);
 
@@ -684,5 +726,3 @@ async function destroy(id) {
     throw error;
   }
 }
-
-export { findAll, recomendedProperties, findByPk, findBySellerEmail, getAllPropertiesIds, getAllPropertiesCities, getTimesSeen, addTimesSeen, filter, create, update, destroy };

@@ -1,5 +1,6 @@
-import { Sequelize, DataTypes } from 'sequelize';
+/* eslint-disable no-console */
 import dotenv from 'dotenv';
+import { DataTypes, Sequelize } from 'sequelize';
 
 import config from './config/config.js';
 
@@ -24,4 +25,4 @@ async function connection() {
   }
 }
 
-export { connection, sequelize, DataTypes, Sequelize };
+export { DataTypes, Sequelize, connection, sequelize };

@@ -1,19 +1,19 @@
 import { initializeApp } from 'firebase/app';
 import { deleteObject, getDownloadURL, getStorage, ref, uploadBytesResumable } from 'firebase/storage';
-import { v4 as uuid } from 'uuid';
 import { Op } from 'sequelize';
+import { v4 as uuid } from 'uuid';
 
 import Client from '../db/models/Client.js';
-import Realtor from '../db/models/Realtor.js';
 import Property from '../db/models/Property.js';
+import Realtor from '../db/models/Realtor.js';
 import RealtorPhoto from '../db/models/RealtorPhoto.js';
 import RealtorRating from '../db/models/RealtorRating.js';
 
 // import { getAvgRateByReceiver } from './ratingService.js';
 
-import RealtorNotFound from '../errors/realtorErrors/realtorNotFound.js';
-import NoRealtorsFound from '../errors/realtorErrors/noRealtorsFound.js';
 import ClientNotFound from '../errors/clientErrors/clientNotFound.js';
+import NoRealtorsFound from '../errors/realtorErrors/noRealtorsFound.js';
+import RealtorNotFound from '../errors/realtorErrors/realtorNotFound.js';
 import {
   validateCep,
   validateCpf,
@@ -127,7 +127,9 @@ async function findAll(page) {
     const result = await Promise.all(realtors.map(async (realtor) => {
       const editedRealtor = realtor.dataValues;
 
-      editedRealtor.totalProperties = await Property.count({ where: { realtor_email: realtor.email } });
+      editedRealtor.totalProperties = await Property.count({
+        where: { realtor_email: realtor.email },
+      });
       const profile = await RealtorPhoto.findOne({ where: { email: realtor.email } });
 
       return { ...realtor.dataValues, profile };
@@ -142,12 +144,14 @@ async function findAll(page) {
       total: countTotal,
     };
 
-    result.sort(async (a, b) => (await getAvgRateByRealtor(a.email) < await getAvgRateByRealtor(b.email) ? 1 : -1));
+    result.sort(async (a, b) => (
+      await getAvgRateByRealtor(a.email) < await getAvgRateByRealtor(b.email) ? 1 : -1
+    ));
 
     return { result, pagination };
   } catch (error) {
-    const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    console.error(message);
+    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
+    error.status = error.status || 500;
     throw error;
   }
 }
@@ -175,8 +179,8 @@ async function findByCpf(cpf, password = false, otp = false) {
 
     return { ...realtor.dataValues, properties, profile };
   } catch (error) {
-    const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    console.error(message);
+    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
+    error.status = error.status || 500;
     throw error;
   }
 }
@@ -203,15 +207,14 @@ async function findByRg(rg, password = false, otp = false) {
 
     return { ...realtor.dataValues, properties, profile };
   } catch (error) {
-    const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    console.error(message);
+    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
+    error.status = error.status || 500;
     throw error;
   }
 }
 
 async function create(data, photo) {
   try {
-    console.log(data);
     const realtor = {
       email: validateEmail(data.email),
       name: validateString(data.name, 'O campo nome é obrigatório'),
@@ -257,8 +260,8 @@ async function create(data, photo) {
 
     return { ...newRealtor.dataValues, profile };
   } catch (error) {
-    const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    console.error(message);
+    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
+    error.status = error.status || 500;
     throw error;
   }
 }
@@ -294,7 +297,10 @@ async function update(email, data, photo) {
         bio: data.bio ? validateString(data.bio) : oldRealtor.bio,
         social_one: data.socialOne ? validateString(data.socialOne) : oldRealtor.social_one,
         social_two: data.socialTwo ? validateString(data.socialTwo) : oldRealtor.social_two,
-        subscription: data.subscription ? validateString(data.subscription) : oldRealtor.subscription,
+
+        subscription: data.subscription
+          ? validateString(data.subscription)
+          : oldRealtor.subscription,
       };
 
       if (realtor.email !== oldRealtor.email) await validateIfUniqueEmail(realtor.email);
@@ -330,8 +336,8 @@ async function update(email, data, photo) {
 
     return { ...updatedRealtor, profile };
   } catch (error) {
-    const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    console.error(message);
+    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
+    error.status = error.status || 500;
     throw error;
   }
 }
@@ -390,8 +396,8 @@ async function elevate(email, data, photo) {
 
     return { ...newRealtor.dataValues, profile };
   } catch (error) {
-    const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    console.error(message);
+    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
+    error.status = error.status || 500;
     throw error;
   }
 }
@@ -432,12 +438,16 @@ async function filter(data, page = 1) {
     const filteredRealtor = realtor;
 
     filteredRealtor.profile = await RealtorPhoto.findOne({ where: { email: realtor.email } });
-    filteredRealtor.totalProperties = await Property.count({ where: { realtor_email: realtor.email } });
+    filteredRealtor.totalProperties = await Property.count({
+      where: { realtor_email: realtor.email },
+    });
 
     return filteredRealtor;
   }));
 
-  result.sort(async (a, b) => (await getAvgRateByRealtor(a.email) < await getAvgRateByRealtor(b.email) ? 1 : -1));
+  result.sort(async (a, b) => (
+    await getAvgRateByRealtor(a.email) < await getAvgRateByRealtor(b.email) ? 1 : -1
+  ));
 
   return { result, pagination };
 }
@@ -460,10 +470,10 @@ async function destroy(email) {
     await Realtor.destroy({ where: { email: validatedEmail } });
     return { message: 'Usuário apagado com sucesso' };
   } catch (error) {
-    const message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    console.error(message);
+    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
+    error.status = error.status || 500;
     throw error;
   }
 }
 
-export { findAll, findByPk, findByCpf, findByRg, create, update, elevate, filter, destroy };
+export { create, destroy, elevate, filter, findAll, findByCpf, findByPk, findByRg, update };
