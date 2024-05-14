@@ -228,9 +228,19 @@ export async function filter(data, page = 1) {
 
 export async function deleteRate(id, senderEmail) {
   const validateId = validateString(id);
+  const validatedSenderEmail = validateEmail(senderEmail);
+
+  const user = await find(validatedSenderEmail);
+  if (!user) {
+    const error = new Error('Usuário não encontrado.');
+    error.status = 404;
+    throw error;
+  }
 
   let rate = await RealtorRating.findByPk(validateId);
-  if (!rate) rate = await RealstateRating.findByPk(validateId);
+  if (!rate) {
+    rate = await RealstateRating.findByPk(validateId);
+  }
   if (!rate) {
     const error = new Error('Avaliação não encontrada.');
     error.status = 404;
