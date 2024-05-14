@@ -85,6 +85,7 @@ async function findByPk(email, password = false, otp = false) {
     realtor.avgRate = await getAvgRateByRealtor(realtor.email);
     realtor.properties = await Property.findAll({ where: { realtor_email: realtor.email } });
     realtor.profile = await RealtorPhoto.findOne({ where: { email: realtor.email } });
+    realtor.totalRatings = await RealtorRating.count({ where: { receiver_email: realtor.email } });
 
     return realtor;
   } catch (error) {
@@ -134,6 +135,9 @@ async function findAll(page) {
       editRealtor.avgRate = await getAvgRateByRealtor(realtor.email);
       editRealtor.profile = await RealtorPhoto.findOne({ where: { email: realtor.email } });
       editRealtor.properties = await Property.findAll({ where: { realtor_email: realtor.email } });
+      editRealtor.totalRatings = await RealtorRating.count({
+        where: { receiver_email: realtor.email },
+      });
 
       return editRealtor;
     }));
@@ -179,6 +183,7 @@ async function findByCpf(cpf, password = false, otp = false) {
     realtor.avgRate = await getAvgRateByRealtor(realtor.email);
     realtor.profile = await RealtorPhoto.findOne({ where: { email: realtor.email } });
     realtor.properties = await Property.findAll({ where: { realtor_email: realtor.email } });
+    realtor.totalRatings = await RealtorRating.count({ where: { receiver_email: realtor.email } });
 
     return realtor;
   } catch (error) {
@@ -207,6 +212,7 @@ async function findByRg(rg, password = false, otp = false) {
     realtor.avgRate = await getAvgRateByRealtor(realtor.email);
     realtor.profile = await RealtorPhoto.findOne({ where: { email: realtor.email } });
     realtor.properties = await Property.findAll({ where: { realtor_email: realtor.email } });
+    realtor.totalRatings = await RealtorRating.count({ where: { receiver_email: realtor.email } });
 
     return realtor;
   } catch (error) {
@@ -444,6 +450,7 @@ async function filter(data, page = 1) {
     filtered.totalProperties = await Property.count({
       where: { realtor_email: realtor.email },
     });
+    filtered.totalRatings = await RealtorRating.count({ where: { receiver_email: realtor.email } });
     filtered.avgRate = await getAvgRateByRealtor(realtor.email);
     filtered.properties = await Property.findAll({ where: { realtor_email: realtor.email } });
 

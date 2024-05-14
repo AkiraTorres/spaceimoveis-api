@@ -83,6 +83,9 @@ async function findByPk(email, password = false, otp = false) {
     realstate.avgRate = await getAvgRateByReceiver(realstate.email);
     realstate.properties = await Property.findAll({ where: { realstate_email: realstate.email } });
     realstate.profile = await RealstatePhoto.findOne({ where: { email: realstate.email } });
+    realstate.totalRatings = await RealstateRating.count({
+      where: { receiver_email: realstate.email },
+    });
 
     return realstate;
   } catch (error) {
@@ -135,6 +138,9 @@ async function findAll(page) {
       editedRealstate.properties = await Property.findAll({
         where: { realstate_email: realstate.email },
       });
+      editedRealstate.totalRatings = await RealstateRating.count({
+        where: { receiver_email: realstate.email },
+      });
 
       return editedRealstate;
     }));
@@ -183,6 +189,9 @@ async function findByCnpj(cnpj, password = false, otp = false) {
     realstate.profile = await RealstatePhoto.findOne({ where: { email: realstate.email } });
     realstate.properties = await Property.findAll({ where: { realstate_email: realstate.email } });
     realstate.avgRate = await getAvgRateByReceiver(realstate.email);
+    realstate.totalRatings = await RealstateRating.count({
+      where: { receiver_email: realstate.email },
+    });
 
     return realstate;
   } catch (error) {
@@ -215,6 +224,9 @@ async function findByCreci(creci, password = false, otp = false) {
     realstate.profile = await RealstatePhoto.findOne({ where: { email: realstate.email } });
     realstate.properties = await Property.findAll({ where: { realstate_email: realstate.email } });
     realstate.avgRate = await getAvgRateByReceiver(realstate.email);
+    realstate.totalRatings = await RealstateRating.count({
+      where: { receiver_email: realstate.email },
+    });
 
     return realstate;
   } catch (error) {
@@ -450,6 +462,9 @@ async function filter(data, page = 1) {
     filteredRealstate.avgRate = await getAvgRateByReceiver(filteredRealstate.email);
     filteredRealstate.properties = await Property.findAll({
       where: { realstate_email: filteredRealstate.email },
+    });
+    filteredRealstate.totalRatings = await RealstateRating.count({
+      where: { receiver_email: realstate.email },
     });
 
     return filteredRealstate;
