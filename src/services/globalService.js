@@ -1,15 +1,15 @@
-import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
+import nodemailer from 'nodemailer';
 
 import Client from '../db/models/Client.js';
 import Owner from '../db/models/Owner.js';
-import Realtor from '../db/models/Realtor.js';
 import Realstate from '../db/models/Realstate.js';
+import Realtor from '../db/models/Realtor.js';
 
 import * as clientService from './clientService.js';
 import * as ownerService from './ownerService.js';
-import * as realtorService from './realtorService.js';
 import * as realstateService from './realstateService.js';
+import * as realtorService from './realtorService.js';
 
 import { validateEmail, validatePassword } from '../validators/inputValidators.js';
 
@@ -30,31 +30,31 @@ export async function findAll() {
   }
 }
 
-export async function find(email, pass = false) {
+export async function find(email, pass = false, otp = false) {
   if (email) {
     try {
-      const client = await clientService.findByPk(email, pass);
+      const client = await clientService.findByPk(email, pass, otp);
       if (client) {
         return client;
       }
     } catch (error) { /* empty */ }
 
     try {
-      const owner = await ownerService.findByPk(email, pass);
+      const owner = await ownerService.findByPk(email, pass, otp);
       if (owner) {
         return owner;
       }
     } catch (error) { /* empty */ }
 
     try {
-      const realtor = await realtorService.findByPk(email, pass);
+      const realtor = await realtorService.findByPk(email, pass, otp);
       if (realtor) {
         return realtor;
       }
     } catch (error) { /* empty */ }
 
     try {
-      const realstate = await realstateService.findByPk(email, pass);
+      const realstate = await realstateService.findByPk(email, pass, otp);
       if (realstate) {
         return realstate;
       }

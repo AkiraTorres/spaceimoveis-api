@@ -69,6 +69,7 @@ async function findByPk(email, password = false, otp = false) {
 
     const realstate = await Realstate.findByPk(validatedEmail, {
       attributes,
+      raw: true,
     });
 
     if (!realstate) {
@@ -77,12 +78,11 @@ async function findByPk(email, password = false, otp = false) {
 
     realstate.totalProperties = await Property.count({
       where: { realstate_email: realstate.email },
-      raw: true,
     });
 
-    realstate.profile = await RealstatePhoto.findOne({ where: { email: realstate.email } });
-    realstate.properties = await Property.findAll({ where: { realstate_email: realstate.email } });
     realstate.avgRate = await getAvgRateByReceiver(realstate.email);
+    realstate.properties = await Property.findAll({ where: { realstate_email: realstate.email } });
+    realstate.profile = await RealstatePhoto.findOne({ where: { email: realstate.email } });
 
     return realstate;
   } catch (error) {
