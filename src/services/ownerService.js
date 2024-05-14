@@ -99,10 +99,10 @@ async function findByPk(email, password, otp = false) {
       throw new OwnerNotFound();
     }
 
-    const profile = await OwnerPhoto.findOne({ where: { email: owner.email } });
-    const properties = await Property.findAll({ where: { owner_email: owner.email } });
+    owner.profile = await OwnerPhoto.findOne({ where: { email: owner.email } });
+    owner.properties = await Property.findAll({ where: { owner_email: owner.email } });
 
-    return { ...owner.dataValues, profile, properties };
+    return owner;
   } catch (error) {
     error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     error.status = error.status || 500;
