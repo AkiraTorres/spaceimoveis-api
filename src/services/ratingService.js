@@ -183,7 +183,7 @@ export async function setRate(senderEmail, receiverEmail, rating, comment) {
     rate = await RealstateRating.create(ratingData);
   }
 
-  return { rate, sender, receiver };
+  return { ...rate, ...sender };
 }
 
 export async function filter(data, page = 1) {
