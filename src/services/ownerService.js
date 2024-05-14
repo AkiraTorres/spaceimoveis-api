@@ -60,10 +60,11 @@ async function findAll(page) {
     }
 
     const result = await Promise.all(owners.map(async (owner) => {
-      const profile = await OwnerPhoto.findOne({ where: { email: owner.email } });
-      const properties = await Property.findAll({ where: { owner_email: owner.email } });
+      const editedOwner = owner;
+      editedOwner.profile = await OwnerPhoto.findOne({ where: { email: owner.email } });
+      editedOwner.properties = await Property.findAll({ where: { owner_email: owner.email } });
 
-      return { ...owner.dataValues, profile, properties };
+      return editedOwner;
     }));
 
     const pagination = {
@@ -83,31 +84,25 @@ async function findAll(page) {
   }
 }
 
-async function findByPk(email, password, otp = false) {
-  try {
-    const validatedEmail = validateEmail(email);
-    const attributes = { exclude: [] };
-    if (!otp) attributes.exclude.push('otp', 'otp_ttl');
-    if (!password) attributes.exclude.push('password');
+async function findByPk(email, password = false, otp = false) {
+  const validatedEmail = validateEmail(email);
+  const attributes = { exclude: [] };
+  if (!otp) attributes.exclude.push('otp', 'otp_ttl');
+  if (!password) attributes.exclude.push('password');
 
-    const owner = await Owner.findByPk(validatedEmail, {
-      raw: true,
-      attributes,
-    });
+  const owner = await Owner.findByPk(validatedEmail, {
+    raw: true,
+    attributes,
+  });
 
-    if (!owner) {
-      throw new OwnerNotFound();
-    }
-
-    owner.profile = await OwnerPhoto.findOne({ where: { email: owner.email } });
-    owner.properties = await Property.findAll({ where: { owner_email: owner.email } });
-
-    return owner;
-  } catch (error) {
-    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    error.status = error.status || 500;
-    throw error;
+  if (!owner) {
+    throw new OwnerNotFound();
   }
+
+  owner.profile = await OwnerPhoto.findOne({ where: { email: owner.email } });
+  owner.properties = await Property.findAll({ where: { owner_email: owner.email } });
+
+  return owner;
 }
 
 async function findByCpf(cpf, password = false, otp = false) {
