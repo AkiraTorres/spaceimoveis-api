@@ -96,11 +96,13 @@ export async function findAll(page = 1, isHighlighted = false, isPublished = tru
       if (property.realtor_email) editedProperty.email = editedProperty.realtor_email;
       if (property.realstate_email) editedProperty.email = editedProperty.realstate_email;
 
+      const seller = await find(editedProperty.email);
+
       const totalFavorites = await getPropertyTotalFavorites(property.id);
 
       const pictures = await Photo.findAll({ where: { property_id: property.id }, order: [['type', 'ASC']] });
 
-      return { ...editedProperty, totalFavorites, pictures };
+      return { ...editedProperty, totalFavorites, pictures, seller };
     }));
 
     properties.sort((a, b) => {
@@ -140,11 +142,13 @@ export async function recommendedProperties(page = 1, isHighlighted = true, limi
     if (property.realtor_email) editedProperty.email = editedProperty.realtor_email;
     if (property.realstate_email) editedProperty.email = editedProperty.realstate_email;
 
+    const seller = await find(editedProperty.email);
+
     const totalFavorites = await getPropertyTotalFavorites(property.id);
 
     const pictures = await Photo.findAll({ where: { property_id: property.id }, order: [['type', 'ASC']] });
 
-    return { ...editedProperty, totalFavorites, pictures };
+    return { ...editedProperty, totalFavorites, pictures, seller };
   }));
 
   properties.sort((a, b) => {
@@ -169,9 +173,11 @@ export async function findByPk(id) {
     if (property.realtor_email) property.email = property.realtor_email;
     if (property.realstate_email) property.email = property.realstate_email;
 
+    const seller = await find(property.email);
+
     const pictures = await Photo.findAll({ where: { property_id: property.id }, order: [['type', 'ASC']] });
 
-    return { property, pictures };
+    return { property, pictures, seller };
   } catch (error) {
     error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     error.status = error.status || 500;
@@ -216,9 +222,11 @@ export async function findBySellerEmail(email, page = 1, limit = 6) {
       if (property.realtor_email) editedProperty.email = editedProperty.realtor_email;
       if (property.realstate_email) editedProperty.email = editedProperty.realstate_email;
 
+      const seller = await find(editedProperty.email);
+
       const pictures = await Photo.findAll({ where: { property_id: property.id }, order: [['type', 'ASC']] });
 
-      return { ...editedProperty, pictures };
+      return { ...editedProperty, pictures, seller };
     }));
 
     properties.sort((a, b) => {
@@ -688,9 +696,11 @@ export async function filter(data, page = 1, isHighlighted = false, isPublished 
     if (property.realtor_email) editedProperty.email = editedProperty.realtor_email;
     if (property.realstate_email) editedProperty.email = editedProperty.realstate_email;
 
+    const seller = await find(editedProperty.email);
+
     const pictures = await Photo.findAll({ where: { property_id: property.id }, order: [['type', 'ASC']] });
 
-    return { ...editedProperty, pictures };
+    return { ...editedProperty, pictures, seller };
   }));
 
   return { properties, pagination };
