@@ -34,38 +34,10 @@ import firebaseConfig from '../config/firebase.js';
 const app = initializeApp(firebaseConfig);
 const storage = getStorage(app);
 
-async function findByPk(email, password = false, otp = false) {
-  try {
-    const validatedEmail = validateEmail(email);
-    const attributes = { exclude: [] };
-    if (!otp) attributes.exclude.push('otp', 'otp_ttl');
-    if (!password) attributes.exclude.push('password');
-
-    const realtor = await Realtor.findByPk(validatedEmail, {
-      attributes,
-    });
-
-    if (!realtor) {
-      throw new RealtorNotFound();
-    }
-
-    realtor.totalProperties = await Property.count({ where: { realtor_email: realtor.email } });
-
-    const properties = await Property.findAll({ where: { realtor_email: realtor.email } });
-    const profile = await RealtorPhoto.findOne({ where: { email: realtor.email } });
-
-    return { ...realtor.dataValues, properties, profile };
-  } catch (error) {
-    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    error.status = error.status || 500;
-    throw error;
-  }
-}
-
 async function getAvgRateByRealtor(receiverEmail) {
   const validatedReceiverEmail = validateEmail(receiverEmail);
 
-  const receiver = await findByPk(validatedReceiverEmail);
+  const receiver = await Realtor.findByPk(validatedReceiverEmail);
   if (!receiver) {
     const error = new Error('Usuário não encontrado.');
     error.status = 404;
@@ -91,6 +63,34 @@ async function getAvgRateByRealtor(receiverEmail) {
   const sum = ratings.reduce((acc, curr) => acc + curr.rating, 0);
   const avg = ((sum / total) / 2).toFixed(2);
   return avg;
+}
+
+async function findByPk(email, password = false, otp = false) {
+  try {
+    const validatedEmail = validateEmail(email);
+    const attributes = { exclude: [] };
+    if (!otp) attributes.exclude.push('otp', 'otp_ttl');
+    if (!password) attributes.exclude.push('password');
+
+    const realtor = await Realtor.findByPk(validatedEmail, {
+      attributes,
+    });
+
+    if (!realtor) {
+      throw new RealtorNotFound();
+    }
+
+    realtor.totalProperties = await Property.count({ where: { realtor_email: realtor.email } });
+    realtor.avgRate = await getAvgRateByRealtor(realtor.email);
+    realtor.profile = await RealtorPhoto.findOne({ where: { email: realtor.email } });
+    realtor.properties = await Property.findAll({ where: { realtor_email: realtor.email } });
+
+    return realtor;
+  } catch (error) {
+    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
+    error.status = error.status || 500;
+    throw error;
+  }
 }
 
 async function findAll(page) {
@@ -125,14 +125,16 @@ async function findAll(page) {
     }
 
     const result = await Promise.all(realtors.map(async (realtor) => {
-      const editedRealtor = realtor.dataValues;
+      const editRealtor = realtor.dataValues;
 
-      editedRealtor.totalProperties = await Property.count({
+      editRealtor.totalProperties = await Property.count({
         where: { realtor_email: realtor.email },
       });
-      const profile = await RealtorPhoto.findOne({ where: { email: realtor.email } });
+      editRealtor.avgRate = await getAvgRateByRealtor(realtor.email);
+      editRealtor.profile = await RealtorPhoto.findOne({ where: { email: realtor.email } });
+      editRealtor.properties = await Property.findAll({ where: { realtor_email: realtor.email } });
 
-      return { ...realtor.dataValues, profile };
+      return editRealtor;
     }));
 
     const pagination = {
@@ -173,11 +175,11 @@ async function findByCpf(cpf, password = false, otp = false) {
     }
 
     realtor.totalProperties = await Property.count({ where: { realtor_email: realtor.email } });
+    realtor.avgRate = await getAvgRateByRealtor(realtor.email);
+    realtor.profile = await RealtorPhoto.findOne({ where: { email: realtor.email } });
+    realtor.properties = await Property.findAll({ where: { realtor_email: realtor.email } });
 
-    const properties = await Property.findAll({ where: { realtor_email: realtor.email } });
-    const profile = await RealtorPhoto.findOne({ where: { email: realtor.email } });
-
-    return { ...realtor.dataValues, properties, profile };
+    return realtor;
   } catch (error) {
     error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     error.status = error.status || 500;
@@ -201,11 +203,11 @@ async function findByRg(rg, password = false, otp = false) {
     }
 
     realtor.totalProperties = await Property.count({ where: { realtor_email: realtor.email } });
+    realtor.avgRate = await getAvgRateByRealtor(realtor.email);
+    realtor.profile = await RealtorPhoto.findOne({ where: { email: realtor.email } });
+    realtor.properties = await Property.findAll({ where: { realtor_email: realtor.email } });
 
-    const properties = await Property.findAll({ where: { realtor_email: realtor.email } });
-    const profile = await RealtorPhoto.findOne({ where: { email: realtor.email } });
-
-    return { ...realtor.dataValues, properties, profile };
+    return realtor;
   } catch (error) {
     error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     error.status = error.status || 500;
@@ -435,14 +437,16 @@ async function filter(data, page = 1) {
   }
 
   const result = await Promise.all(realtors.map(async (realtor) => {
-    const filteredRealtor = realtor;
+    const filtered = realtor;
 
-    filteredRealtor.profile = await RealtorPhoto.findOne({ where: { email: realtor.email } });
-    filteredRealtor.totalProperties = await Property.count({
+    filtered.profile = await RealtorPhoto.findOne({ where: { email: realtor.email } });
+    filtered.totalProperties = await Property.count({
       where: { realtor_email: realtor.email },
     });
+    filtered.avgRate = await getAvgRateByRealtor(realtor.email);
+    filtered.properties = await Property.findAll({ where: { realtor_email: realtor.email } });
 
-    return filteredRealtor;
+    return filtered;
   }));
 
   result.sort(async (a, b) => (
