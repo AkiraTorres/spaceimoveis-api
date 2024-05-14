@@ -4,19 +4,19 @@ import validator from 'validator';
 
 import Client from '../db/models/Client.js';
 import Owner from '../db/models/Owner.js';
-import Realtor from '../db/models/Realtor.js';
 import Realstate from '../db/models/Realstate.js';
-import EmailAlreadyExists from '../errors/emailAlreadyExists.js';
-import CpfAlreadyExists from '../errors/cpfAlreadyExists.js';
-import RgAlreadyExists from '../errors/rgAlreadyExists.js';
+import Realtor from '../db/models/Realtor.js';
 import CnpjAlreadyExists from '../errors/cnpjAlreadyExists.js';
+import CpfAlreadyExists from '../errors/cpfAlreadyExists.js';
 import CreciAlreadyExists from '../errors/creciAlreadyExists.js';
-import InvalidEmail from '../errors/invalidEmail.js';
-import InvalidString from '../errors/invalidString.js';
-import InvalidInteger from '../errors/invalidInteger.js';
+import EmailAlreadyExists from '../errors/emailAlreadyExists.js';
 import InsecurePassword from '../errors/insecurePassword.js';
-import InvalidPhone from '../errors/invalidPhone.js';
 import InvalidCpf from '../errors/invalidCpf.js';
+import InvalidEmail from '../errors/invalidEmail.js';
+import InvalidInteger from '../errors/invalidInteger.js';
+import InvalidPhone from '../errors/invalidPhone.js';
+import InvalidString from '../errors/invalidString.js';
+import RgAlreadyExists from '../errors/rgAlreadyExists.js';
 
 dotenv.config();
 const salt = process.env.CRYPT_SALT;
