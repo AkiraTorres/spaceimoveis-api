@@ -295,11 +295,24 @@ export async function getMostSeenPropertiesBySeller(email, limit = 6) {
     throw error;
   }
 
-  const properties = await Property.findAll({
+  const props = await Property.findAll({
     where: { [`${user.type}_email`]: user.email },
     order: [['times_seen', 'DESC']],
     limit,
+    raw: true,
   });
+
+  const properties = await Promise.all(props.map(async (property) => {
+    const editedProperty = property;
+
+    if (property.owner_email) editedProperty.email = editedProperty.owner_email;
+    if (property.realtor_email) editedProperty.email = editedProperty.realtor_email;
+    if (property.realstate_email) editedProperty.email = editedProperty.realstate_email;
+
+    editedProperty.seller = await find(editedProperty.email);
+    editedProperty.pictures = await Photo.findAll({ where: { property_id: property.id }, order: [['type', 'ASC']] });
+    return editedProperty;
+  }));
 
   return properties;
 }
