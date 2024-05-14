@@ -1,3 +1,4 @@
+import asyncHandler from 'express-async-handler';
 import * as globalService from '../services/globalService.js';
 
 export async function findAll(req, res) {
@@ -61,3 +62,17 @@ export async function resetPassword(req, res) {
     return res.status(status).json({ message: error.message });
   }
 }
+
+export const shareProperty = asyncHandler(async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { guestEmail } = req.body;
+    const { email } = req;
+
+    const result = await globalService.shareProperty(id, email, guestEmail);
+    res.json(result);
+  } catch (error) {
+    const status = error.status || 500;
+    res.status(status).json({ message: error.message });
+  }
+});

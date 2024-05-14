@@ -40,6 +40,8 @@ app.post('/change/password', verifyGoogleToken, verifyJwt, globalController.chan
 app.post('/rescue/password', globalController.rescuePassword);
 app.post('/reset/password', globalController.resetPassword);
 
+app.put('/share/:id', verifyJwt, globalController.shareProperty);
+
 app.all('*', (req, res) => {
   res.status(404).send('Not Found');
 });

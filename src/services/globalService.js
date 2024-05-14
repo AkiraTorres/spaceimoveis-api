@@ -3,6 +3,7 @@ import nodemailer from 'nodemailer';
 
 import Client from '../db/models/Client.js';
 import Owner from '../db/models/Owner.js';
+import Property from '../db/models/Property.js';
 import Realstate from '../db/models/Realstate.js';
 import Realtor from '../db/models/Realtor.js';
 
@@ -11,7 +12,7 @@ import * as ownerService from './ownerService.js';
 import * as realstateService from './realstateService.js';
 import * as realtorService from './realtorService.js';
 
-import { validateEmail, validatePassword } from '../validators/inputValidators.js';
+import { validateEmail, validatePassword, validateString } from '../validators/inputValidators.js';
 
 dotenv.config();
 
@@ -155,4 +156,49 @@ export async function resetPassword(email, password, otp) {
   }
 
   return changePassword(email, password);
+}
+
+export async function shareProperty(propertyId, ownerEmail, guestEmail) {
+  const validatedPropertyId = validateString(propertyId);
+  const validatedOwnerEmail = validateEmail(ownerEmail);
+  const validatedGuestEmail = validateEmail(guestEmail);
+
+  const owner = await ownerService.findByPk(validatedOwnerEmail);
+  if (!owner) {
+    const error = new Error('Proprietário não encontrado');
+    error.status = 404;
+    throw error;
+  }
+
+  const guest = await find(validatedGuestEmail);
+  if (!guest) {
+    const error = new Error('O usuário com quem você tentou compartilhar o imóvel não existe');
+    error.status = 404;
+    throw error;
+  }
+
+  const property = await Property.findByPk(validatedPropertyId);
+  if (!property) {
+    const error = new Error('Imóvel não encontrado');
+    error.status = 404;
+    throw error;
+  }
+
+  const transporter = nodemailer.createTransport({
+    service: process.env.EMAIL_SERVICE,
+    auth: {
+      user: process.env.EMAIL_ADDRESS,
+      pass: process.env.EMAIL_PASSWORD,
+    },
+  });
+
+  const mailOptions = {
+    from: process.env.EMAIL_ADDRESS,
+    to: validatedGuestEmail,
+    subject: 'Compartilhamento de Imóvel',
+    text: `O proprietário ${owner.name} compartilhou um imóvel com você. Para mais informações acesse o site.`,
+  };
+
+  transporter.sendMail(mailOptions);
+  return { message: 'Email Enviado.' };
 }
