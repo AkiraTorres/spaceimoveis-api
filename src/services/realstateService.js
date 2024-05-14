@@ -77,13 +77,14 @@ async function findByPk(email, password = false, otp = false) {
 
     realstate.totalProperties = await Property.count({
       where: { realstate_email: realstate.email },
+      raw: true,
     });
 
-    const profile = await RealstatePhoto.findOne({ where: { email: realstate.email } });
-    const properties = await Property.findAll({ where: { realstate_email: realstate.email } });
-    const avgRate = await getAvgRateByReceiver(realstate.email);
+    realstate.profile = await RealstatePhoto.findOne({ where: { email: realstate.email } });
+    realstate.properties = await Property.findAll({ where: { realstate_email: realstate.email } });
+    realstate.avgRate = await getAvgRateByReceiver(realstate.email);
 
-    return { ...realstate.dataValues, avgRate, profile, properties };
+    return realstate;
   } catch (error) {
     error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     error.status = error.status || 500;
@@ -116,6 +117,7 @@ async function findAll(page) {
       order: [['company_name', 'ASC']],
       offset,
       limit,
+      raw: true,
     });
 
     if (realstates.length === 0) {
@@ -129,10 +131,12 @@ async function findAll(page) {
       editedRealstate.totalProperties = await Property.count({
         where: { realstate_email: realstate.email },
       });
-      const properties = await Property.findAll({ where: { realstate_email: realstate.email } });
-      const avgRate = await getAvgRateByReceiver(realstate.email);
+      editedRealstate.avgRate = await getAvgRateByReceiver(realstate.email);
+      editedRealstate.properties = await Property.findAll({
+        where: { realstate_email: realstate.email },
+      });
 
-      return { ...editedRealstate, avgRate, properties };
+      return editedRealstate;
     }));
 
     const pagination = {
@@ -165,6 +169,7 @@ async function findByCnpj(cnpj, password = false, otp = false) {
 
     const realstate = await Realstate.findOne({ where: { cnpj: validatedCnpj } }, {
       attributes,
+      raw: true,
     });
 
     if (!realstate) {
@@ -175,11 +180,11 @@ async function findByCnpj(cnpj, password = false, otp = false) {
       where: { realstate_email: realstate.email },
     });
 
-    const profile = await RealstatePhoto.findOne({ where: { email: realstate.email } });
-    const properties = await Property.findAll({ where: { realstate_email: realstate.email } });
-    const avgRate = await getAvgRateByReceiver(realstate.email);
+    realstate.profile = await RealstatePhoto.findOne({ where: { email: realstate.email } });
+    realstate.properties = await Property.findAll({ where: { realstate_email: realstate.email } });
+    realstate.avgRate = await getAvgRateByReceiver(realstate.email);
 
-    return { ...realstate.dataValues, avgRate, profile, properties };
+    return realstate;
   } catch (error) {
     error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     error.status = error.status || 500;
@@ -196,6 +201,7 @@ async function findByCreci(creci, password = false, otp = false) {
 
     const realstate = await Realstate.findOne({ where: { creci: validatedCreci } }, {
       attributes,
+      raw: true,
     });
 
     if (!realstate) {
@@ -206,11 +212,11 @@ async function findByCreci(creci, password = false, otp = false) {
       where: { realstate_email: realstate.email },
     });
 
-    const profile = await RealstatePhoto.findOne({ where: { email: realstate.email } });
-    const properties = await Property.findAll({ where: { realstate_email: realstate.email } });
-    const avgRate = await getAvgRateByReceiver(realstate.email);
+    realstate.profile = await RealstatePhoto.findOne({ where: { email: realstate.email } });
+    realstate.properties = await Property.findAll({ where: { realstate_email: realstate.email } });
+    realstate.avgRate = await getAvgRateByReceiver(realstate.email);
 
-    return { ...realstate.dataValues, avgRate, profile, properties };
+    return realstate;
   } catch (error) {
     error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     error.status = error.status || 500;

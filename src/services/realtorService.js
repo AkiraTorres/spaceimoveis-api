@@ -74,6 +74,7 @@ async function findByPk(email, password = false, otp = false) {
 
     const realtor = await Realtor.findByPk(validatedEmail, {
       attributes,
+      raw: true,
     });
 
     if (!realtor) {
@@ -82,8 +83,8 @@ async function findByPk(email, password = false, otp = false) {
 
     realtor.totalProperties = await Property.count({ where: { realtor_email: realtor.email } });
     realtor.avgRate = await getAvgRateByRealtor(realtor.email);
-    realtor.profile = await RealtorPhoto.findOne({ where: { email: realtor.email } });
     realtor.properties = await Property.findAll({ where: { realtor_email: realtor.email } });
+    realtor.profile = await RealtorPhoto.findOne({ where: { email: realtor.email } });
 
     return realtor;
   } catch (error) {
@@ -166,7 +167,7 @@ async function findByCpf(cpf, password = false, otp = false) {
     if (!password) attributes.exclude.push('password');
 
     const realtor = await Realtor.findOne(
-      { where: { cpf: validatedCpf } },
+      { where: { cpf: validatedCpf }, raw: true },
       attributes,
     );
 
@@ -194,7 +195,7 @@ async function findByRg(rg, password = false, otp = false) {
     if (!otp) attributes.exclude.push('otp', 'otp_ttl');
     if (!password) attributes.exclude.push('password');
 
-    const realtor = await Realtor.findOne({ where: { rg: validatedRg } }, {
+    const realtor = await Realtor.findOne({ where: { rg: validatedRg }, raw: true }, {
       attributes,
     });
 

@@ -52,6 +52,7 @@ async function findAll(page) {
       order: [['name', 'ASC']],
       offset,
       limit,
+      raw: true,
     });
 
     if (owners.length === 0) {
@@ -90,6 +91,7 @@ async function findByPk(email, password, otp = false) {
     if (!password) attributes.exclude.push('password');
 
     const owner = await Owner.findByPk(validatedEmail, {
+      raw: true,
       attributes,
     });
 
@@ -116,6 +118,7 @@ async function findByCpf(cpf, password = false, otp = false) {
     if (!password) attributes.exclude.push('password');
 
     const realtor = await Owner.findOne({ where: { cpf: validatedCpf } }, {
+      raw: true,
       attributes,
     });
 
@@ -142,6 +145,7 @@ async function findByRg(rg, password = false, otp = false) {
     if (!password) attributes.exclude.push('password');
 
     const realtor = await Owner.findOne({ where: { rg: validatedRg } }, {
+      raw: true,
       attributes,
     });
 
