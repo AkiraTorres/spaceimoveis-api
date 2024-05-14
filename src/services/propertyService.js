@@ -404,7 +404,7 @@ export async function create(data, files) {
       return { name: `${picture.originalname}`, type: picture.mimetype, downloadURL };
     }));
 
-    return { newProperty, photos };
+    return { ...newProperty.dataValues, photos };
   } catch (error) {
     error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
     error.status = error.status || 500;
