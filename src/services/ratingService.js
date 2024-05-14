@@ -3,7 +3,7 @@ import { Op } from 'sequelize';
 import RealtorRating from '../db/models/RealtorRating.js';
 import RealstateRating from '../db/models/RealstateRating.js';
 import { find } from './globalService.js';
-import { validateString, validateInteger, validateEmail } from '../validators/inputValidators.js';
+import { validateEmail, validateInteger, validateString } from '../validators/inputValidators.js';
 
 async function getAllRatesByReceiver(receiverEmail, page = 1) {
   const validatedReceiverEmail = validateEmail(receiverEmail);
@@ -25,7 +25,6 @@ async function getAllRatesByReceiver(receiverEmail, page = 1) {
   const where = { receiver_email: validatedReceiverEmail };
 
   const total = receiver.type === 'realtor' ? await RealtorRating.count({ where }) : await RealstateRating.count({ where });
-
   if (total === 0) {
     const error = new Error('Nenhuma avaliação encontrada.');
     error.status = 404;
@@ -59,8 +58,7 @@ async function getAllRatesByReceiver(receiverEmail, page = 1) {
 
   const result = await Promise.all(rates.map(async (rate) => {
     const editedRate = rate;
-    const sender = await find(rate.sender_email);
-    editedRate.sender = sender;
+    editedRate.sender = await find(rate.sender_email);
     return editedRate;
   }));
 
@@ -197,13 +195,12 @@ async function filter(data, page = 1) {
 
   const where = {};
   if (data) {
-    const { receiverEmail, senderEmail, rating, comment, order, orderType } = data;
+    const { receiverEmail, senderEmail, minRating = 0, maxRating = 10, order, orderType } = data;
     if (receiverEmail) where.receiver_email = validateEmail(receiverEmail);
     if (senderEmail) where.sender_email = validateEmail(senderEmail);
-    if (rating) where.rating = { [Op.substring]: validateString(rating) };
-    if (comment) where.comment = validateString(comment);
     if (order) ordering[0][0] = validateString(order);
     if (orderType) ordering[0][1] = validateString(orderType);
+    where.rating = { [Op.between]: [minRating, maxRating] };
   }
 
   const total = await RealtorRating.count({ where }) + await RealstateRating.count({ where });
