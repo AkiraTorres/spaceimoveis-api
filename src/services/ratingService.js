@@ -176,16 +176,14 @@ export async function setRate(senderEmail, receiverEmail, rating, comment) {
     sender_email: sender.email,
   };
 
+  let rate;
   if (receiver.type === 'realtor') {
-    return RealtorRating.create(ratingData);
-  }
-  if (receiver.type === 'realstate') {
-    return RealstateRating.create(ratingData);
+    rate = await RealtorRating.create(ratingData);
+  } else if (receiver.type === 'realstate') {
+    rate = await RealstateRating.create(ratingData);
   }
 
-  const error = new Error('Usuário a receber a avaliação deve ser um corretor ou imobiliária.');
-  error.status = 400;
-  throw error;
+  return { rate, sender, receiver };
 }
 
 export async function filter(data, page = 1) {
