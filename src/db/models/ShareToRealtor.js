@@ -6,7 +6,7 @@ const ShareToRealtor = sequelize.define('share_to_realtor', {
     primaryKey: true,
     allowNull: false,
   },
-  realtor_email: {
+  email: {
     type: DataTypes.STRING,
     allowNull: false,
     references: {

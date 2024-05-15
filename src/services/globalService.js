@@ -188,12 +188,12 @@ export async function shareProperty(propertyId, ownerEmail, guestEmail) {
 
   if (guest.type === 'realtor') {
     ShareToRealtor.create({
-      realtor_email: validatedGuestEmail,
+      email: validatedGuestEmail,
       property_id: validatedPropertyId,
     });
   } else if (guest.type === 'realstate') {
     ShareToRealstate.create({
-      realtor_email: validatedGuestEmail,
+      email: validatedGuestEmail,
       property_id: validatedPropertyId,
     });
   }

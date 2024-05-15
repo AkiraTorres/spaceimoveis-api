@@ -6,7 +6,7 @@ const ShareToRealstate = sequelize.define('share_to_realstate', {
     primaryKey: true,
     allowNull: false,
   },
-  realstate_email: {
+  email: {
     type: DataTypes.STRING,
     allowNull: false,
     references: {

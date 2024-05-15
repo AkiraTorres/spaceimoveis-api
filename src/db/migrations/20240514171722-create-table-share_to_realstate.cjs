@@ -5,22 +5,22 @@ module.exports = {
   async up(queryInterface, Sequelize) {
     await queryInterface.createTable('share_to_realstate', {
       id: {
-        type: Sequelize.UUIDV4,
+        type: Sequelize.UUID,
         primaryKey: true,
         allowNull: false,
       },
-      realstate_email: {
+      email: {
         type: Sequelize.STRING,
         allowNull: false,
         references: {
-          model: 'realstate',
+          model: 'realstates',
           key: 'email',
         },
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE',
       },
       property_id: {
-        type: Sequelize.UUIDV4,
+        type: Sequelize.UUID,
         allowNull: false,
         references: {
           model: 'properties',
