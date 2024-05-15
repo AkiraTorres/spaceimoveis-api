@@ -6,6 +6,8 @@ import Owner from '../db/models/Owner.js';
 import Property from '../db/models/Property.js';
 import Realstate from '../db/models/Realstate.js';
 import Realtor from '../db/models/Realtor.js';
+import ShareToRealstate from '../db/models/ShareToRealstate.js';
+import ShareToRealtor from '../db/models/ShareToRealtor.js';
 
 import * as clientService from './clientService.js';
 import * as ownerService from './ownerService.js';
@@ -184,6 +186,18 @@ export async function shareProperty(propertyId, ownerEmail, guestEmail) {
     throw error;
   }
 
+  if (guest.type === 'realtor') {
+    ShareToRealtor.create({
+      realtor_email: validatedGuestEmail,
+      property_id: validatedPropertyId,
+    });
+  } else if (guest.type === 'realstate') {
+    ShareToRealstate.create({
+      realtor_email: validatedGuestEmail,
+      property_id: validatedPropertyId,
+    });
+  }
+
   const transporter = nodemailer.createTransport({
     service: process.env.EMAIL_SERVICE,
     auth: {
@@ -196,7 +210,7 @@ export async function shareProperty(propertyId, ownerEmail, guestEmail) {
     from: process.env.EMAIL_ADDRESS,
     to: validatedGuestEmail,
     subject: 'Compartilhamento de Imóvel',
-    text: `O proprietário ${owner.name} compartilhou um imóvel com você. Para mais informações acesse o site.`,
+    text: `O proprietário ${owner.name}, dono de uma casa na cidade de ${property.city}-${property.state} compartilhou um imóvel com você. Para mais informações acesse o site.`,
   };
 
   transporter.sendMail(mailOptions);
