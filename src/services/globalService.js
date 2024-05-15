@@ -3,6 +3,7 @@ import nodemailer from 'nodemailer';
 
 import Client from '../db/models/Client.js';
 import Owner from '../db/models/Owner.js';
+import Photo from '../db/models/Photo.js';
 import Property from '../db/models/Property.js';
 import Realstate from '../db/models/Realstate.js';
 import Realtor from '../db/models/Realtor.js';
@@ -215,4 +216,106 @@ export async function shareProperty(propertyId, ownerEmail, guestEmail) {
 
   transporter.sendMail(mailOptions);
   return { message: 'Email Enviado.' };
+}
+
+export async function getSharedProperties(email, page = 1, limit = 6) {
+  const validatedEmail = validateEmail(email);
+
+  const offset = Number(limit * (page - 1));
+  let total = 0;
+  let sharedProperties;
+
+  const user = await find(validatedEmail);
+  if (!user) {
+    const error = new Error('Usuário não encontrado');
+    error.status = 404;
+    throw error;
+  }
+
+  if (user.type === 'realtor') {
+    total = await ShareToRealtor.count({ where: { email: validatedEmail } });
+
+    if (total === 0) {
+      const error = new Error('Nenhum imóvel compartilhado com você');
+      error.status = 404;
+      throw error;
+    }
+
+    sharedProperties = await ShareToRealtor.findAll({
+      where: { email: validatedEmail },
+      order: [['created_at', 'DESC']],
+      limit,
+      offset,
+    });
+  } else if (user.type === 'realstate') {
+    total = await ShareToRealstate.count({ where: { email: validatedEmail } });
+
+    if (total === 0) {
+      const error = new Error('Nenhum imóvel compartilhado com você');
+      error.status = 404;
+      throw error;
+    }
+
+    sharedProperties = await ShareToRealstate.findAll({
+      where: { email: validatedEmail },
+      order: [['created_at', 'DESC']],
+      limit,
+      offset,
+    });
+  }
+
+  const lastPage = Math.ceil(total / limit);
+
+  const pagination = {
+    path: '/clients',
+    page,
+    prev_page_url: page - 1 >= 1 ? page - 1 : null,
+    next_page_url: Number(page) + 1 <= lastPage ? Number(page) + 1 : null,
+    lastPage,
+    total,
+  };
+
+  const properties = Promise.all(sharedProperties.map(async (sharedProperty) => {
+    const property = sharedProperty;
+    property.owner = await ownerService.findByPk(property.owner_email);
+    property.pictures = await Photo.findAll({ where: { property_id: property.id } });
+    return property;
+  }));
+
+  return { properties, pagination };
+}
+
+export async function getSharedProperty(email, propertyId) {
+  const validatedEmail = validateEmail(email);
+  const validatedPropertyId = validateString(propertyId);
+
+  let property;
+
+  const user = await find(validatedEmail);
+  if (!user) {
+    const error = new Error('Usuário não encontrado');
+    error.status = 404;
+    throw error;
+  }
+
+  if (user.type === 'realtor') {
+    property = await ShareToRealtor.findOne({
+      where: { email: validatedEmail, property_id: validatedPropertyId },
+    });
+  } else if (user.type === 'realstate') {
+    property = await ShareToRealstate.findOne({
+      where: { email: validatedEmail, property_id: validatedPropertyId },
+    });
+  }
+
+  if (!property) {
+    const error = new Error('Imóvel não compartilhado com você');
+    error.status = 404;
+    throw error;
+  }
+
+  property.owner = await ownerService.findByPk(property.owner_email);
+  property.pictures = await Photo.findAll({ where: { property_id: property.id } });
+
+  return property;
 }

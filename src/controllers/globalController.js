@@ -76,3 +76,19 @@ export const shareProperty = asyncHandler(async (req, res) => {
     res.status(status).json({ message: error.message });
   }
 });
+
+export const getSharedProperties = asyncHandler(async (req, res) => {
+  const { email } = req;
+  const { page = 1, limit = 6 } = req.query;
+
+  const result = await globalService.getSharedProperties(email, page, limit);
+  res.json(result);
+});
+
+export const getSharedProperty = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { email } = req;
+
+  const result = await globalService.getSharedProperty(id, email);
+  res.json(result);
+});
