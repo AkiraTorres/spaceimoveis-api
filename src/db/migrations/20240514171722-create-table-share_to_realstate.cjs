@@ -3,7 +3,7 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('share_to_realstate', {
+    await queryInterface.createTable('share_to_realstates', {
       id: {
         type: Sequelize.UUID,
         primaryKey: true,
@@ -41,6 +41,6 @@ module.exports = {
   },
 
   async down(queryInterface) {
-    await queryInterface.dropTable('share_to_realstate');
+    await queryInterface.dropTable('share_to_realstates');
   },
 };

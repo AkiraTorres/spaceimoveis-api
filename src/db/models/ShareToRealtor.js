@@ -1,6 +1,6 @@
 import { DataTypes, sequelize } from '../Conn.js';
 
-const ShareToRealtor = sequelize.define('share_to_realtor', {
+const ShareToRealtor = sequelize.define('share_to_realtors', {
   id: {
     type: DataTypes.UUIDV4,
     primaryKey: true,

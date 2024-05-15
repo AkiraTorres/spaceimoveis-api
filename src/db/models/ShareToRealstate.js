@@ -1,6 +1,6 @@
 import { DataTypes, sequelize } from '../Conn.js';
 
-const ShareToRealstate = sequelize.define('share_to_realstate', {
+const ShareToRealstate = sequelize.define('share_to_realstates', {
   id: {
     type: DataTypes.UUIDV4,
     primaryKey: true,
