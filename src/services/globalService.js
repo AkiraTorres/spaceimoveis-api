@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 import nodemailer from 'nodemailer';
+import { v4 as uuid } from 'uuid';
 
 import Client from '../db/models/Client.js';
 import Owner from '../db/models/Owner.js';
@@ -189,11 +190,13 @@ export async function shareProperty(propertyId, ownerEmail, guestEmail) {
 
   if (guest.type === 'realtor') {
     ShareToRealtor.create({
+      id: uuid(),
       email: validatedGuestEmail,
       property_id: validatedPropertyId,
     });
   } else if (guest.type === 'realstate') {
     ShareToRealstate.create({
+      id: uuid(),
       email: validatedGuestEmail,
       property_id: validatedPropertyId,
     });
@@ -214,14 +217,14 @@ export async function shareProperty(propertyId, ownerEmail, guestEmail) {
     text: `O proprietário ${owner.name}, dono de uma casa na cidade de ${property.city}-${property.state} compartilhou um imóvel com você. Para mais informações acesse o site.`,
   };
 
+  const response = { message: 'Email Enviado.' };
   transporter.sendMail(mailOptions);
-  return { message: 'Email Enviado.' };
+  return response;
 }
 
 export async function getSharedProperties(email, page = 1, limit = 6) {
   const validatedEmail = validateEmail(email);
 
-  const offset = Number(limit * (page - 1));
   let total = 0;
   let sharedProperties;
 
@@ -243,9 +246,9 @@ export async function getSharedProperties(email, page = 1, limit = 6) {
 
     sharedProperties = await ShareToRealtor.findAll({
       where: { email: validatedEmail },
-      order: [['created_at', 'DESC']],
+      order: [['createdAt', 'DESC']],
       limit,
-      offset,
+      raw: true,
     });
   } else if (user.type === 'realstate') {
     total = await ShareToRealstate.count({ where: { email: validatedEmail } });
@@ -258,9 +261,9 @@ export async function getSharedProperties(email, page = 1, limit = 6) {
 
     sharedProperties = await ShareToRealstate.findAll({
       where: { email: validatedEmail },
-      order: [['created_at', 'DESC']],
+      order: [['createdAt', 'DESC']],
       limit,
-      offset,
+      raw: true,
     });
   }
 
@@ -275,8 +278,10 @@ export async function getSharedProperties(email, page = 1, limit = 6) {
     total,
   };
 
-  const properties = Promise.all(sharedProperties.map(async (sharedProperty) => {
-    const property = sharedProperty;
+  const properties = await Promise.all(sharedProperties.map(async (sharedProperty) => {
+    const property = await Property.findOne({
+      where: { id: sharedProperty.property_id }, raw: true,
+    });
     property.owner = await ownerService.findByPk(property.owner_email);
     property.pictures = await Photo.findAll({ where: { property_id: property.id } });
     return property;
