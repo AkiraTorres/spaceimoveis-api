@@ -2,6 +2,7 @@ import dotenv from 'dotenv';
 import nodemailer from 'nodemailer';
 import { v4 as uuid } from 'uuid';
 
+import { Op } from 'sequelize';
 import Client from '../db/models/Client.js';
 import Owner from '../db/models/Owner.js';
 import Photo from '../db/models/Photo.js';
@@ -379,15 +380,18 @@ export async function confirmSharedProperty(propertyId, email) {
       { where: { email: validatedEmail, property_id: validatedPropertyId } },
     );
     emailBody = `O corretor ${user.name} aceitou o compartilhamento do imóvel com o id ${sharedProperty.property_id}!`;
+    await ShareToRealtor.destroy({ where: { email: { [Op.not]: validateEmail } } });
   } else if (user.type === 'realstate') {
     ShareToRealstate.update(
       { accepted: true },
       { where: { email: validatedEmail, property_id: validatedPropertyId } },
     );
     emailBody = `A imobiliária ${user.name} aceitou o compartilhamento do imóvel com o id ${sharedProperty.property_id}!`;
+    await ShareToRealstate.destroy({ where: { email: { [Op.not]: validateEmail } } });
   }
 
   const property = await Property.findByPk(validatedPropertyId);
+  await Property.update({ [`${user.type}_email`]: validatedEmail }, { where: { id: validatedPropertyId } });
 
   const transporter = nodemailer.createTransport({
     service: process.env.EMAIL_SERVICE,
