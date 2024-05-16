@@ -59,10 +59,9 @@ async function checkAnnouncementLimit(email) {
 export async function findAll(page = 1, isHighlighted = false, isPublished = true, limit = 6) {
   try {
     if (page < 1) {
-      return await Property.findAll({
-        where: { is_highlighted: isHighlighted, is_published: isPublished },
-        order: [['updatedAt', 'DESC']],
-      });
+      const error = new Error('A página deve ser maior que 0');
+      error.status = 400;
+      throw error;
     }
 
     const countTotal = await Property.count({
@@ -93,8 +92,10 @@ export async function findAll(page = 1, isHighlighted = false, isPublished = tru
     const properties = await Promise.all(props.map(async (property) => {
       const editedProperty = property.dataValues;
       if (property.owner_email) editedProperty.email = editedProperty.owner_email;
-      if (property.realtor_email) editedProperty.email = editedProperty.realtor_email;
       if (property.realstate_email) editedProperty.email = editedProperty.realstate_email;
+      if (property.realtor_email) editedProperty.email = editedProperty.realtor_email;
+
+      editedProperty.shared = property.owner_email !== property.email;
 
       const seller = await find(editedProperty.email);
 
@@ -139,8 +140,10 @@ export async function recommendedProperties(page = 1, isHighlighted = true, limi
   const properties = await Promise.all(props.map(async (property) => {
     const editedProperty = property.dataValues;
     if (property.owner_email) editedProperty.email = editedProperty.owner_email;
-    if (property.realtor_email) editedProperty.email = editedProperty.realtor_email;
     if (property.realstate_email) editedProperty.email = editedProperty.realstate_email;
+    if (property.realtor_email) editedProperty.email = editedProperty.realtor_email;
+
+    editedProperty.shared = property.owner_email !== property.email;
 
     const seller = await find(editedProperty.email);
 
@@ -170,8 +173,10 @@ export async function findByPk(id) {
     }
 
     if (property.owner_email) property.email = property.owner_email;
-    if (property.realtor_email) property.email = property.realtor_email;
     if (property.realstate_email) property.email = property.realstate_email;
+    if (property.realtor_email) property.email = property.realtor_email;
+
+    property.shared = property.owner_email !== property.email;
 
     const seller = await find(property.email);
 
@@ -218,9 +223,11 @@ export async function findBySellerEmail(email, page = 1, limit = 6) {
 
     const properties = await Promise.all(props.map(async (property) => {
       const editedProperty = property.dataValues;
-      if (property.owner_email) editedProperty.email = editedProperty.owner_email;
-      if (property.realtor_email) editedProperty.email = editedProperty.realtor_email;
-      if (property.realstate_email) editedProperty.email = editedProperty.realstate_email;
+      if (property.owner_email === email) editedProperty.email = editedProperty.owner_email;
+      if (property.realtor_email === email) editedProperty.email = editedProperty.realtor_email;
+      if (property.realstate_email === email) editedProperty.email = editedProperty.realstate_email;
+
+      editedProperty.shared = property.owner_email !== property.email;
 
       const seller = await find(editedProperty.email);
 
@@ -305,9 +312,11 @@ export async function getMostSeenPropertiesBySeller(email, limit = 6) {
   const properties = await Promise.all(props.map(async (property) => {
     const editedProperty = property;
 
-    if (property.owner_email) editedProperty.email = editedProperty.owner_email;
-    if (property.realtor_email) editedProperty.email = editedProperty.realtor_email;
-    if (property.realstate_email) editedProperty.email = editedProperty.realstate_email;
+    if (property.owner_email === email) editedProperty.email = editedProperty.owner_email;
+    if (property.realstate_email === email) editedProperty.email = editedProperty.realstate_email;
+    if (property.realtor_email === email) editedProperty.email = editedProperty.realtor_email;
+
+    editedProperty.shared = property.owner_email !== property.email;
 
     editedProperty.seller = await find(editedProperty.email);
     editedProperty.pictures = await Photo.findAll({ where: { property_id: property.id }, order: [['type', 'ASC']] });
@@ -724,8 +733,10 @@ export async function filter(data, page = 1, isHighlighted = false, isPublished 
   const properties = await Promise.all(result.map(async (property) => {
     const editedProperty = property.dataValues;
     if (property.owner_email) editedProperty.email = editedProperty.owner_email;
-    if (property.realtor_email) editedProperty.email = editedProperty.realtor_email;
     if (property.realstate_email) editedProperty.email = editedProperty.realstate_email;
+    if (property.realtor_email) editedProperty.email = editedProperty.realtor_email;
+
+    editedProperty.shared = property.owner_email !== property.email;
 
     const seller = await find(editedProperty.email);
 
