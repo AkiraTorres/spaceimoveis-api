@@ -140,7 +140,8 @@ const Property = sequelize.define('properties', {
   },
   financiable: {
     type: DataTypes.BOOLEAN,
-    allowNull: false,
+    allowNull: true,
+    defaultValue: null,
   },
   iptu: {
     type: DataTypes.INTEGER,

@@ -341,9 +341,9 @@ export async function create(data, files) {
       event_area: validateBoolean(data.eventArea, 'O campo "sala de eventos" é obrigatório'),
       description: validateString(data.description, 'O campo "descrição" é obrigatório'),
       contact: validatePhone(data.contact, 'O campo "telefone" é obrigatório'),
-      financiable: validateBoolean(data.financiable, 'O campo "aceita financiamento" é obrigatório'),
     };
 
+    if (data.financiable) propertyData.financiable = validateBoolean(data.financiable);
     if (data.rentPrice) propertyData.rent_price = validatePrice(data.rentPrice, 'O campo "preço de aluguel" é obrigatório');
     if (data.sellPrice) propertyData.sell_price = validatePrice(data.sellPrice, 'O campo "preço de venda" é obrigatório');
     if (data.sellerType === 'owner') propertyData.owner_email = validateEmail(sellerEmail);
@@ -456,7 +456,7 @@ export async function update(id, data, files, sellerEmail) {
     if (data.eventArea !== undefined) property.event_area = validateBoolean(data.eventArea, 'O campo "sala de eventos" é obrigatório');
     if (data.description) property.description = validateString(data.description, 'O campo "descrição" é obrigatório');
     if (data.contact) property.contact = validatePhone(data.contact, 'O campo "telefone" é obrigatório');
-    if (data.financiable !== undefined) property.financiable = validateBoolean(data.financiable, 'O campo "aceita financiamento" é obrigatório');
+    if (data.financiable !== undefined) property.financiable = validateBoolean(data.financiable);
     if (data.ownerEmail) property.owner_email = validateEmail(data.ownerEmail);
     if (data.realtorEmail) property.realtor_email = validateEmail(data.realtorEmail);
     if (data.realstateEmail) property.realstate_email = validateEmail(data.realstateEmail);
