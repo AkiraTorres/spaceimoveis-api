@@ -438,10 +438,10 @@ export async function negateSharedProperty(propertyId, email, reason) {
   }
 
   if (user.type === 'realtor') {
-    await ShareToRealtor.destroy(sharedProperty);
+    await ShareToRealtor.destroy({ where: { email: validatedEmail, property_id: validatedPropertyId } });
     emailBody = `Infelizmente, o corretor ${user.name} negou o compartilhamento do imóvel com o id ${sharedProperty.property_id}.`;
   } else if (user.type === 'realstate') {
-    await ShareToRealstate.destroy(sharedProperty);
+    await ShareToRealstate.destroy({ where: { email: validatedEmail, property_id: validatedPropertyId } });
     emailBody = `Infelizmente, a imobiliária ${user.name} negou o compartilhamento do imóvel com o id ${sharedProperty.property_id}.`;
   }
 
