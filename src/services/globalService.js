@@ -343,3 +343,120 @@ export async function getSharedProperty(email, propertyId) {
 
   return property;
 }
+
+export async function confirmSharedProperty(email, propertyId) {
+  const validatedEmail = validateEmail(email);
+  const validatedPropertyId = validateString(propertyId);
+  let sharedProperty;
+  let emailBody;
+
+  const user = await find(validatedEmail);
+  if (!user) {
+    const error = new Error('Usuário não encontrado');
+    error.status = 404;
+    throw error;
+  }
+
+  if (user.type === 'realtor') {
+    sharedProperty = await ShareToRealtor.findOne({
+      where: { email: validatedEmail, property_id: validatedPropertyId },
+    });
+  } else if (user.type === 'realstate') {
+    sharedProperty = await ShareToRealstate.findOne({
+      where: { email: validatedEmail, property_id: validatedPropertyId },
+    });
+  }
+
+  if (!sharedProperty) {
+    const error = new Error('Imóvel não compartilhado com você');
+    error.status = 404;
+    throw error;
+  }
+
+  if (user.type === 'realtor') {
+    ShareToRealtor.update({ accepted: true }, sharedProperty);
+    emailBody = `O corretor ${user.name} aceitou o compartilhamento do imóvel com o id ${sharedProperty.property_id}!`;
+  } else if (user.type === 'realstate') {
+    ShareToRealstate.update({ accepted: true }, sharedProperty);
+    emailBody = `A imobiliária ${user.name} aceitou o compartilhamento do imóvel com o id ${sharedProperty.property_id}!`;
+  }
+
+  const transporter = nodemailer.createTransport({
+    service: process.env.EMAIL_SERVICE,
+    auth: {
+      user: process.env.EMAIL_ADDRESS,
+      pass: process.env.EMAIL_PASSWORD,
+    },
+  });
+
+  const mailOptions = {
+    from: process.env.EMAIL_ADDRESS,
+    to: sharedProperty.owner_email,
+    subject: 'Aceito o compartilhamento do imóvel!',
+    text: emailBody,
+  };
+
+  transporter.sendMail(mailOptions);
+
+  return { message: 'Compartilhamento aceito com sucesso!' };
+}
+
+export async function negateSharedProperty(propertyId, email, reason) {
+  const validatedEmail = validateEmail(email);
+  const validatedPropertyId = validateString(propertyId);
+  const validatedReason = reason ? ` \nMotivo: ${validateString(reason)}.` : '';
+  let sharedProperty;
+  let emailBody;
+
+  const user = await find(validatedEmail);
+  if (!user) {
+    const error = new Error('Usuário não encontrado');
+    error.status = 404;
+    throw error;
+  }
+
+  if (user.type === 'realtor') {
+    sharedProperty = await ShareToRealtor.findOne({
+      where: { email: validatedEmail, property_id: validatedPropertyId },
+    });
+  } else if (user.type === 'realstate') {
+    sharedProperty = await ShareToRealstate.findOne({
+      where: { email: validatedEmail, property_id: validatedPropertyId },
+    });
+  }
+
+  if (!sharedProperty) {
+    const error = new Error('Imóvel não compartilhado com você');
+    error.status = 404;
+    throw error;
+  }
+
+  if (user.type === 'realtor') {
+    await ShareToRealtor.destroy(sharedProperty);
+    emailBody = `Infelizmente, o corretor ${user.name} negou o compartilhamento do imóvel com o id ${sharedProperty.property_id}.`;
+  } else if (user.type === 'realstate') {
+    await ShareToRealstate.destroy(sharedProperty);
+    emailBody = `Infelizmente, a imobiliária ${user.name} negou o compartilhamento do imóvel com o id ${sharedProperty.property_id}.`;
+  }
+
+  emailBody += validatedReason;
+
+  const transporter = nodemailer.createTransport({
+    service: process.env.EMAIL_SERVICE,
+    auth: {
+      user: process.env.EMAIL_ADDRESS,
+      pass: process.env.EMAIL_PASSWORD,
+    },
+  });
+
+  const mailOptions = {
+    from: process.env.EMAIL_ADDRESS,
+    to: sharedProperty.owner_email,
+    subject: 'Compartilhamento de imóvel negado.',
+    text: emailBody,
+  };
+
+  transporter.sendMail(mailOptions);
+
+  return { message: 'Compartilhamento negado com sucesso!' };
+}

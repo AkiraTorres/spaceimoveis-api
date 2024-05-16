@@ -43,6 +43,8 @@ app.post('/reset/password', globalController.resetPassword);
 app.put('/share/:id', verifyGoogleToken, verifyJwt, globalController.shareProperty);
 app.get('/shared/:id', verifyGoogleToken, verifyJwt, globalController.getSharedProperties);
 app.get('/shared', verifyGoogleToken, verifyJwt, globalController.getSharedProperties);
+app.post('/share/confirm/:id', verifyGoogleToken, verifyJwt, globalController.confirmSharedProperty);
+app.post('/share/negate/:id', verifyGoogleToken, verifyJwt, globalController.negateSharedProperty);
 
 app.all('*', (req, res) => {
   res.status(404).send('Not Found');

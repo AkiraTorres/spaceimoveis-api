@@ -92,3 +92,20 @@ export const getSharedProperty = asyncHandler(async (req, res) => {
   const result = await globalService.getSharedProperty(id, email);
   res.json(result);
 });
+
+export const confirmSharedProperty = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { email } = req;
+
+  const result = await globalService.confirmSharedProperty(id, email);
+  res.json(result);
+});
+
+export const negateSharedProperty = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { email } = req;
+  const { reason } = req.body;
+
+  const result = await globalService.negateSharedProperty(id, email, reason);
+  res.json(result);
+});
