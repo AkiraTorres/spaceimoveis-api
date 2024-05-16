@@ -40,9 +40,9 @@ app.post('/change/password', verifyGoogleToken, verifyJwt, globalController.chan
 app.post('/rescue/password', globalController.rescuePassword);
 app.post('/reset/password', globalController.resetPassword);
 
-app.put('/share/:id', verifyJwt, globalController.shareProperty);
-app.get('/shared/:id', verifyJwt, globalController.getSharedProperties);
-app.get('/shared', verifyJwt, globalController.getSharedProperties);
+app.put('/share/:id', verifyGoogleToken, verifyJwt, globalController.shareProperty);
+app.get('/shared/:id', verifyGoogleToken, verifyJwt, globalController.getSharedProperties);
+app.get('/shared', verifyGoogleToken, verifyJwt, globalController.getSharedProperties);
 
 app.all('*', (req, res) => {
   res.status(404).send('Not Found');
