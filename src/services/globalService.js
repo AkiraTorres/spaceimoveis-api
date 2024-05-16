@@ -255,7 +255,7 @@ export async function getSharedProperties(email, page = 1, limit = 6) {
   }
 
   if (user.type === 'realtor') {
-    total = await ShareToRealtor.count({ where: { email: validatedEmail } });
+    total = await ShareToRealtor.count({ where: { email: validatedEmail, accepted: false } });
 
     if (total === 0) {
       const error = new Error('Nenhum imóvel compartilhado com você');
@@ -264,13 +264,13 @@ export async function getSharedProperties(email, page = 1, limit = 6) {
     }
 
     sharedProperties = await ShareToRealtor.findAll({
-      where: { email: validatedEmail },
+      where: { email: validatedEmail, accepted: false },
       order: [['createdAt', 'DESC']],
       limit,
       raw: true,
     });
   } else if (user.type === 'realstate') {
-    total = await ShareToRealstate.count({ where: { email: validatedEmail } });
+    total = await ShareToRealstate.count({ where: { email: validatedEmail, accepted: false } });
 
     if (total === 0) {
       const error = new Error('Nenhum imóvel compartilhado com você');
@@ -279,7 +279,7 @@ export async function getSharedProperties(email, page = 1, limit = 6) {
     }
 
     sharedProperties = await ShareToRealstate.findAll({
-      where: { email: validatedEmail },
+      where: { email: validatedEmail, accepted: false },
       order: [['createdAt', 'DESC']],
       limit,
       raw: true,
@@ -324,11 +324,11 @@ export async function getSharedProperty(email, propertyId) {
 
   if (user.type === 'realtor') {
     property = await ShareToRealtor.findOne({
-      where: { email: validatedEmail, property_id: validatedPropertyId },
+      where: { email: validatedEmail, property_id: validatedPropertyId, accepted: false },
     });
   } else if (user.type === 'realstate') {
     property = await ShareToRealstate.findOne({
-      where: { email: validatedEmail, property_id: validatedPropertyId },
+      where: { email: validatedEmail, property_id: validatedPropertyId, accepted: false },
     });
   }
 
@@ -470,7 +470,7 @@ export async function negateSharedProperty(propertyId, email, reason) {
     text: emailBody,
   };
 
-  transporter.sendMail(mailOptions, (error) => { console.error(error); });
+  transporter.sendMail(mailOptions);
 
   return { message: 'Compartilhamento negado com sucesso!' };
 }
