@@ -188,6 +188,25 @@ export async function shareProperty(propertyId, ownerEmail, guestEmail) {
     throw error;
   }
 
+  const sharedRealtor = await ShareToRealtor.findOne({
+    where: {
+      email: validatedGuestEmail,
+      property_id: validatedPropertyId,
+    },
+  });
+  const sharedRealstate = await ShareToRealstate.findOne({
+    where: {
+      email: validatedGuestEmail,
+      property_id: validatedPropertyId,
+    },
+  });
+
+  if (sharedRealtor || sharedRealstate) {
+    const error = new Error('Imóvel já compartilhado com esse usuário');
+    error.status = 400;
+    throw error;
+  }
+
   if (guest.type === 'realtor') {
     ShareToRealtor.create({
       id: uuid(),
