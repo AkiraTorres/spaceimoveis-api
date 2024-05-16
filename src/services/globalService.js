@@ -387,6 +387,8 @@ export async function confirmSharedProperty(propertyId, email) {
     emailBody = `A imobiliária ${user.name} aceitou o compartilhamento do imóvel com o id ${sharedProperty.property_id}!`;
   }
 
+  const property = await Property.findByPk(validatedPropertyId);
+
   const transporter = nodemailer.createTransport({
     service: process.env.EMAIL_SERVICE,
     auth: {
@@ -397,7 +399,7 @@ export async function confirmSharedProperty(propertyId, email) {
 
   const mailOptions = {
     from: process.env.EMAIL_ADDRESS,
-    to: sharedProperty.owner_email,
+    to: property.owner_email,
     subject: 'Aceito o compartilhamento do imóvel!',
     text: emailBody,
   };
@@ -438,14 +440,20 @@ export async function negateSharedProperty(propertyId, email, reason) {
   }
 
   if (user.type === 'realtor') {
-    await ShareToRealtor.destroy({ where: { email: validatedEmail, property_id: validatedPropertyId } });
+    await ShareToRealtor.destroy({
+      where: { email: validatedEmail, property_id: validatedPropertyId },
+    });
     emailBody = `Infelizmente, o corretor ${user.name} negou o compartilhamento do imóvel com o id ${sharedProperty.property_id}.`;
   } else if (user.type === 'realstate') {
-    await ShareToRealstate.destroy({ where: { email: validatedEmail, property_id: validatedPropertyId } });
+    await ShareToRealstate.destroy({
+      where: { email: validatedEmail, property_id: validatedPropertyId },
+    });
     emailBody = `Infelizmente, a imobiliária ${user.name} negou o compartilhamento do imóvel com o id ${sharedProperty.property_id}.`;
   }
 
   emailBody += validatedReason;
+
+  const property = await Property.findByPk(validatedPropertyId);
 
   const transporter = nodemailer.createTransport({
     service: process.env.EMAIL_SERVICE,
@@ -457,12 +465,12 @@ export async function negateSharedProperty(propertyId, email, reason) {
 
   const mailOptions = {
     from: process.env.EMAIL_ADDRESS,
-    to: sharedProperty.owner_email,
+    to: property.owner_email,
     subject: 'Compartilhamento de imóvel negado.',
     text: emailBody,
   };
 
-  transporter.sendMail(mailOptions);
+  transporter.sendMail(mailOptions, (error) => { console.error(error); });
 
   return { message: 'Compartilhamento negado com sucesso!' };
 }
