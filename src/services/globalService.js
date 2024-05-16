@@ -344,7 +344,7 @@ export async function getSharedProperty(email, propertyId) {
   return property;
 }
 
-export async function confirmSharedProperty(email, propertyId) {
+export async function confirmSharedProperty(propertyId, email) {
   const validatedEmail = validateEmail(email);
   const validatedPropertyId = validateString(propertyId);
   let sharedProperty;
@@ -374,10 +374,16 @@ export async function confirmSharedProperty(email, propertyId) {
   }
 
   if (user.type === 'realtor') {
-    ShareToRealtor.update({ accepted: true }, sharedProperty);
+    ShareToRealtor.update(
+      { accepted: true },
+      { where: { email: validatedEmail, property_id: validatedPropertyId } },
+    );
     emailBody = `O corretor ${user.name} aceitou o compartilhamento do imóvel com o id ${sharedProperty.property_id}!`;
   } else if (user.type === 'realstate') {
-    ShareToRealstate.update({ accepted: true }, sharedProperty);
+    ShareToRealstate.update(
+      { accepted: true },
+      { where: { email: validatedEmail, property_id: validatedPropertyId } },
+    );
     emailBody = `A imobiliária ${user.name} aceitou o compartilhamento do imóvel com o id ${sharedProperty.property_id}!`;
   }
 
