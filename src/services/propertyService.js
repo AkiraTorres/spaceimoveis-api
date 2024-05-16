@@ -423,9 +423,10 @@ export async function update(id, data, files, sellerEmail) {
       throw new PropertyNotFound();
     }
 
-    if (oldProperty.owner_email !== sellerEmail
+    if ((oldProperty.owner_email !== sellerEmail
       && oldProperty.realtor_email !== sellerEmail
-      && oldProperty.realstate_email !== sellerEmail) {
+      && oldProperty.realstate_email !== sellerEmail)
+      || (oldProperty.owner_email && oldProperty.owner_email !== sellerEmail)) {
       const error = new Error('Você não tem permissão para alterar este imóvel');
       error.status = 401;
       throw error;
@@ -736,12 +737,21 @@ export async function filter(data, page = 1, isHighlighted = false, isPublished 
   return { properties, pagination };
 }
 
-export async function destroy(id) {
+export async function destroy(id, email) {
   try {
     const validatedId = validateString(id);
 
-    if (!await Property.findByPk(validatedId)) {
+    const user = await find(email);
+
+    const property = await Property.findByPk(validatedId);
+    if (!property) {
       throw new PropertyNotFound();
+    }
+
+    if (property.owner_email && property.owner_email !== user.email) {
+      const error = new Error('Você não tem permissão para deletar este imóvel');
+      error.status = 401;
+      throw error;
     }
 
     const photos = await Photo.findAll({ where: { property_id: validatedId } });

@@ -92,7 +92,8 @@ export const update = asyncHandler(async (req, res) => {
 
 export const destroy = asyncHandler(async (req, res) => {
   const { id } = req.params;
+  const { email } = req;
 
-  const result = await service.destroy(id);
+  const result = await service.destroy(id, email);
   res.status(200).json(result);
 });
