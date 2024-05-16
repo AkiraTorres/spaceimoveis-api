@@ -209,13 +209,13 @@ export async function shareProperty(propertyId, ownerEmail, guestEmail) {
   }
 
   if (guest.type === 'realtor') {
-    ShareToRealtor.create({
+    await ShareToRealtor.create({
       id: uuid(),
       email: validatedGuestEmail,
       property_id: validatedPropertyId,
     });
   } else if (guest.type === 'realstate') {
-    ShareToRealstate.create({
+    await ShareToRealstate.create({
       id: uuid(),
       email: validatedGuestEmail,
       property_id: validatedPropertyId,
@@ -373,25 +373,27 @@ export async function confirmSharedProperty(propertyId, email) {
     error.status = 404;
     throw error;
   }
+  const property = await Property.findByPk(validatedPropertyId);
 
   if (user.type === 'realtor') {
-    ShareToRealtor.update(
+    await ShareToRealtor.update(
       { accepted: true },
       { where: { email: validatedEmail, property_id: validatedPropertyId } },
     );
     emailBody = `O corretor ${user.name} aceitou o compartilhamento do imóvel com o id ${sharedProperty.property_id}!`;
-    await ShareToRealtor.destroy({ where: { email: { [Op.not]: validateEmail } } });
+    await ShareToRealtor.destroy({ where: { email: { [Op.not]: validatedEmail } } });
+    property.realtor_email = validatedEmail;
+    property.save({ fields: ['realtor_email'] });
   } else if (user.type === 'realstate') {
-    ShareToRealstate.update(
+    await ShareToRealstate.update(
       { accepted: true },
       { where: { email: validatedEmail, property_id: validatedPropertyId } },
     );
     emailBody = `A imobiliária ${user.name} aceitou o compartilhamento do imóvel com o id ${sharedProperty.property_id}!`;
-    await ShareToRealstate.destroy({ where: { email: { [Op.not]: validateEmail } } });
+    await ShareToRealstate.destroy({ where: { email: { [Op.not]: validatedEmail } } });
+    property.realstate_email = validatedEmail;
+    property.save({ fields: ['realstate_email'] });
   }
-
-  const property = await Property.findByPk(validatedPropertyId);
-  await Property.update({ [`${user.type}_email`]: validatedEmail }, { where: { id: validatedPropertyId } });
 
   const transporter = nodemailer.createTransport({
     service: process.env.EMAIL_SERVICE,
@@ -408,7 +410,7 @@ export async function confirmSharedProperty(propertyId, email) {
     text: emailBody,
   };
 
-  transporter.sendMail(mailOptions);
+  transporter.sendMail(mailOptions, (error) => { console.log(error); });
 
   return { message: 'Compartilhamento aceito com sucesso!' };
 }

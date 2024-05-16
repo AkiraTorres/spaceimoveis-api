@@ -82,7 +82,7 @@ export const getSharedProperties = asyncHandler(async (req, res) => {
   const { page = 1, limit = 6 } = req.query;
 
   const result = await globalService.getSharedProperties(email, page, limit);
-  res.json(result);
+  res.status(200).json(result);
 });
 
 export const getSharedProperty = asyncHandler(async (req, res) => {
@@ -90,7 +90,7 @@ export const getSharedProperty = asyncHandler(async (req, res) => {
   const { email } = req;
 
   const result = await globalService.getSharedProperty(id, email);
-  res.json(result);
+  res.status(200).json(result);
 });
 
 export const confirmSharedProperty = asyncHandler(async (req, res) => {
@@ -98,7 +98,7 @@ export const confirmSharedProperty = asyncHandler(async (req, res) => {
   const { email } = req;
 
   const result = await globalService.confirmSharedProperty(id, email);
-  res.json(result);
+  res.status(200).json(result);
 });
 
 export const negateSharedProperty = asyncHandler(async (req, res) => {
@@ -107,5 +107,5 @@ export const negateSharedProperty = asyncHandler(async (req, res) => {
   const { reason } = req.body;
 
   const result = await globalService.negateSharedProperty(id, email, reason);
-  res.json(result);
+  res.status(200).json(result);
 });
