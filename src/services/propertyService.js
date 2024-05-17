@@ -642,13 +642,49 @@ export async function publish(id, email) {
 
 export async function filter(data, page = 1, isHighlighted = false, isPublished = true, limit = 6) {
   const offset = Number(limit * (page - 1));
-  const where = {};
+  let where = {};
   const order = [['updatedAt', 'DESC']];
   let minPrice = 0;
   let maxPrice = 999999999;
   let minSize = 0;
   let maxSize = 999999999;
   let user;
+  let shared;
+
+  if (data.shared !== undefined) {
+    shared = validateBoolean(data.shared);
+    if (shared) {
+      where = {
+        [Op.and]: [
+          { owner_email: { [Op.not]: null } },
+          { [Op.and]: [
+            { realstate_email: { [Op.not]: null } },
+            { realtor_email: { [Op.not]: null } },
+          ] },
+        ],
+      };
+    } else {
+      where = {
+        [Op.or]: [
+          { [Op.and]: [
+            { owner_email: { [Op.not]: null } },
+            { realtor_email: null },
+            { realstate_email: null },
+          ] },
+          { [Op.and]: [
+            { owner_email: null },
+            { realtor_email: { [Op.not]: null } },
+            { realstate_email: null },
+          ] },
+          { [Op.and]: [
+            { owner_email: null },
+            { realtor_email: null },
+            { realstate_email: { [Op.not]: null } },
+          ] },
+        ],
+      };
+    }
+  }
 
   if (data) {
     if (data.id) where.id = validateString(data.id);
@@ -736,7 +772,12 @@ export async function filter(data, page = 1, isHighlighted = false, isPublished 
     if (property.realstate_email) editedProperty.email = editedProperty.realstate_email;
     if (property.realtor_email) editedProperty.email = editedProperty.realtor_email;
 
-    editedProperty.shared = property.owner_email !== property.email;
+    if ((property.owner_email && property.realtor_email)
+      || (property.owner_email && property.realstate_email)) {
+      editedProperty.shared = true;
+    } else {
+      editedProperty.shared = false;
+    }
 
     const seller = await find(editedProperty.email);
 
