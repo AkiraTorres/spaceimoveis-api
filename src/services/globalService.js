@@ -140,8 +140,15 @@ export async function rescuePassword(email) {
     text: `Seu código para redefinição de senha é ${otp} e ele irá se espirar em 6 minutos`,
   };
 
-  transporter.sendMail(mailOptions);
-  return { message: 'Email Enviado.' };
+  let response = 'Foi enviado um email para recuperar sua senha';
+
+  transporter.sendMail(mailOptions, (error) => {
+    if (error) {
+      response = 'Ocorreu um erro ao enviar o email, tente novamente mais tarde.';
+    }
+  });
+
+  return { message: response };
 }
 
 export async function resetPassword(email, password, otp) {
