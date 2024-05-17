@@ -237,9 +237,13 @@ export async function shareProperty(propertyId, ownerEmail, guestEmail) {
     text: `O proprietário ${owner.name}, dono de uma casa na cidade de ${property.city}-${property.state} compartilhou um imóvel com você. Para mais informações acesse o site.`,
   };
 
-  const response = { message: 'Email Enviado.' };
-  transporter.sendMail(mailOptions);
-  return response;
+  let response = 'O compartilhamento foi compartilhado com sucesso!';
+
+  try { transporter.sendMail(mailOptions); } catch (error) {
+    response += ' Mas o email não pode ser enviado.';
+  }
+
+  return { message: response };
 }
 
 export async function getSharedProperties(email, page = 1, limit = 6) {
@@ -410,9 +414,13 @@ export async function confirmSharedProperty(propertyId, email) {
     text: emailBody,
   };
 
-  transporter.sendMail(mailOptions, (error) => { console.log(error); });
+  let response = 'O compartilhamento foi aceito com sucesso!';
 
-  return { message: 'Compartilhamento aceito com sucesso!' };
+  try { transporter.sendMail(mailOptions); } catch (error) {
+    response += ' Mas o email não foi enviado.';
+  }
+
+  return { message: response };
 }
 
 export async function negateSharedProperty(propertyId, email, reason) {
@@ -475,8 +483,11 @@ export async function negateSharedProperty(propertyId, email, reason) {
     subject: 'Compartilhamento de imóvel negado.',
     text: emailBody,
   };
+  let response = 'O compartilhamento foi negado com sucesso!';
 
-  transporter.sendMail(mailOptions);
+  try { transporter.sendMail(mailOptions); } catch (error) {
+    response += ' Mas o email não foi enviado.';
+  }
 
-  return { message: 'Compartilhamento negado com sucesso!' };
+  return { message: response };
 }
