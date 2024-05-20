@@ -142,11 +142,9 @@ export async function rescuePassword(email) {
 
   let response = 'Foi enviado um email para recuperar sua senha';
 
-  transporter.sendMail(mailOptions, (error) => {
-    if (error) {
-      response = 'Ocorreu um erro ao enviar o email, tente novamente mais tarde.';
-    }
-  });
+  try { await transporter.sendMail(mailOptions); } catch (error) {
+    response = 'Ocorreu um erro ao enviar o email, tente novamente mais tarde.';
+  }
 
   return { message: response };
 }
@@ -246,7 +244,7 @@ export async function shareProperty(propertyId, ownerEmail, guestEmail) {
 
   let response = 'O compartilhamento foi compartilhado com sucesso!';
 
-  try { transporter.sendMail(mailOptions); } catch (error) {
+  try { await transporter.sendMail(mailOptions); } catch (error) {
     response += ' Mas o email não pode ser enviado.';
   }
 
@@ -423,7 +421,7 @@ export async function confirmSharedProperty(propertyId, email) {
 
   let response = 'O compartilhamento foi aceito com sucesso!';
 
-  try { transporter.sendMail(mailOptions); } catch (error) {
+  try { await transporter.sendMail(mailOptions); } catch (error) {
     response += ' Mas o email não foi enviado.';
   }
 
@@ -492,7 +490,7 @@ export async function negateSharedProperty(propertyId, email, reason) {
   };
   let response = 'O compartilhamento foi negado com sucesso!';
 
-  try { transporter.sendMail(mailOptions); } catch (error) {
+  try { await transporter.sendMail(mailOptions); } catch (error) {
     response += ' Mas o email não foi enviado.';
   }
 
