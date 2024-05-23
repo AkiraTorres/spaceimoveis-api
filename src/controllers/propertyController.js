@@ -10,10 +10,8 @@ export const findAll = asyncHandler(async (req, res) => {
 });
 
 export const recommendedProperties = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 6 } = req.query;
-
-  const result = await service.recommendedProperties(page, limit);
-  res.status(200).json(result);
+  const result = await service.recommendedProperties(true, false);
+  res.json(result);
 });
 
 export const findByPk = asyncHandler(async (req, res) => {

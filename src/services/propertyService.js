@@ -119,32 +119,18 @@ export async function findAll(page = 1, isHighlighted = false, isPublished = tru
   }
 }
 
-export async function recommendedProperties(page = 1, isHighlighted = true, limit = 6) {
-  const offset = Number(limit * (page - 1));
-  const where = { is_highlighted: isHighlighted, is_published: true };
+export async function recommendedProperties(isHighlighted = true, isPublished = false) {
+  const where = { is_highlighted: isHighlighted, is_published: isPublished };
   const order = [['updatedAt', 'DESC']];
-  const total = await Property.count({ where });
-  const lastPage = Math.ceil(total / limit);
 
-  const pagination = {
-    path: '/properties',
-    page,
-    prev_page_url: page - 1 >= 1 ? page - 1 : null,
-    next_page_url: Number(page) + 1 <= lastPage ? Number(page) + 1 : null,
-    lastPage,
-    total,
-  };
-
-  const props = await Property.findAll({ where, order, limit, offset });
-
-  const properties = await Promise.all(props.map(async (property) => {
+  const props = await Property.findAll({ where, order });
+  let properties = await Promise.all(props.map(async (property) => {
     const editedProperty = property.dataValues;
     if (property.owner_email) editedProperty.email = editedProperty.owner_email;
     if (property.realstate_email) editedProperty.email = editedProperty.realstate_email;
     if (property.realtor_email) editedProperty.email = editedProperty.realtor_email;
 
     editedProperty.shared = property.owner_email !== property.email;
-
     const seller = await find(editedProperty.email);
 
     const totalFavorites = await getPropertyTotalFavorites(property.id);
@@ -154,12 +140,19 @@ export async function recommendedProperties(page = 1, isHighlighted = true, limi
     return { ...editedProperty, totalFavorites, pictures, seller };
   }));
 
+  const d = new Date();
+  const fifteenDaysInMillis = 15 * 24 * 60 * 60 * 1000;
+  properties = properties.filter((property) => {
+    if (properties.length <= 6) return true;
+    return !((d - property.updatedAt >= fifteenDaysInMillis) && (Math.abs(d.getDate() - property.updatedAt.getDate())) % 2 === 0);
+  });
+
   properties.sort((a, b) => {
     if (a.totalFavorites !== b.totalFavorites) return b.totalFavorites - a.totalFavorites;
     return b.times_seen - a.times_seen;
   });
 
-  return { properties, pagination };
+  return properties.slice(0, 6);
 }
 
 export async function findByPk(id) {

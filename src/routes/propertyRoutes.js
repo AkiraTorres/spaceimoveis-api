@@ -10,13 +10,13 @@ const router = Express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
 router.get('/', controller.findAll);
+router.get('/recommended', controller.recommendedProperties);
 router.get('/:id', controller.findByPk);
 router.get('/seller/:email', controller.findBySellerEmail);
 router.get('/times-seen/:id', controller.getTimesSeen);
 router.post('/times-seen/:id', controller.addTimesSeen);
 router.get('/most-seen/:email', controller.getMostSeenPropertiesBySeller);
 router.put('/filter', controller.filter);
-router.get('recommended', controller.recommendedProperties);
 router.get('/get/ids', verifyJwt, controller.getAllPropertiesIds);
 router.get('/get/cities', verifyJwt, controller.getAllPropertiesCities);
 router.post('/', verifyJwt, upload.any(), controller.create);
