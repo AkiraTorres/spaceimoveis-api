@@ -42,7 +42,6 @@ export async function find(email, pass = false, otp = false) {
     const attributes = { exclude: [] };
     if (!otp) attributes.exclude.push('otp', 'otp_ttl');
     if (!pass) attributes.exclude.push('password');
-    let user = null;
 
     try {
       return await clientService.findByPk(email, pass, otp);
@@ -57,7 +56,7 @@ export async function find(email, pass = false, otp = false) {
     } catch (err) { /* */ }
 
     try {
-    return await realstateService.findByPk(email, pass, otp);
+      return await realstateService.findByPk(email, pass, otp);
     } catch (err) { /* */ }
   }
   const error = new Error('Usuário não encontrado');
