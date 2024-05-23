@@ -144,7 +144,7 @@ export async function rescuePassword(email) {
 
 export async function resetPassword(email, password, otp) {
   const validatedEmail = validateEmail(email);
-  const user = (await find(validatedEmail, true));
+  const user = await find(validatedEmail, true, true);
 
   if (!user) {
     const error = new Error('Usuário não encontrado');
@@ -152,13 +152,13 @@ export async function resetPassword(email, password, otp) {
     throw error;
   }
 
-  if (!(user.otp === otp && user.otp_ttl > new Date())) {
-    const error = new Error('Código inválido ou expirado');
-    error.status = 400;
-    throw error;
+  if (user.otp === otp && user.otp_ttl > new Date()) {
+    return changePassword(email, password);
   }
 
-  return changePassword(email, password);
+  const error = new Error('Código inválido ou expirado');
+  error.status = 400;
+  throw error;
 }
 
 export async function shareProperty(propertyId, ownerEmail, guestEmail) {
