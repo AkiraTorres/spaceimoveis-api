@@ -44,19 +44,25 @@ export async function find(email, pass = false, otp = false) {
     if (!pass) attributes.exclude.push('password');
     let user = null;
 
-    user = await Client.findByPk(email, { attributes, raw: true });
-    if (user) return user;
+    try {
+      return await clientService.findByPk(email, pass, otp);
+    } catch (err) { /* */ }
 
-    user = await Owner.findByPk(email, { attributes, raw: true });
-    if (user) return user;
+    try {
+      return await ownerService.findByPk(email, pass, otp);
+    } catch (err) { /* */ }
 
-    user = await Realtor.findByPk(email, { attributes, raw: true });
-    if (user) return user;
+    try {
+      return await realtorService.findByPk(email, pass, otp);
+    } catch (err) { /* */ }
 
-    user = await Realstate.findByPk(email, { attributes, raw: true });
-    if (user) return user;
+    try {
+    return await realstateService.findByPk(email, pass, otp);
+    } catch (err) { /* */ }
   }
-  return null;
+  const error = new Error('Usuário não encontrado');
+  error.status = 404;
+  throw error;
 }
 
 export async function changePassword(email, newPassword) {
