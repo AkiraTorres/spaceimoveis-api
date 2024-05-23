@@ -39,35 +39,23 @@ export async function findAll() {
 
 export async function find(email, pass = false, otp = false) {
   if (email) {
-    try {
-      const client = await clientService.findByPk(email, pass, otp);
-      if (client) {
-        return client;
-      }
-    } catch (error) { /* empty */ }
+    const attributes = { exclude: [] };
+    if (!otp) attributes.exclude.push('otp', 'otp_ttl');
+    if (!pass) attributes.exclude.push('password');
+    let user = null;
 
-    try {
-      const owner = await ownerService.findByPk(email, pass, otp);
-      if (owner) {
-        return owner;
-      }
-    } catch (error) { /* empty */ }
+    user = await Client.findByPk(email, { attributes, raw: true });
+    if (user) return user;
 
-    try {
-      const realtor = await realtorService.findByPk(email, pass, otp);
-      if (realtor) {
-        return realtor;
-      }
-    } catch (error) { /* empty */ }
+    user = await Owner.findByPk(email, { attributes, raw: true });
+    if (user) return user;
 
-    try {
-      const realstate = await realstateService.findByPk(email, pass, otp);
-      if (realstate) {
-        return realstate;
-      }
-    } catch (error) { /* empty */ }
+    user = await Realtor.findByPk(email, { attributes, raw: true });
+    if (user) return user;
+
+    user = await Realstate.findByPk(email, { attributes, raw: true });
+    if (user) return user;
   }
-
   return null;
 }
 
@@ -107,7 +95,7 @@ export async function rescuePassword(email) {
   const receiverEmail = validateEmail(email);
 
   const user = await find(receiverEmail);
-  if (!user) return { message: 'Email enviado.' };
+  if (!user) return { message: 'Usuário não encontrado.' };
 
   const otp = Math.floor(1000 + Math.random() * 9000);
   const otpTTL = new Date();
