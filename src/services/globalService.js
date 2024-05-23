@@ -1,5 +1,5 @@
+import sgMail from '@sendgrid/mail';
 import dotenv from 'dotenv';
-import nodemailer from 'nodemailer';
 import { v4 as uuid } from 'uuid';
 
 import { Op } from 'sequelize';
@@ -20,6 +20,7 @@ import * as realtorService from './realtorService.js';
 import { validateEmail, validatePassword, validateString } from '../validators/inputValidators.js';
 
 dotenv.config();
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 export async function findAll() {
   try {
@@ -125,14 +126,6 @@ export async function rescuePassword(email) {
     Realstate.update(user, { where: { email: receiverEmail } });
   }
 
-  const transporter = nodemailer.createTransport({
-    service: process.env.EMAIL_SERVICE,
-    auth: {
-      user: process.env.EMAIL_ADDRESS,
-      pass: process.env.EMAIL_PASSWORD,
-    },
-  });
-
   const mailOptions = {
     from: process.env.EMAIL_ADDRESS,
     to: receiverEmail,
@@ -142,9 +135,9 @@ export async function rescuePassword(email) {
 
   let response = 'Foi enviado um email para recuperar sua senha';
 
-  try { await transporter.sendMail(mailOptions); } catch (error) {
-    response = 'Ocorreu um erro ao enviar o email, tente novamente mais tarde.';
-  }
+  sgMail
+    .send(mailOptions)
+    .catch(() => { response = 'Ocorreu um erro ao enviar o email, tente novamente mais tarde.'; });
 
   return { message: response };
 }
@@ -227,14 +220,6 @@ export async function shareProperty(propertyId, ownerEmail, guestEmail) {
     });
   }
 
-  const transporter = nodemailer.createTransport({
-    service: process.env.EMAIL_SERVICE,
-    auth: {
-      user: process.env.EMAIL_ADDRESS,
-      pass: process.env.EMAIL_PASSWORD,
-    },
-  });
-
   const mailOptions = {
     from: process.env.EMAIL_ADDRESS,
     to: validatedGuestEmail,
@@ -244,9 +229,9 @@ export async function shareProperty(propertyId, ownerEmail, guestEmail) {
 
   let response = 'O compartilhamento foi compartilhado com sucesso!';
 
-  try { await transporter.sendMail(mailOptions); } catch (error) {
-    response += ' Mas o email não pode ser enviado.';
-  }
+  sgMail
+    .send(mailOptions)
+    .catch(() => { response += ' Mas o email não pode ser enviado.'; });
 
   return { message: response };
 }
@@ -404,14 +389,6 @@ export async function confirmSharedProperty(propertyId, email) {
     property.save({ fields: ['realstate_email'] });
   }
 
-  const transporter = nodemailer.createTransport({
-    service: process.env.EMAIL_SERVICE,
-    auth: {
-      user: process.env.EMAIL_ADDRESS,
-      pass: process.env.EMAIL_PASSWORD,
-    },
-  });
-
   const mailOptions = {
     from: process.env.EMAIL_ADDRESS,
     to: property.owner_email,
@@ -420,10 +397,9 @@ export async function confirmSharedProperty(propertyId, email) {
   };
 
   let response = 'O compartilhamento foi aceito com sucesso!';
-
-  try { await transporter.sendMail(mailOptions); } catch (error) {
-    response += ' Mas o email não foi enviado.';
-  }
+  sgMail
+    .send(mailOptions)
+    .catch(() => { response += ' Mas o email não pode ser enviado.'; });
 
   return { message: response };
 }
@@ -474,14 +450,6 @@ export async function negateSharedProperty(propertyId, email, reason) {
 
   const property = await Property.findByPk(validatedPropertyId);
 
-  const transporter = nodemailer.createTransport({
-    service: process.env.EMAIL_SERVICE,
-    auth: {
-      user: process.env.EMAIL_ADDRESS,
-      pass: process.env.EMAIL_PASSWORD,
-    },
-  });
-
   const mailOptions = {
     from: process.env.EMAIL_ADDRESS,
     to: property.owner_email,
@@ -490,9 +458,9 @@ export async function negateSharedProperty(propertyId, email, reason) {
   };
   let response = 'O compartilhamento foi negado com sucesso!';
 
-  try { await transporter.sendMail(mailOptions); } catch (error) {
-    response += ' Mas o email não foi enviado.';
-  }
+  sgMail
+    .send(mailOptions)
+    .catch(() => { response += ' Mas o email não pode ser enviado.'; });
 
   return { message: response };
 }
