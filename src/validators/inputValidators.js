@@ -59,7 +59,7 @@ export function validateString(string, msg = '') {
 export function validateInteger(integer, msg = '') {
   const sanitizedInteger = parseInt(integer, 10);
 
-  if (!sanitizedInteger || !Number.isInteger(sanitizedInteger)) {
+  if (sanitizedInteger === undefined || !Number.isInteger(sanitizedInteger)) {
     if (msg !== '') {
       throw new InvalidInteger(msg);
     }
