@@ -57,7 +57,9 @@ export function validateString(string, msg = '') {
 }
 
 export function validateInteger(integer, msg = '') {
-  const sanitizedInteger = parseInt(integer, 10);
+  const int = typeof integer === 'string' ? integer.replace(/\./g, '') : integer;
+
+  const sanitizedInteger = parseInt(int, 10);
 
   if (sanitizedInteger === undefined || !Number.isInteger(sanitizedInteger)) {
     if (msg !== '') {

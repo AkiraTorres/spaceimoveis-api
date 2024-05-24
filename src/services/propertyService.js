@@ -144,7 +144,8 @@ export async function recommendedProperties(isHighlighted = true, isPublished = 
   const fifteenDaysInMillis = 15 * 24 * 60 * 60 * 1000;
   properties = properties.filter((property) => {
     if (properties.length <= 6) return true;
-    return !((d - property.updatedAt >= fifteenDaysInMillis) && (Math.abs(d.getDate() - property.updatedAt.getDate())) % 2 === 0);
+    return !((d - property.updatedAt >= fifteenDaysInMillis)
+    && (Math.abs(d.getDate() - property.updatedAt.getDate())) % 2 === 0);
   });
 
   properties.sort((a, b) => {
