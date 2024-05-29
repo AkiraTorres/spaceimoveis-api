@@ -274,10 +274,10 @@ export async function validateIfUniqueCreci(creci) {
   }
 }
 
-export async function validateFurnished(furnished, msg) {
-  const sanitizedFurnished = validator.escape(furnished);
+export function validateFurnished(furnished, msg) {
+  // const sanitizedFurnished = validator.escape(furnished);
 
-  if (sanitizedFurnished === 'not-furnished' || sanitizedFurnished === 'semi-furnished' || sanitizedFurnished === 'furnished') return sanitizedFurnished;
+  if (furnished === 'not-furnished' || furnished === 'semi-furnished' || furnished === 'furnished') return furnished;
 
   if (msg !== '') {
     throw new InvalidString(msg);
