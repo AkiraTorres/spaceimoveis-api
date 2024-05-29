@@ -358,11 +358,22 @@ export async function create(data, files) {
     if (data.aditionalFees) propertyData.aditional_fees = validatePrice(data.aditionalFees);
     if (data.negotiable !== undefined) propertyData.negotiable = validateBoolean(data.negotiable);
     if (data.suites) propertyData.suites = validateInteger(data.suites);
-    if (data.furnished !== undefined) propertyData.furnished = validateBoolean(data.furnished);
+    if (data.furnished) propertyData.furnished = validateInteger(data.furnished);
     if (data.gym !== undefined) propertyData.gym = validateBoolean(data.gym);
     if (data.balcony !== undefined) propertyData.balcony = validateBoolean(data.balcony);
     if (data.concierge !== undefined) propertyData.concierge = validateBoolean(data.concierge);
     if (data.yard !== undefined) propertyData.yard = validateBoolean(data.yard);
+    if (data.garden !== undefined) propertyData.garden = validateBoolean(data.garden);
+    if (data.porch !== undefined) propertyData.porch = validateBoolean(data.porch);
+    if (data.slab !== undefined) propertyData.slab = validateBoolean(data.slab);
+
+    if (data.gatedCommunity !== undefined) {
+      propertyData.gated_community = validateBoolean(data.gatedCommunity);
+    }
+
+    if (data.gourmetArea !== undefined) {
+      propertyData.gourmet_area = validateBoolean(data.gourmetArea);
+    }
 
     if (data.solarEnergy !== undefined) {
       propertyData.solar_energy = validateBoolean(data.solarEnergy);
@@ -469,7 +480,7 @@ export async function update(id, data, files, sellerEmail) {
     if (data.aditionalFees) property.aditional_fees = validatePrice(data.aditionalFees);
     if (data.negotiable !== undefined) property.negotiable = validateBoolean(data.negotiable);
     if (data.suites) property.suites = validateInteger(data.suites);
-    if (data.furnished !== undefined) property.furnished = validateBoolean(data.furnished);
+    if (data.furnished) property.furnished = validateInteger(data.furnished);
     if (data.gym !== undefined) property.gym = validateBoolean(data.gym);
     if (data.balcony !== undefined) property.balcony = validateBoolean(data.balcony);
     if (data.solarEnergy !== undefined) property.solar_energy = validateBoolean(data.solarEnergy);
@@ -477,6 +488,17 @@ export async function update(id, data, files, sellerEmail) {
     if (data.yard !== undefined) property.yard = validateBoolean(data.yard);
     if (data.isPublished !== undefined) property.is_published = validateBoolean(data.isPublished);
     if (data.oldPhotos) oldPhotosUrls = data.oldPhotos;
+    if (data.garden !== undefined) property.garden = validateBoolean(data.garden);
+    if (data.porch !== undefined) property.porch = validateBoolean(data.porch);
+    if (data.slab !== undefined) property.slab = validateBoolean(data.slab);
+
+    if (data.gatedCommunity !== undefined) {
+      property.gated_community = validateBoolean(data.gatedCommunity);
+    }
+
+    if (data.gourmetArea !== undefined) {
+      property.gourmet_area = validateBoolean(data.gourmetArea);
+    }
 
     if (data.isHighlighted !== undefined) {
       property.is_highlighted = validateBoolean(data.isHighlighted);

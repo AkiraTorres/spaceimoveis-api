@@ -130,6 +130,26 @@ const Property = sequelize.define('properties', {
     type: DataTypes.BOOLEAN,
     allowNull: false,
   },
+  gourmet_area: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+  },
+  garden: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+  },
+  porch: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+  },
+  slab: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+  },
+  gated_community: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+  },
   description: {
     type: DataTypes.TEXT,
     allowNull: false,
@@ -164,9 +184,9 @@ const Property = sequelize.define('properties', {
     defaultValue: null,
   },
   furnished: {
-    type: DataTypes.BOOLEAN,
+    type: DataTypes.INTEGER,
     allowNull: false,
-    defaultValue: false,
+    defaultValue: 0,
   },
   gym: {
     type: DataTypes.BOOLEAN,
