@@ -399,6 +399,8 @@ export async function create(data, files) {
       else if (propertyData.is_published) checkAnnouncementLimit(sellerEmail);
     }
 
+    if (propertyData.is_highlighted) propertyData.is_published = true;
+
     const newProperty = await Property.create(propertyData);
 
     const photos = await Promise.all(files.map(async (picture) => {
@@ -520,10 +522,10 @@ export async function update(id, data, files, sellerEmail) {
     if (subscription === 'free' && subscription === 'platinum') {
       if (property.is_highlighted && !oldProperty.is_highlighted) {
         await checkHighlightLimit(sellerEmail);
-      } else if (!property.is_published && oldProperty.is_published) {
-        await checkAnnouncementLimit(sellerEmail);
       }
     }
+
+    if (property.is_highlighted) property.is_published = true;
 
     await Property.update(property, { where: { id: validatedId } });
 
