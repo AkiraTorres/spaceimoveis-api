@@ -3,15 +3,19 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.changeColumn('properties', 'furnished', {
-      type: Sequelize.INTEGER,
+    await queryInterface.removeColumn('properties', 'furnished');
+
+    await queryInterface.addColumn('properties', 'furnished', {
+      type: Sequelize.ENUM('not-furnished', 'semi-furnished', 'furnished'),
       allowNull: false,
-      defaultValue: 0,
+      defaultValue: 'not-furnished',
     });
   },
 
   async down(queryInterface, Sequelize) {
-    await queryInterface.changeColumn('properties', 'furnished', {
+    await queryInterface.removeColumn('properties', 'furnished');
+
+    await queryInterface.addColumn('properties', 'furnished', {
       type: Sequelize.BOOLEAN,
       allowNull: false,
       defaultValue: false,

@@ -9,6 +9,7 @@ import PropertyNotFound from '../errors/propertyErrors/propertyNotFound.js';
 import {
   validateBoolean,
   validateEmail,
+  validateFurnished,
   validateInteger,
   validatePhone,
   validatePrice,
@@ -358,7 +359,7 @@ export async function create(data, files) {
     if (data.aditionalFees) propertyData.aditional_fees = validatePrice(data.aditionalFees);
     if (data.negotiable !== undefined) propertyData.negotiable = validateBoolean(data.negotiable);
     if (data.suites) propertyData.suites = validateInteger(data.suites);
-    if (data.furnished) propertyData.furnished = validateInteger(data.furnished);
+    if (data.furnished) propertyData.furnished = validateFurnished(data.furnished);
     if (data.gym !== undefined) propertyData.gym = validateBoolean(data.gym);
     if (data.balcony !== undefined) propertyData.balcony = validateBoolean(data.balcony);
     if (data.concierge !== undefined) propertyData.concierge = validateBoolean(data.concierge);
@@ -482,7 +483,7 @@ export async function update(id, data, files, sellerEmail) {
     if (data.aditionalFees) property.aditional_fees = validatePrice(data.aditionalFees);
     if (data.negotiable !== undefined) property.negotiable = validateBoolean(data.negotiable);
     if (data.suites) property.suites = validateInteger(data.suites);
-    if (data.furnished) property.furnished = validateInteger(data.furnished);
+    if (data.furnished) property.furnished = validateFurnished(data.furnished);
     if (data.gym !== undefined) property.gym = validateBoolean(data.gym);
     if (data.balcony !== undefined) property.balcony = validateBoolean(data.balcony);
     if (data.solarEnergy !== undefined) property.solar_energy = validateBoolean(data.solarEnergy);

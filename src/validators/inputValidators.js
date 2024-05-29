@@ -273,3 +273,11 @@ export async function validateIfUniqueCreci(creci) {
     throw new CreciAlreadyExists();
   }
 }
+
+export async function validateFurnished(furnished) {
+  const sanitizedFurnished = validator.escape(furnished);
+
+  if (sanitizedFurnished === 'not-furnished' || sanitizedFurnished === 'semi-furnished' || sanitizedFurnished === 'furnished') return sanitizedFurnished;
+
+  throw new InvalidString('Campo mobiliado inválido');
+}
