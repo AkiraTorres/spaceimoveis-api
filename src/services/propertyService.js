@@ -345,6 +345,7 @@ export async function create(data, files) {
       event_area: validateBoolean(data.eventArea, 'O campo "sala de eventos" é obrigatório'),
       description: validateString(data.description, 'O campo "descrição" é obrigatório'),
       contact: validatePhone(data.contact, 'O campo "telefone" é obrigatório'),
+      furnished: validateFurnished(data.furnished, 'O campo "mobiliado" é obrigatório e deve ser "not-furnished", "semi-furnished" ou "furnished"'),
     };
 
     if (data.financiable) propertyData.financiable = validateBoolean(data.financiable);
@@ -359,7 +360,6 @@ export async function create(data, files) {
     if (data.aditionalFees) propertyData.aditional_fees = validatePrice(data.aditionalFees);
     if (data.negotiable !== undefined) propertyData.negotiable = validateBoolean(data.negotiable);
     if (data.suites) propertyData.suites = validateInteger(data.suites);
-    if (data.furnished) propertyData.furnished = validateFurnished(data.furnished);
     if (data.gym !== undefined) propertyData.gym = validateBoolean(data.gym);
     if (data.balcony !== undefined) propertyData.balcony = validateBoolean(data.balcony);
     if (data.concierge !== undefined) propertyData.concierge = validateBoolean(data.concierge);

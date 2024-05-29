@@ -274,10 +274,13 @@ export async function validateIfUniqueCreci(creci) {
   }
 }
 
-export async function validateFurnished(furnished) {
+export async function validateFurnished(furnished, msg) {
   const sanitizedFurnished = validator.escape(furnished);
 
   if (sanitizedFurnished === 'not-furnished' || sanitizedFurnished === 'semi-furnished' || sanitizedFurnished === 'furnished') return sanitizedFurnished;
 
-  throw new InvalidString('Campo mobiliado inválido');
+  if (msg !== '') {
+    throw new InvalidString(msg);
+  }
+  throw new InvalidString('O campo mobiliado deve ser um valor válido');
 }
