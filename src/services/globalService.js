@@ -11,6 +11,7 @@ import Realstate from '../db/models/Realstate.js';
 import Realtor from '../db/models/Realtor.js';
 import ShareToRealstate from '../db/models/ShareToRealstate.js';
 import ShareToRealtor from '../db/models/ShareToRealtor.js';
+import UserMessages from '../db/models/UserMessages.js';
 
 import * as clientService from './clientService.js';
 import * as ownerService from './ownerService.js';
@@ -456,4 +457,19 @@ export async function negateSharedProperty(propertyId, email, reason) {
     .catch(() => { response += ' Mas o email não pode ser enviado.'; });
 
   return { message: response };
+}
+
+export async function contact(data) {
+  const { name, email, type, message } = data;
+
+  const newData = {
+    validatedName: validateString(name, 'O campo nome é obrigatório'),
+    validatedEmail: validateEmail(email, 'O campo email é obrigatório'),
+    validatedType: type ? validateString(type) : null,
+    validatedMessage: validateString(message, 'O campo mensagem é obrigatório'),
+  };
+
+  await UserMessages.create(newData);
+
+  return { message: 'Mensagem enviada com sucesso!' };
 }

@@ -46,6 +46,8 @@ app.get('/shared', verifyGoogleToken, verifyJwt, globalController.getSharedPrope
 app.post('/share/confirm/:id', verifyGoogleToken, verifyJwt, globalController.confirmSharedProperty);
 app.post('/share/negate/:id', verifyGoogleToken, verifyJwt, globalController.negateSharedProperty);
 
+app.post('/contact', globalController.contact);
+
 app.all('*', (req, res) => {
   res.status(404).send('Not Found');
 });

@@ -109,3 +109,13 @@ export const negateSharedProperty = asyncHandler(async (req, res) => {
   const result = await globalService.negateSharedProperty(id, email, reason);
   res.status(200).json(result);
 });
+
+export const contact = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  const { message } = req.body;
+  const { name } = req.body;
+  const { type } = req.body;
+
+  const result = await globalService.contact(email, message, name, type);
+  res.status(200).json(result);
+});
