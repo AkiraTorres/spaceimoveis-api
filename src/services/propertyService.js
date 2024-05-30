@@ -351,9 +351,11 @@ export async function create(data, files) {
       propertyData.furnished = validateFurnished(data.furnished, 'O campo "mobiliado" é obrigatório e deve ser "not-furnished", "semi-furnished" ou "furnished"');
     }
 
-    if (data.bedrooms !== undefined) propertyData.bedrooms = validateInteger(data.bedrooms, 'O campo "quartos" deve possuir um valor válido');
-    if (data.bathrooms !== undefined) propertyData.bathrooms = validateInteger(data.bathrooms, 'O campo "banheiros" deve possuir um valor válido');
-    if (data.parkingSpaces !== undefined) propertyData.parking_spaces = validateInteger(data.parkingSpaces, 'O campo "vagas" deve possuir um valor válido');
+    if (propertyData !== 'Terreno') {
+      if (data.bedrooms !== undefined) propertyData.bedrooms = validateInteger(data.bedrooms, 'O campo "quartos" deve possuir um valor válido');
+      if (data.bathrooms !== undefined) propertyData.bathrooms = validateInteger(data.bathrooms, 'O campo "banheiros" deve possuir um valor válido');
+      if (data.parkingSpaces !== undefined) propertyData.parking_spaces = validateInteger(data.parkingSpaces, 'O campo "vagas" deve possuir um valor válido');
+    }
     if (data.houseNumber) propertyData.house_number = validateString(data.houseNumber, 'O campo "numero" deve ser um número válido');
     if (data.financiable) propertyData.financiable = validateBoolean(data.financiable);
     if (data.rentPrice) propertyData.rent_price = validatePrice(data.rentPrice, 'O campo "preço de aluguel" é obrigatório');
