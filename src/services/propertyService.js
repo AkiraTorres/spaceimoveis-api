@@ -40,7 +40,7 @@ async function checkHighlightLimit(email) {
   }
 }
 
-async function checkAnnouncementLimit(email) {
+/** async function checkAnnouncementLimit(email) {
   let highlighLimit;
   const { subscription, type } = await find(email);
   if (subscription === 'free') highlighLimit = 3;
@@ -48,14 +48,16 @@ async function checkAnnouncementLimit(email) {
   if (subscription === 'gold') highlighLimit = 9999;
   if (subscription === 'diamond') highlighLimit = 9999;
 
-  const highlightedProperties = await Property.count({ where: { [`${type}_email`]: email, is_highlighted: true } });
+  const highlightedProperties = await Property.count(
+    { where: { [`${type}_email`]: email, is_highlighted: true } }
+  );
 
   if (highlightedProperties >= highlighLimit) {
     const error = new Error('Limite de imóveis em destaque atingido');
     error.status = 400;
     throw error;
   }
-}
+} */
 
 export async function findAll(page = 1, isHighlighted = false, isPublished = true, limit = 6) {
   try {
