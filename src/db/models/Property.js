@@ -71,7 +71,7 @@ const Property = sequelize.define('properties', {
   },
   house_number: {
     type: DataTypes.STRING,
-    allowNull: false,
+    allowNull: true,
   },
   city: {
     type: DataTypes.STRING,
@@ -100,55 +100,65 @@ const Property = sequelize.define('properties', {
   },
   bathrooms: {
     type: DataTypes.INTEGER,
-    allowNull: false,
+    allowNull: true,
   },
   bedrooms: {
     type: DataTypes.INTEGER,
-    allowNull: false,
+    allowNull: true,
   },
   parking_spaces: {
     type: DataTypes.INTEGER,
-    allowNull: false,
+    allowNull: true,
   },
   pool: {
     type: DataTypes.BOOLEAN,
     allowNull: false,
+    defaultValue: false,
   },
   grill: {
     type: DataTypes.BOOLEAN,
     allowNull: false,
+    defaultValue: false,
   },
   air_conditioning: {
     type: DataTypes.BOOLEAN,
     allowNull: false,
+    defaultValue: false,
   },
   playground: {
     type: DataTypes.BOOLEAN,
     allowNull: false,
+    defaultValue: false,
   },
   event_area: {
     type: DataTypes.BOOLEAN,
     allowNull: false,
+    defaultValue: false,
   },
   gourmet_area: {
     type: DataTypes.BOOLEAN,
     allowNull: false,
+    defaultValue: false,
   },
   garden: {
     type: DataTypes.BOOLEAN,
     allowNull: false,
+    defaultValue: false,
   },
   porch: {
     type: DataTypes.BOOLEAN,
     allowNull: false,
+    defaultValue: false,
   },
   slab: {
     type: DataTypes.BOOLEAN,
     allowNull: false,
+    defaultValue: false,
   },
   gated_community: {
     type: DataTypes.BOOLEAN,
     allowNull: false,
+    defaultValue: false,
   },
   description: {
     type: DataTypes.TEXT,

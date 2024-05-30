@@ -330,7 +330,6 @@ export async function create(data, files) {
       property_type: validateString(data.propertyType, 'O campo "tipo do imóvel" é obrigatório'),
       cep: validateString(data.cep, 'O campo "cep" é obrigatório'),
       address: validateString(data.address, 'O campo "rua" é obrigatório'),
-      house_number: validateString(data.houseNumber, 'O campo "numero" é obrigatório'),
       city: validateString(data.city, 'O campo "cidade" é obrigatório'),
       state: validateString(data.state, 'O campo "estado" é obrigatório'),
       district: validateString(data.district, 'O campo "bairro" é obrigatório'),
@@ -338,16 +337,12 @@ export async function create(data, files) {
       bedrooms: validateInteger(data.bedrooms, 'O campo "quartos" é obrigatório'),
       bathrooms: validateInteger(data.bathrooms, 'O campo "banheiros" é obrigatório'),
       parking_spaces: validateInteger(data.parkingSpaces, 'O campo "vagas" é obrigatório'),
-      pool: validateBoolean(data.pool, 'O campo "piscina" é obrigatório'),
-      grill: validateBoolean(data.grill, 'O campo "churrasqueira" é obrigatório'),
-      air_conditioning: validateBoolean(data.airConditioning, 'O campo "ar condicionado" é obrigatório'),
-      playground: validateBoolean(data.playground, 'O campo "playground" é obrigatório'),
-      event_area: validateBoolean(data.eventArea, 'O campo "sala de eventos" é obrigatório'),
       description: validateString(data.description, 'O campo "descrição" é obrigatório'),
       contact: validatePhone(data.contact, 'O campo "telefone" é obrigatório'),
       furnished: validateFurnished(data.furnished, 'O campo "mobiliado" é obrigatório e deve ser "not-furnished", "semi-furnished" ou "furnished"'),
     };
 
+    if (data.houseNumber) propertyData.house_number = validateString(data.houseNumber, 'O campo "numero" deve ser um número válido');
     if (data.financiable) propertyData.financiable = validateBoolean(data.financiable);
     if (data.rentPrice) propertyData.rent_price = validatePrice(data.rentPrice, 'O campo "preço de aluguel" é obrigatório');
     if (data.sellPrice) propertyData.sell_price = validatePrice(data.sellPrice, 'O campo "preço de venda" é obrigatório');
@@ -367,6 +362,14 @@ export async function create(data, files) {
     if (data.garden !== undefined) propertyData.garden = validateBoolean(data.garden);
     if (data.porch !== undefined) propertyData.porch = validateBoolean(data.porch);
     if (data.slab !== undefined) propertyData.slab = validateBoolean(data.slab);
+    if (data.pool !== undefined) propertyData.pool = validateBoolean(data.pool);
+    if (data.grill !== undefined) propertyData.grill = validateBoolean(data.grill);
+    if (data.playground !== undefined) propertyData.playground = validateBoolean(data.playground);
+    if (data.eventArea !== undefined) propertyData.event_area = validateBoolean(data.eventArea);
+
+    if (data.airConditioning !== undefined) {
+      propertyData.air_conditioning = validateBoolean(data.airConditioning);
+    }
 
     if (data.gatedCommunity !== undefined) {
       propertyData.gated_community = validateBoolean(data.gatedCommunity);
@@ -397,7 +400,7 @@ export async function create(data, files) {
     const { subscription } = await find(sellerEmail);
     if (subscription === 'free' && subscription === 'platinum') {
       if (propertyData.is_highlighted) checkHighlightLimit(sellerEmail);
-      else if (propertyData.is_published) checkAnnouncementLimit(sellerEmail);
+      // else if (propertyData.is_published) checkAnnouncementLimit(sellerEmail);
     }
 
     if (propertyData.is_highlighted) propertyData.is_published = true;
@@ -457,7 +460,7 @@ export async function update(id, data, files, sellerEmail) {
     if (data.sellPrice) property.sell_price = validatePrice(data.sellPrice, 'O campo "preço de venda" é obrigatório');
     if (data.cep) property.cep = validateString(data.cep, 'O campo "cep" é obrigatório');
     if (data.address) property.address = validateString(data.address, 'O campo "rua" é obrigatório');
-    if (data.number) property.number = validateString(data.number, 'O campo "numero" é obrigatório');
+    if (data.houseNumber) property.house_number = validateString(data.houseNumber, 'O campo "numero" deve ser um número válido');
     if (data.city) property.city = validateString(data.city, 'O campo "cidade" é obrigatório');
     if (data.state) property.state = validateString(data.state, 'O campo "estado" é obrigatório');
     if (data.neighborhood) property.neighborhood = validateString(data.neighborhood, 'O campo "bairro" é obrigatório');
@@ -653,7 +656,6 @@ export async function publish(id, email) {
   const { subscription } = await find(email);
   if (subscription === 'free' && subscription === 'platinum') {
     if (property.is_highlighted && !property.is_highlighted) await checkHighlightLimit(email);
-    else if (!property.is_published && property.is_published) await checkAnnouncementLimit(email);
   }
 
   return { message: 'Imóvel publicado com sucesso' };
