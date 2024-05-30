@@ -23,17 +23,22 @@ import firebaseConfig from '../config/firebase.js';
 const app = initializeApp(firebaseConfig);
 const storage = getStorage(app);
 
-async function checkHighlightLimit(email) {
-  let highlighLimit;
+async function checkHighlightLimit(email, propertyId) {
+  let highlightLimit;
+  let highlightedProperties;
   const { subscription, type } = await find(email);
-  if (subscription === 'free') highlighLimit = 1;
-  if (subscription === 'platinum') highlighLimit = 5;
-  if (subscription === 'gold') highlighLimit = 9999;
-  if (subscription === 'diamond') highlighLimit = 9999;
+  if (subscription === 'free') highlightLimit = 3;
+  if (subscription === 'platinum') highlightLimit = 5;
+  if (subscription === 'gold') highlightLimit = 9999;
+  if (subscription === 'diamond') highlightLimit = 9999;
 
-  const highlightedProperties = await Property.count({ where: { [`${type}_email`]: email, is_highlighted: true } });
+  if (propertyId) {
+    highlightedProperties = await Property.count({ where: { id: { [Op.not]: propertyId }, [`${type}_email`]: email, is_highlighted: true } });
+  } else {
+    highlightedProperties = await Property.count({ where: { [`${type}_email`]: email, is_highlighted: true } });
+  }
 
-  if (highlightedProperties >= highlighLimit) {
+  if (highlightedProperties >= highlightLimit) {
     const error = new Error('Limite de imóveis em destaque atingido');
     error.status = 400;
     throw error;
@@ -527,11 +532,8 @@ export async function update(id, data, files, sellerEmail) {
       throw error;
     }
 
-    const { subscription } = await find(sellerEmail);
-    if (subscription === 'free' && subscription === 'platinum') {
-      if (property.is_highlighted && !oldProperty.is_highlighted) {
-        await checkHighlightLimit(sellerEmail);
-      }
+    if (property.is_highlighted) {
+      await checkHighlightLimit(sellerEmail, id);
     }
 
     if (property.is_highlighted) property.is_published = true;
