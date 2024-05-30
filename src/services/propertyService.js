@@ -334,14 +334,23 @@ export async function create(data, files) {
       state: validateString(data.state, 'O campo "estado" é obrigatório'),
       district: validateString(data.district, 'O campo "bairro" é obrigatório'),
       size: validateInteger(data.size, 'O campo "tamanho do imóvel" é obrigatório'),
-      bedrooms: validateInteger(data.bedrooms, 'O campo "quartos" é obrigatório'),
-      bathrooms: validateInteger(data.bathrooms, 'O campo "banheiros" é obrigatório'),
-      parking_spaces: validateInteger(data.parkingSpaces, 'O campo "vagas" é obrigatório'),
       description: validateString(data.description, 'O campo "descrição" é obrigatório'),
       contact: validatePhone(data.contact, 'O campo "telefone" é obrigatório'),
       furnished: validateFurnished(data.furnished, 'O campo "mobiliado" é obrigatório e deve ser "not-furnished", "semi-furnished" ou "furnished"'),
     };
 
+    if (propertyData.propertyType !== 'Terreno'
+    && ((data.bedrooms === undefined || data.bedrooms === null)
+    || (data.bathrooms === undefined || data.bathrooms === null)
+    || (data.parkingSpaces === undefined || data.parkingSpaces === null))) {
+      const error = new Error('Os campos "quartos", "banheiros" e "vagas" são obrigatórios para imóveis que não são terrenos');
+      error.status = 400;
+      throw error;
+    }
+
+    if (data.bedrooms !== undefined) propertyData.bedrooms = validateInteger(data.bedrooms, 'O campo "quartos" deve possuir um valor válido');
+    if (data.bathrooms !== undefined) propertyData.bathrooms = validateInteger(data.bathrooms, 'O campo "banheiros" deve possuir um valor válido');
+    if (data.parkingSpaces !== undefined) propertyData.parking_spaces = validateInteger(data.parkingSpaces, 'O campo "vagas" deve possuir um valor válido');
     if (data.houseNumber) propertyData.house_number = validateString(data.houseNumber, 'O campo "numero" deve ser um número válido');
     if (data.financiable) propertyData.financiable = validateBoolean(data.financiable);
     if (data.rentPrice) propertyData.rent_price = validatePrice(data.rentPrice, 'O campo "preço de aluguel" é obrigatório');
