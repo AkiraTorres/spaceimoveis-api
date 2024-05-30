@@ -728,6 +728,17 @@ export async function filter(data, page = 1, isHighlighted = false, isPublished 
     if (data.solarEnergy !== undefined) where.solar_energy = validateBoolean(data.solarEnergy);
     if (data.concierge !== undefined) where.concierge = validateBoolean(data.concierge);
     if (data.yard !== undefined) where.yard = validateBoolean(data.yard);
+    if (data.garden !== undefined) where.garden = validateBoolean(data.garden);
+    if (data.porch !== undefined) where.porch = validateBoolean(data.porch);
+    if (data.slab !== undefined) where.slab = validateBoolean(data.slab);
+
+    if (data.gatedCommunity !== undefined) {
+      where.gated_community = validateBoolean(data.gatedCommunity);
+    }
+
+    if (data.gourmetArea !== undefined) {
+      where.gourmet_area = validateBoolean(data.gourmetArea);
+    }
 
     if (data.airConditioning !== undefined) {
       where.air_conditioning = validateBoolean(data.airConditioning);
