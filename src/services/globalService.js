@@ -461,10 +461,10 @@ export async function negateSharedProperty(propertyId, email, reason) {
 
 export async function contact(email, message, name, type) {
   const newData = {
-    validatedName: validateString(name, 'O campo nome é obrigatório'),
-    validatedEmail: validateEmail(email, 'O campo email é obrigatório'),
-    validatedType: type ? validateString(type) : null,
-    validatedMessage: validateString(message, 'O campo mensagem é obrigatório'),
+    user_name: validateString(name, 'O campo nome é obrigatório'),
+    user_email: validateEmail(email, 'O campo email é obrigatório'),
+    user_type: type ? validateString(type) : null,
+    message: validateString(message, 'O campo mensagem é obrigatório'),
   };
 
   await UserMessages.create(newData);
