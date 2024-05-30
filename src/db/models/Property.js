@@ -194,9 +194,9 @@ const Property = sequelize.define('properties', {
     defaultValue: null,
   },
   furnished: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.ENUM('not-furnished', 'semi-furnished', 'furnished'),
     allowNull: false,
-    defaultValue: 0,
+    defaultValue: 'not-furnished',
   },
   gym: {
     type: DataTypes.BOOLEAN,

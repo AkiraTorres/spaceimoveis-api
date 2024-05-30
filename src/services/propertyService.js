@@ -336,16 +336,19 @@ export async function create(data, files) {
       size: validateInteger(data.size, 'O campo "tamanho do imóvel" é obrigatório'),
       description: validateString(data.description, 'O campo "descrição" é obrigatório'),
       contact: validatePhone(data.contact, 'O campo "telefone" é obrigatório'),
-      furnished: validateFurnished(data.furnished, 'O campo "mobiliado" é obrigatório e deve ser "not-furnished", "semi-furnished" ou "furnished"'),
     };
 
-    if (propertyData.propertyType !== 'Terreno'
+    if (propertyData.property_type !== 'Terreno'
     && ((data.bedrooms === undefined || data.bedrooms === null)
     || (data.bathrooms === undefined || data.bathrooms === null)
     || (data.parkingSpaces === undefined || data.parkingSpaces === null))) {
       const error = new Error('Os campos "quartos", "banheiros" e "vagas" são obrigatórios para imóveis que não são terrenos');
       error.status = 400;
       throw error;
+    }
+
+    if (propertyData.property_type !== 'Terreno') {
+      propertyData.furnished = validateFurnished(data.furnished, 'O campo "mobiliado" é obrigatório e deve ser "not-furnished", "semi-furnished" ou "furnished"');
     }
 
     if (data.bedrooms !== undefined) propertyData.bedrooms = validateInteger(data.bedrooms, 'O campo "quartos" deve possuir um valor válido');
