@@ -129,8 +129,8 @@ export async function findAll(page = 1, isHighlighted = false, isPublished = tru
   }
 }
 
-export async function recommendedProperties(isHighlighted = true, isPublished = true) {
-  const where = { is_highlighted: isHighlighted, is_published: isPublished };
+export async function recommendedProperties(isHighlighted = true) {
+  const where = { is_highlighted: isHighlighted };
   const order = [['updatedAt', 'DESC']];
 
   const props = await Property.findAll({ where, order });
