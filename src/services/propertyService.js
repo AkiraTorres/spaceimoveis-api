@@ -38,7 +38,7 @@ async function checkHighlightLimit(email, propertyId) {
     highlightedProperties = await Property.findAll({ where: { [`${type}_email`]: email, is_highlighted: true } });
   }
 
-  highlightLimit.filter((item) => item.owner_email === null || item.owner_email === email);
+  highlightedProperties.filter((item) => item.owner_email === null || item.owner_email === email);
 
   if (highlightedProperties.length >= highlightLimit) {
     const error = new Error('Limite de imóveis em destaque atingido');
