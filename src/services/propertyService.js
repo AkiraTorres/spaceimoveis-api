@@ -129,7 +129,7 @@ export async function findAll(page = 1, isHighlighted = false, isPublished = tru
   }
 }
 
-export async function recommendedProperties(isHighlighted = true, isPublished = false) {
+export async function recommendedProperties(isHighlighted = true, isPublished = true) {
   const where = { is_highlighted: isHighlighted, is_published: isPublished };
   const order = [['updatedAt', 'DESC']];
 
