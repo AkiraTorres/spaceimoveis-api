@@ -33,14 +33,16 @@ async function checkHighlightLimit(email, propertyId) {
   if (subscription === 'diamond') highlightLimit = 9999;
 
   if (propertyId) {
-    highlightedProperties = await Property.count({ where: { id: { [Op.not]: propertyId }, [`${type}_email`]: email, is_highlighted: true } });
+    highlightedProperties = await Property.findAll({ where: { id: { [Op.not]: propertyId }, [`${type}_email`]: email, is_highlighted: true } });
   } else {
-    highlightedProperties = await Property.count({ where: { [`${type}_email`]: email, is_highlighted: true } });
+    highlightedProperties = await Property.findAll({ where: { [`${type}_email`]: email, is_highlighted: true } });
   }
 
-  if (highlightedProperties >= highlightLimit) {
+  highlightLimit.filter((item) => item.owner_email === null || item.owner_email === email);
+
+  if (highlightedProperties.length >= highlightLimit) {
     const error = new Error('Limite de imóveis em destaque atingido');
-    error.status = 400;
+    error.status = 403;
     throw error;
   }
 }
