@@ -798,10 +798,10 @@ export async function filter(data, page = 1, isHighlighted = false, isPublished 
 
   where.size = { [Op.between]: [minSize, maxSize] };
 
-  const total = await Property.count({ where });
+  const result = await Property.findAll({ where, order, limit, offset });
 
+  const total = result.length;
   const lastPage = Math.ceil(total / limit);
-
   const pagination = {
     path: '/properties/filter',
     page,
@@ -810,8 +810,6 @@ export async function filter(data, page = 1, isHighlighted = false, isPublished 
     lastPage,
     total,
   };
-
-  const result = await Property.findAll({ where, order, limit, offset });
 
   if (total === 0) return { properties: result, pagination };
 
