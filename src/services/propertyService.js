@@ -783,9 +783,11 @@ export async function filter(data, page = 1, isHighlighted = false, isPublished 
     }
   }
 
-  if (!data.allProperties) {
-    where.is_highlighted = isHighlighted;
+  if (!data.allProperties && isPublished) {
     where.is_published = isPublished;
+  } else if (!data.allProperties && !isPublished) {
+    where.is_published = isPublished;
+    where.is_highlighted = isHighlighted;
   }
 
   where.size = { [Op.between]: [minSize, maxSize] };
