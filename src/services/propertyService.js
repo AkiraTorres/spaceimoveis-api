@@ -800,7 +800,7 @@ export async function filter(data, page = 1, isHighlighted = false, isPublished 
 
   const result = await Property.findAll({ where, order, limit, offset });
 
-  const total = result.length;
+  const total = await Property.count({ where });
   const lastPage = Math.ceil(total / limit);
   const pagination = {
     path: '/properties/filter',
