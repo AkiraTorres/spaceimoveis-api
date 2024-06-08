@@ -6,6 +6,7 @@ import Express from 'express';
 import * as globalController from './controllers/globalController.js';
 import { verifyGoogleToken } from './middlewares/verifyGoogle.cjs';
 import verifyJwt from './middlewares/verifyJwt.js';
+import adminRoutes from './routes/adminRoutes.js';
 import clientRoutes from './routes/clientRoutes.js';
 import favoriteRoutes from './routes/favoriteRoutes.js';
 import loginRoutes from './routes/loginRoutes.js';
@@ -32,6 +33,7 @@ app.use('/realstate', realstateRoutes);
 app.use('/properties', propertyRoutes);
 app.use('/favorites', favoriteRoutes);
 app.use('/rating/', ratingRoutes);
+app.use('/admin', adminRoutes);
 
 app.get('/find/:email', globalController.find);
 app.get('/find', globalController.findAll);

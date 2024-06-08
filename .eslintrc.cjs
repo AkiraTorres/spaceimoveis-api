@@ -27,7 +27,7 @@ module.exports = {
     strict: 'off',
     'no-plusplus': 'off',
     'import/no-extraneous-dependencies': 'off',
-    // 'max-len': 'off',
+    'max-len': 'off',
     // endOfLine: 'auto',
   },
 };

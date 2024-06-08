@@ -40,10 +40,6 @@ export async function findAll() {
 
 export async function find(email, pass = false, otp = false) {
   if (email) {
-    const attributes = { exclude: [] };
-    if (!otp) attributes.exclude.push('otp', 'otp_ttl');
-    if (!pass) attributes.exclude.push('password');
-
     try {
       return await clientService.findByPk(email, pass, otp);
     } catch (err) { /* */ }
