@@ -29,6 +29,16 @@ const AdminPhoto = sequelize.define('admins_pictures', {
     type: DataTypes.STRING,
     allowNull: false,
   },
+  createdAt: {
+    type: DataTypes.DATE,
+    defaultValue: DataTypes.DATE('CURRENT_TIMESTAMP'),
+    allowNull: false,
+  },
+  updatedAt: {
+    type: DataTypes.DATE,
+    defaultValue: DataTypes.DATE('CURRENT_TIMESTAMP'),
+    allowNull: false,
+  },
 });
 
 export default AdminPhoto;
