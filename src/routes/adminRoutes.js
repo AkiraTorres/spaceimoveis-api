@@ -1,8 +1,6 @@
 import Express from 'express';
 
 import * as controller from '../controllers/adminController.js';
-// import verifyJwt from '../middlewares/verifyJwt.js';
-// import verifyAdmin from '../middlewares/verifyAdmin.js';
 
 const router = Express.Router();
 

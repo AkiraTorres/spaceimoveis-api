@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import Express from 'express';
 
 import * as globalController from './controllers/globalController.js';
+import verifyAdmin from './middlewares/verifyAdmin.js';
 import { verifyGoogleToken } from './middlewares/verifyGoogle.cjs';
 import verifyJwt from './middlewares/verifyJwt.js';
 import adminRoutes from './routes/adminRoutes.js';
@@ -33,7 +34,6 @@ app.use('/realstate', realstateRoutes);
 app.use('/properties', propertyRoutes);
 app.use('/favorites', favoriteRoutes);
 app.use('/rating/', ratingRoutes);
-app.use('/admin', adminRoutes);
 
 app.get('/find/:email', globalController.find);
 app.get('/find', globalController.findAll);
@@ -49,6 +49,10 @@ app.post('/share/confirm/:id', verifyGoogleToken, verifyJwt, globalController.co
 app.post('/share/negate/:id', verifyGoogleToken, verifyJwt, globalController.negateSharedProperty);
 
 app.post('/contact', globalController.contact);
+
+app.use(verifyJwt);
+app.use(verifyAdmin);
+app.use('/admin', adminRoutes);
 
 app.all('*', (req, res) => {
   res.status(404).send('Not Found');
