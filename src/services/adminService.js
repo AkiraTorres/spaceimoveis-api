@@ -1,3 +1,5 @@
+import sgMail from '@sendgrid/mail';
+import dotenv from 'dotenv';
 import { initializeApp } from 'firebase/app';
 import { deleteObject, getDownloadURL, getStorage, ref, uploadBytesResumable } from 'firebase/storage';
 import { Op } from 'sequelize';
@@ -22,6 +24,9 @@ import firebaseConfig from '../config/firebase.js';
 
 const app = initializeApp(firebaseConfig);
 const storage = getStorage(app);
+
+dotenv.config();
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 export async function findByPk(email, password = false, otp = false) {
   const validatedEmail = validateEmail(email);
@@ -358,15 +363,22 @@ export async function getLastRegisteredUsers(page = 1, limit = 10) {
   return { users, pagination };
 }
 
-export async function denyProperty(id) {
+export async function denyProperty(id, reason = false) {
   const validatedId = validateString(id);
+  const validatedReason = reason ? ` \n Motivo: ${validateString(reason)}.` : '';
   const property = await Property.findByPk(validatedId);
+
+  const emailBody = reason
+    ? `Sua conta foi recusada pela administração.${validatedReason}`
+    : 'Sua conta foi recusada pela administração.';
 
   if (!property) {
     const error = new Error('Property not found');
     error.status = 404;
     throw error;
   }
+
+  const seller = await find(property.owner_email || property.realtor_email || property.realstate_email);
 
   const photos = await Photo.findAll({ where: { property_id: validatedId }, raw: true });
 
@@ -379,10 +391,30 @@ export async function denyProperty(id) {
 
   await Photo.destroy({ where: { property_id: validatedId } });
   await Property.destroy({ where: { id: validatedId } });
+
+  let message = 'Usuário apagado com sucesso.';
+
+  const mailOptions = {
+    from: process.env.EMAIL_ADDRESS,
+    to: seller.email,
+    subject: 'Anúncio de imóvel negado.',
+    text: emailBody,
+  };
+
+  sgMail
+    .send(mailOptions)
+    .catch(() => { message += ' Mas o email não pode ser enviado.'; });
+
+  return { message };
 }
 
-export async function denyUser(id) {
+export async function denyUser(id, reason = false) {
   const validatedId = validateString(id);
+  const validatedReason = reason ? ` \n Motivo: ${validateString(reason)}.` : '';
+
+  const emailBody = reason
+    ? `Sua conta foi recusada pela administração.${validatedReason}`
+    : 'Sua conta foi recusada pela administração.';
 
   const user = await find(validatedId);
 
@@ -417,7 +449,20 @@ export async function denyUser(id) {
     Realstate.destroy({ where: { email: user.email } });
   }
 
-  return { message: 'Usuário apagado com sucesso' };
+  let message = 'Usuário apagado com sucesso.';
+
+  const mailOptions = {
+    from: process.env.EMAIL_ADDRESS,
+    to: user.email,
+    subject: 'Cadastro de usuário negado.',
+    text: emailBody,
+  };
+
+  sgMail
+    .send(mailOptions)
+    .catch(() => { message += ' Mas o email não pode ser enviado.'; });
+
+  return { message };
 }
 
 export async function filterUsers(filter, page = 1, limit = 10) {

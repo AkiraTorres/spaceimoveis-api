@@ -65,15 +65,17 @@ export const getLastRegisteredUsers = asyncHandler(async (req, res) => {
 
 export const denyProperty = asyncHandler(async (req, res) => {
   const { id } = req.params;
+  const { reason } = req.body;
 
-  await service.denyProperty(id);
+  await service.denyProperty(id, reason);
   res.status(200).send();
 });
 
 export const denyUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
+  const { reason } = req.body;
 
-  await service.denyUser(id);
+  await service.denyUser(id, reason);
   res.status(200).send();
 });
 
