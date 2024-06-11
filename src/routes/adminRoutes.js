@@ -2,9 +2,16 @@ import Express from 'express';
 
 import * as controller from '../controllers/adminController.js';
 // import verifyJwt from '../middlewares/verifyJwt.js';
-// import { verifyGoogleToken } from '../middlewares/verifyGoogle.cjs';
+// import verifyAdmin from '../middlewares/verifyAdmin.js';
 
 const router = Express.Router();
+
+router.get('/', controller.findAll);
+router.get('/:email', controller.findByPk);
+router.get('/cpf/:cpf', controller.findByCpf);
+router.post('/', controller.create);
+router.put('/:email', controller.update);
+router.delete('/:email', controller.destroy);
 
 router.get('/properties/new', controller.getLastPublishedProperties);
 router.get('/users/new', controller.getLastRegisteredUsers);

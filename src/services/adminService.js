@@ -1,7 +1,10 @@
 import { initializeApp } from 'firebase/app';
-import { deleteObject, getStorage, ref } from 'firebase/storage';
+import { deleteObject, getDownloadURL, getStorage, ref, uploadBytesResumable } from 'firebase/storage';
 import { Op } from 'sequelize';
+import { v4 as uuid } from 'uuid';
 
+import Admin from '../db/models/Admin.js';
+import AdminPhoto from '../db/models/AdminPhoto.js';
 import Client from '../db/models/Client.js';
 import Owner from '../db/models/Owner.js';
 import OwnerPhoto from '../db/models/OwnerPhoto.js';
@@ -12,13 +15,223 @@ import RealstatePhoto from '../db/models/RealstatePhoto.js';
 import Realtor from '../db/models/Realtor.js';
 import RealtorPhoto from '../db/models/RealtorPhoto.js';
 
-import { validateString } from '../validators/inputValidators.js';
+import { validateCpf, validateEmail, validatePassword, validateString } from '../validators/inputValidators.js';
 import { find } from './globalService.js';
 
 import firebaseConfig from '../config/firebase.js';
 
 const app = initializeApp(firebaseConfig);
 const storage = getStorage(app);
+
+export async function findByPk(email, password = false, otp = false) {
+  const validatedEmail = validateEmail(email);
+  const attributes = { exclude: [] };
+  if (!otp) attributes.exclude.push('otp', 'otp_ttl');
+  if (!password) attributes.exclude.push('password');
+
+  const admin = await Admin.findByPk(validatedEmail, {
+    attributes,
+    raw: true,
+  });
+
+  if (!admin) {
+    const error = new Error('Administrador não encontrado com o email informado.');
+    error.status = 404;
+    throw error;
+  }
+
+  admin.profile = await AdminPhoto.findOne({ where: { email: admin.email } });
+
+  return admin;
+}
+
+export async function findAll(page = 1) {
+  try {
+    const attributes = { exclude: ['otp', 'otp_ttl', 'password'] };
+    if (page < 1) {
+      return await Admin.findAll({
+        attributes,
+        order: [['name', 'ASC']],
+      });
+    }
+
+    const limit = 6;
+    const countTotal = await Admin.count();
+
+    if (countTotal === 0) {
+      const error = new Error('Não existe nenhum Administrador cadastrado.');
+      error.status = 404;
+      throw error;
+    }
+
+    const lastPage = Math.ceil(countTotal / limit);
+    const offset = Number(limit * (page - 1));
+
+    const admins = await Admin.findAll({
+      attributes,
+      order: [['name', 'ASC']],
+      offset,
+      limit,
+    });
+
+    if (admins.length === 0) {
+      const error = new Error('Não existe nenhum Administrador cadastrado.');
+      error.status = 404;
+      throw error;
+    }
+
+    const result = await Promise.all(admins.map(async (admin) => {
+      const editedAdmin = admin.dataValues;
+
+      editedAdmin.profile = await AdminPhoto.findOne({ where: { email: admin.email } });
+
+      return editedAdmin;
+    }));
+
+    const pagination = {
+      path: '/admin',
+      page,
+      prev_page_url: page - 1 >= 1 ? page - 1 : null,
+      next_page_url: Number(page) + 1 <= lastPage ? Number(page) + 1 : null,
+      lastPage,
+      total: countTotal,
+    };
+
+    return { result, pagination };
+  } catch (error) {
+    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
+    error.status = error.status || 500;
+    throw error;
+  }
+}
+
+export async function findByCpf(cpf, password = false, otp = false) {
+  const validatedCpf = validateCpf(cpf);
+  const attributes = { exclude: [] };
+  if (!otp) attributes.exclude.push('otp', 'otp_ttl');
+  if (!password) attributes.exclude.push('password');
+
+  const admin = await Admin.findByPk(validatedCpf, {
+    attributes,
+    raw: true,
+  });
+
+  if (!admin) {
+    const error = new Error('Administrador não encontrado com o cpf informado.');
+    error.status = 404;
+    throw error;
+  }
+
+  admin.profile = await AdminPhoto.findOne({ where: { email: admin.email } });
+
+  return admin;
+}
+
+export async function create(data, photo) {
+  const admin = {
+    email: validateEmail(data.email, "O campo 'email' é obrigatório"),
+    name: validateString(data.name, "O campo 'nome' é obrigatório"),
+    password: validatePassword(data.password, "O campo 'senha' é obrigatório"),
+    cpf: validateCpf(data.cpf, "O campo 'cpf' é obrigatório"),
+  };
+
+  // await validateIfUniqueEmail(admin.email);
+  // await validateIfUniqueCpf(admin.cpf);
+
+  const newAdmin = await Realtor.create(admin);
+
+  let profile = null;
+  if (photo) {
+    const storageRef = ref(storage, `images/admins/${newAdmin.email}/${photo.originalname}`);
+    const metadata = { contentType: photo.mimetype };
+    const snapshot = await uploadBytesResumable(storageRef, photo.buffer, metadata);
+    const downloadUrl = await getDownloadURL(snapshot.ref);
+
+    profile = await RealtorPhoto.create({
+      id: uuid(),
+      email: newAdmin.email,
+      url: downloadUrl,
+      name: photo.originalname,
+      type: 'profile',
+    });
+  }
+
+  return { ...newAdmin.dataValues, profile };
+}
+
+export async function update(email, data, photo) {
+  const validatedEmail = validateEmail(email);
+
+  if ((!data && !photo) || (Object.keys(data).length === 0 && !photo)) {
+    throw new Error('Nenhum dado foi informado para atualização');
+  }
+
+  const oldAdmin = await Admin.findByPk(validatedEmail);
+  if (!oldAdmin) {
+    const error = new Error('Administrador não encontrado');
+    error.status = 404;
+    throw error;
+  }
+
+  let updatedAdmin = oldAdmin.dataValues;
+  if (data) {
+    const admin = {
+      email: data.email ? validateEmail(data.email) : oldAdmin.email,
+      name: data.name ? validateString(data.name, 'O campo nome é obrigatório') : oldAdmin.name,
+      cpf: data.cpf ? validateCpf(data.cpf) : oldAdmin.cpf,
+    };
+
+    // if (admin.email !== oldAdmin.email) await validateIfUniqueEmail(admin.email);
+    // if (admin.cpf !== oldAdmin.cpf) await validateIfUniqueCpf(admin.cpf);
+
+    await Admin.update(admin, { where: { email: admin.email } });
+    updatedAdmin = admin;
+  }
+
+  let profile = await AdminPhoto.findOne({ where: { email: updatedAdmin.email } });
+  if (photo) {
+    if (profile) {
+      const storageRef = ref(storage, `images/admins/${updatedAdmin.email}/${profile.name}`);
+      await AdminPhoto.destroy({ where: { email: updatedAdmin.email } });
+      await deleteObject(storageRef);
+    }
+
+    const storageRef = ref(storage, `images/admins/${updatedAdmin.email}/${photo.originalname}`);
+    const metadata = { contentType: photo.mimetype };
+    const snapshot = await uploadBytesResumable(storageRef, photo.buffer, metadata);
+    const downloadURL = await getDownloadURL(snapshot.ref);
+
+    profile = await AdminPhoto.create({
+      id: uuid(),
+      email: updatedAdmin.email,
+      url: downloadURL,
+      name: photo.originalname,
+      type: 'profile',
+    });
+  }
+
+  return { ...updatedAdmin, profile };
+}
+
+export async function destroy(email) {
+  const validatedEmail = validateEmail(email);
+
+  if (!await Admin.findByPk(validatedEmail)) {
+    const error = new Error('Administrador não encontrado');
+    error.status = 404;
+    throw error;
+  }
+
+  const profile = await AdminPhoto.findOne({ where: { email: validatedEmail } });
+  if (profile) {
+    const storageRef = ref(storage, `images/admins/${validatedEmail}/${profile.name}`);
+    await deleteObject(storageRef);
+    await AdminPhoto.destroy({ where: { email: validatedEmail } });
+  }
+
+  await Admin.destroy({ where: { email: validatedEmail } });
+  return { message: 'Usuário apagado com sucesso' };
+}
 
 export async function getLastPublishedProperties(page = 1, limit = 10) {
   const date = new Date();
