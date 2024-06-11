@@ -11,9 +11,22 @@ const Admin = sequelize.define('admins', {
     type: DataTypes.STRING,
     allowNull: false,
   },
+  cpf: {
+    type: DataTypes.STRING(11),
+    unique: true,
+    allowNull: false,
+  },
   password: {
     type: DataTypes.STRING,
     allowNull: false,
+  },
+  otp: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  otp_ttl: {
+    type: DataTypes.DATE,
+    allowNull: true,
   },
   createdAt: {
     type: DataTypes.DATE,

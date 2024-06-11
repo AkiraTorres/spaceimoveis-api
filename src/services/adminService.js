@@ -143,7 +143,7 @@ export async function create(data, photo) {
   // await validateIfUniqueEmail(admin.email);
   // await validateIfUniqueCpf(admin.cpf);
 
-  const newAdmin = await Realtor.create(admin);
+  const newAdmin = await Admin.create(admin);
 
   let profile = null;
   if (photo) {
@@ -152,7 +152,7 @@ export async function create(data, photo) {
     const snapshot = await uploadBytesResumable(storageRef, photo.buffer, metadata);
     const downloadUrl = await getDownloadURL(snapshot.ref);
 
-    profile = await RealtorPhoto.create({
+    profile = await AdminPhoto.create({
       id: uuid(),
       email: newAdmin.email,
       url: downloadUrl,
