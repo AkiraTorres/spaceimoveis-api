@@ -49,7 +49,7 @@ export async function getLastPublishedProperties(page = 1, limit = 10) {
   }
 
   const pagination = {
-    path: '/admin/new/properties',
+    path: '/admin/properties/new',
     page,
     prev_page_url: page - 1 >= 1 ? page - 1 : null,
     next_page_url: Number(page) + 1 <= lastPage ? Number(page) + 1 : null,
@@ -134,7 +134,7 @@ export async function getLastRegisteredUsers(page = 1, limit = 10) {
   }
 
   const pagination = {
-    path: '/admin/new/users',
+    path: '/admin/users/new',
     page,
     prev_page_url: page - 1 >= 1 ? page - 1 : null,
     next_page_url: Number(page) + 1 <= lastPage ? Number(page) + 1 : null,
@@ -205,4 +205,73 @@ export async function denyUser(id) {
   }
 
   return { message: 'Usuário apagado com sucesso' };
+}
+
+export async function filterUsers(filter, page = 1, limit = 10) {
+  const offset = Number(limit * (page - 1));
+  const attributes = { exclude: ['otp', 'otp_ttl', 'password'] };
+  const where = {};
+  const order = [['createdAt', 'DESC']];
+
+  if (filter) {
+    if (filter.type) {
+      if (filter.type === 'client') where.type = 'client';
+      if (filter.type === 'owner') where.type = 'owner';
+      if (filter.type === 'realtor') where.type = 'realtor';
+      if (filter.type === 'realstate') where.type = 'realstate';
+    }
+
+    if (filter.email) where.email = { [Op.iLike]: `%${filter.email}%` };
+    if (filter.name) where.name = { [Op.iLike]: `%${filter.name}%` };
+  }
+
+  const total = await Client.count({ where, raw: true })
+    + await Owner.count({ where, raw: true })
+    + await Realtor.count({ where, raw: true })
+    + await Realstate.count({ where, raw: true });
+
+  if (total === 0) {
+    const error = new Error('No users found');
+    error.status = 404;
+    throw error;
+  }
+
+  const lastPage = Math.ceil(total / limit);
+
+  const [clients, owners, realtors, realstates] = await Promise.all([
+    Client.findAll({ where, attributes, limit, offset, order, raw: true }),
+    Owner.findAll({ where, attributes, limit, offset, order, raw: true }),
+    Realtor.findAll({ where, attributes, limit, offset, order, raw: true }),
+    Realstate.findAll({ where, attributes, limit, offset, order, raw: true }),
+  ]);
+
+  const users = await Promise.all([
+    ...clients,
+    ...owners.map(async (owner) => {
+      const edited = owner;
+      edited.picture = await OwnerPhoto.findAll({ where: { email: owner.email }, raw: true });
+      return edited;
+    }),
+    ...realtors.map(async (realtor) => {
+      const edited = realtor;
+      edited.picture = await RealtorPhoto.findAll({ where: { email: realtor.email }, raw: true });
+      return edited;
+    }),
+    ...realstates.map(async (realstate) => {
+      const edited = realstate;
+      edited.picture = await RealstatePhoto.findAll({ where: { email: realstate.email }, raw: true });
+      return edited;
+    }),
+  ]);
+
+  const pagination = {
+    path: '/admin/users/filter',
+    page,
+    prev_page_url: page - 1 >= 1 ? page - 1 : null,
+    next_page_url: Number(page) + 1 <= lastPage ? Number(page) + 1 : null,
+    lastPage,
+    total,
+  };
+
+  return { users, pagination };
 }

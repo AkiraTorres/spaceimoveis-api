@@ -6,8 +6,10 @@ import * as controller from '../controllers/adminController.js';
 
 const router = Express.Router();
 
-router.get('/new/properties', controller.getLastPublishedProperties);
-router.get('/new/users', controller.getLastRegisteredUsers);
-router.post('/deny/property/:id', controller.denyProperty);
-router.post('/deny/user/:id', controller.denyUser);
+router.get('/properties/new', controller.getLastPublishedProperties);
+router.get('/users/new', controller.getLastRegisteredUsers);
+router.post('/property/deny/:id', controller.denyProperty);
+router.post('/user/deny/:id', controller.denyUser);
+router.put('/properties/filter', controller.filterProperties);
+router.put('/users/filter', controller.filterUsers);
 export default router;

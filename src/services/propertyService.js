@@ -670,7 +670,7 @@ export async function publish(id, email) {
   return { message: 'Imóvel publicado com sucesso' };
 }
 
-export async function filter(data, page = 1, isHighlighted = false, isPublished = true, limit = 6) {
+export async function filter(data, page = 1, isHighlighted = false, isPublished = true, limit = 6, path = '/properties/filter') {
   const offset = Number(limit * (page - 1));
   let where = {};
   const order = [['updatedAt', 'DESC']];
@@ -803,7 +803,7 @@ export async function filter(data, page = 1, isHighlighted = false, isPublished 
   const total = await Property.count({ where });
   const lastPage = Math.ceil(total / limit);
   const pagination = {
-    path: '/properties/filter',
+    path,
     page,
     prev_page_url: page - 1 >= 1 ? page - 1 : null,
     next_page_url: Number(page) + 1 <= lastPage ? Number(page) + 1 : null,
