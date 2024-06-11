@@ -17,7 +17,7 @@ router.delete('/:email', controller.destroy);
 router.get('/properties/new', controller.getLastPublishedProperties);
 router.get('/users/new', controller.getLastRegisteredUsers);
 router.post('/property/deny/:id', controller.denyProperty);
-router.post('/user/deny/:email', controller.denyUser);
+router.post('/users/deny/:email', controller.denyUser);
 router.put('/properties/filter', controller.filterProperties);
 router.put('/users/filter', controller.filterUsers);
 export default router;
