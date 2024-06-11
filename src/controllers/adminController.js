@@ -72,10 +72,10 @@ export const denyProperty = asyncHandler(async (req, res) => {
 });
 
 export const denyUser = asyncHandler(async (req, res) => {
-  const { id } = req.params;
+  const { email } = req.params;
   const { reason } = req.body;
 
-  await service.denyUser(id, reason);
+  await service.denyUser(email, reason);
   res.status(200).send();
 });
 
