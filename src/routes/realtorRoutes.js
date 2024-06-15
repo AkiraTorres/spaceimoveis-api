@@ -17,4 +17,6 @@ router.put('/:email', verifyJwt, matchEmail, upload.single('photo'), controller.
 router.put('/elevate/:email', verifyGoogleToken, verifyJwt, matchEmail, upload.single('photo'), controller.elevate);
 router.delete('/:email', verifyJwt, matchEmail, controller.destroy);
 
+router.get('/dashboard/likes', verifyJwt, controller.totalPropertiesLikes);
+
 export default router;
