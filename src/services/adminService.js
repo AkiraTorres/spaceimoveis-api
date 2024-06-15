@@ -467,10 +467,15 @@ export async function filterUsers(filter, page = 1, limit = 12) {
       if (filter.type === 'owner') where.type = 'owner';
       if (filter.type === 'realtor') where.type = 'realtor';
       if (filter.type === 'realstate') where.type = 'realstate';
-    }
+
+      if (filter.type === 'realstate' && filter.name) {
+        where.company_name = { [Op.iLike]: `%${filter.name}%` };
+      } else if (filter.name) {
+        where.name = { [Op.iLike]: `%${filter.name}%` };
+      }
+    } else if (filter.name) where.name = { [Op.iLike]: `%${filter.name}%` };
 
     if (filter.email) where.email = { [Op.iLike]: `%${filter.email}%` };
-    if (filter.name) where.name = { [Op.iLike]: `%${filter.name}%` };
   }
 
   const total = await Client.count({ where, raw: true })
