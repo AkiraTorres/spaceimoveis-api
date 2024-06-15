@@ -19,6 +19,7 @@ router.delete('/:email', verifyJwt, verifyAdmin, controller.destroy);
 router.get('/properties/new', verifyJwt, verifyAdmin, controller.getLastPublishedProperties);
 router.get('/users/new', verifyJwt, verifyAdmin, controller.getLastRegisteredUsers);
 router.get('/users/monthly', verifyJwt, verifyAdmin, controller.usersRegisteredMonthly);
+router.get('/properties/monthly', verifyJwt, verifyAdmin, controller.propertiesRegisteredMonthly);
 router.post('/property/approve/:id', verifyJwt, verifyAdmin, controller.approveProperty);
 router.post('/property/deny/:id', verifyJwt, verifyAdmin, controller.denyProperty);
 router.post('/users/deny/:email', verifyJwt, verifyAdmin, controller.denyUser);

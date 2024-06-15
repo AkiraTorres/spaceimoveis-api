@@ -105,3 +105,8 @@ export const usersRegisteredMonthly = asyncHandler(async (req, res) => {
   const result = await service.usersRegisteredMonthly();
   res.status(200).json(result);
 });
+
+export const propertiesRegisteredMonthly = asyncHandler(async (req, res) => {
+  const result = await service.propertiesRegisteredMonthly();
+  res.status(200).json(result);
+});

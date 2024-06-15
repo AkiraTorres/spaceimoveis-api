@@ -606,3 +606,27 @@ export async function usersRegisteredMonthly() {
 
   return dataset;
 }
+
+export async function propertiesRegisteredMonthly() {
+  const now = new Date();
+  const beginYear = new Date(now.getFullYear() - 1, 11, 31);
+
+  const monthNames = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+  ];
+
+  const where = { createdAt: { [Op.between]: [beginYear, now] } };
+
+  const properties = await Property.findAll(where);
+
+  let dataset = [];
+
+  for (let i = 0; i <= now.getMonth(); i++) {
+    const total = properties.filter((property) => property.createdAt.getMonth() === i);
+
+    dataset = [...dataset, { month: monthNames[i], value: total.length }];
+  }
+
+  return dataset;
+}
