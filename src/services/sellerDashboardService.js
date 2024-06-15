@@ -78,7 +78,7 @@ async function propertiesData(email) {
     months = [...months, { month: i, views }];
   }
 
-  const dataset = await Promise.all(months.map(async (month) => {
+  return Promise.all(months.map(async (month) => {
     const likes = await Favorite.count({
       where: {
         property_id: { [Op.in]: propertiesIds },
@@ -88,8 +88,6 @@ async function propertiesData(email) {
 
     return { ...month, likes };
   }));
-
-  return dataset;
 }
 
 export async function propertiesLikesMonthly(email) {
@@ -100,14 +98,12 @@ export async function propertiesLikesMonthly(email) {
     'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
   ];
 
-  const result = dataset.map((data) => {
+  return dataset.map((data) => {
     const m = data.month;
     const value = data.likes;
 
     return { month: monthNames[m], value };
   });
-
-  return result;
 }
 
 export async function propertiesViewsMonthly(email) {
@@ -118,14 +114,12 @@ export async function propertiesViewsMonthly(email) {
     'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
   ];
 
-  const result = dataset.map((data) => {
+  return dataset.map((data) => {
     const m = data.month;
     const value = data.views;
 
     return { month: monthNames[m], value };
   });
-
-  return result;
 }
 
 export async function topProperties(email) {
@@ -145,7 +139,7 @@ export async function topProperties(email) {
 
   const sorted = properties.sort((a, b) => b.times_seen - a.times_seen);
 
-  const top = await Promise.all(sorted.slice(0, 5).map(async (property) => {
+  return Promise.all(sorted.slice(0, 5).map(async (property) => {
     const editedProperty = property;
     if (property.owner_email) editedProperty.email = editedProperty.owner_email;
     if (property.realstate_email) editedProperty.email = editedProperty.realstate_email;
@@ -160,6 +154,4 @@ export async function topProperties(email) {
 
     return { ...editedProperty, pictures, seller };
   }));
-
-  return top;
 }

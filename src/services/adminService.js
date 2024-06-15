@@ -401,7 +401,7 @@ export async function denyProperty(id, reason = false) {
 export async function approveProperty(id) {
   const validatedId = validateString(id);
 
-  const property = await Property.findByPk(id);
+  const property = await Property.findByPk(validatedId);
   if (!property) {
     const error = new Error('Não foi possível encontrar um imóvel com o id informado.');
     error.status = 404;
@@ -616,7 +616,7 @@ export async function usersRegisteredMonthly() {
   for (let i = 0; i <= now.getMonth(); i++) {
     const total = users.filter((user) => user.createdAt.getMonth() === i);
 
-    dataset = [...dataset, { month: monthNames[i], total: total.length }];
+    dataset = [...dataset, { month: monthNames[i], value: total.length }];
   }
 
   return dataset;
