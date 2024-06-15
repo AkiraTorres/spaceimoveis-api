@@ -236,12 +236,12 @@ export async function getLastPublishedProperties(page = 1, limit = 10) {
   const date = new Date();
   date.setDate(date.getDate() - 3);
 
-  const total = await Property.count({ where: { createdAt: { [Op.gte]: date } } });
+  const total = await Property.count({ where: { createdAt: { [Op.gte]: date }, verified: false } });
   const lastPage = Math.ceil(total / limit);
   const offset = Number(limit * (page - 1));
 
   const props = await Property.findAll({
-    where: { createdAt: { [Op.gte]: date } },
+    where: { createdAt: { [Op.gte]: date }, verified: false },
     limit,
     offset,
     raw: true,
