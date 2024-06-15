@@ -21,3 +21,8 @@ export const propertiesViewsMonthly = asyncHandler(async (req, res) => {
   const result = await service.propertiesViewsMonthly(req.email);
   res.status(200).json(result);
 });
+
+export const topProperties = asyncHandler(async (req, res) => {
+  const result = await service.topProperties(req.email);
+  res.status(200).json(result);
+});

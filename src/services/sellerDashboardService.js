@@ -1,8 +1,6 @@
 import { Op } from 'sequelize';
 import Favorite from '../db/models/Favorite.js';
-// import Owner from '../db/models/Owner.js';
-// import Realtor from '../db/models/Realtor.js';
-// import Realstate from '../db/models/Realstate.js';
+import Photo from '../db/models/Photo.js';
 import Property from '../db/models/Property.js';
 
 import { validateEmail } from '../validators/inputValidators.js';
@@ -128,4 +126,40 @@ export async function propertiesViewsMonthly(email) {
   });
 
   return result;
+}
+
+export async function topProperties(email) {
+  const validatedEmail = validateEmail(email);
+
+  const user = await find(validatedEmail);
+  if (!user) {
+    const error = new Error('Usuário não encontrado com o email informado');
+    error.status = 404;
+    throw error;
+  }
+
+  const properties = await Property.findAll({
+    where: { [`${user.type}_email`]: validatedEmail },
+    raw: true,
+  });
+
+  const sorted = properties.sort((a, b) => b.times_seen - a.times_seen);
+
+  const top = await Promise.all(sorted.slice(0, 5).map(async (property) => {
+    const editedProperty = property;
+    if (property.owner_email) editedProperty.email = editedProperty.owner_email;
+    if (property.realstate_email) editedProperty.email = editedProperty.realstate_email;
+    if (property.realtor_email) editedProperty.email = editedProperty.realtor_email;
+
+    editedProperty.shared = !!((property.owner_email && property.realtor_email)
+        || (property.owner_email && property.realstate_email));
+
+    const seller = await find(editedProperty.email);
+
+    const pictures = await Photo.findAll({ where: { property_id: property.id }, order: [['type', 'ASC']] });
+
+    return { ...editedProperty, pictures, seller };
+  }));
+
+  return top;
 }
