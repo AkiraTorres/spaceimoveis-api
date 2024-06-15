@@ -4,7 +4,6 @@ import dotenv from 'dotenv';
 import Express from 'express';
 
 import * as globalController from './controllers/globalController.js';
-import verifyAdmin from './middlewares/verifyAdmin.js';
 import { verifyGoogleToken } from './middlewares/verifyGoogle.cjs';
 import verifyJwt from './middlewares/verifyJwt.js';
 import adminRoutes from './routes/adminRoutes.js';
@@ -52,9 +51,6 @@ app.post('/share/confirm/:id', verifyGoogleToken, verifyJwt, globalController.co
 app.post('/share/negate/:id', verifyGoogleToken, verifyJwt, globalController.negateSharedProperty);
 
 app.post('/contact', globalController.contact);
-
-app.use(verifyJwt);
-app.use(verifyAdmin);
 
 app.use('/admin', adminRoutes);
 
