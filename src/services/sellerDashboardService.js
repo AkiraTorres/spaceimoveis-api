@@ -31,3 +31,20 @@ export async function totalPropertiesLikes(email) {
 
   return { total };
 }
+
+export async function totalPropertiesViews(email) {
+  const validatedEmail = validateEmail(email);
+
+  const user = await find(validatedEmail);
+
+  if (!user) {
+    const error = new Error('Usuário não encontrado com o email informado');
+    error.status = 404;
+    throw error;
+  }
+
+  const total = await Property.findAll({ where: { [`${user.type}_email`]: validatedEmail }, attributes: ['id', 'times_seen'], raw: true })
+    .then((properties) => properties.reduce((acc, property) => acc + property.times_seen, 0));
+
+  return { total };
+}

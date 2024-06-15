@@ -1,7 +1,7 @@
 import asyncHandler from 'express-async-handler';
 
 import * as service from '../services/realstateService.js';
-import * as dashboard from "../services/sellerDashboardService.js";
+import * as dashboard from '../services/sellerDashboardService.js';
 
 export const findAll = asyncHandler(async (req, res) => {
   try {
@@ -97,8 +97,11 @@ export const destroy = asyncHandler(async (req, res) => {
 });
 
 export const totalPropertiesLikes = asyncHandler(async (req, res) => {
-  console.log(req);
   const result = await dashboard.totalPropertiesLikes(req.email);
   res.status(200).json(result);
 });
 
+export const totalPropertiesViews = asyncHandler(async (req, res) => {
+  const result = await dashboard.totalPropertiesViews(req.email);
+  res.status(200).json(result);
+});

@@ -1,9 +1,9 @@
 import Express from 'express';
 import multer from 'multer';
 import * as controller from '../controllers/realtorController.js';
-import verifyJwt from '../middlewares/verifyJwt.js';
-import { verifyGoogleToken } from '../middlewares/verifyGoogle.cjs';
 import matchEmail from '../middlewares/matchEmail.js';
+import { verifyGoogleToken } from '../middlewares/verifyGoogle.cjs';
+import verifyJwt from '../middlewares/verifyJwt.js';
 
 const router = Express.Router();
 
@@ -18,5 +18,6 @@ router.put('/elevate/:email', verifyGoogleToken, verifyJwt, matchEmail, upload.s
 router.delete('/:email', verifyJwt, matchEmail, controller.destroy);
 
 router.get('/dashboard/likes', verifyJwt, controller.totalPropertiesLikes);
+router.get('/dashboard/views', verifyJwt, controller.totalPropertiesViews);
 
 export default router;
