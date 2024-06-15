@@ -16,6 +16,7 @@ import propertyRoutes from './routes/propertyRoutes.js';
 import ratingRoutes from './routes/ratingRoutes.js';
 import realstateRoutes from './routes/realstateRoutes.js';
 import realtorRoutes from './routes/realtorRoutes.js';
+import sellerDashboardRoutes from './routes/sellerDashboardRoutes.js';
 
 dotenv.config();
 
@@ -35,6 +36,8 @@ app.use('/properties', propertyRoutes);
 app.use('/favorites', favoriteRoutes);
 app.use('/rating/', ratingRoutes);
 
+app.use('/dashboard', sellerDashboardRoutes);
+
 app.get('/find/:email', globalController.find);
 app.get('/find', globalController.findAll);
 app.post('/change/password', verifyGoogleToken, verifyJwt, globalController.changePassword);
@@ -52,6 +55,7 @@ app.post('/contact', globalController.contact);
 
 app.use(verifyJwt);
 app.use(verifyAdmin);
+
 app.use('/admin', adminRoutes);
 
 app.all('*', (req, res) => {

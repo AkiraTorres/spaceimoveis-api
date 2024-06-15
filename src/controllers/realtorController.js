@@ -1,7 +1,6 @@
 import asyncHandler from 'express-async-handler';
 
 import * as service from '../services/realtorService.js';
-import * as dashboard from '../services/sellerDashboardService.js';
 
 export const findAll = asyncHandler(async (req, res) => {
   try {
@@ -94,14 +93,4 @@ export const destroy = asyncHandler(async (req, res) => {
     const status = error.status || 500;
     res.status(status).json({ message: error.message });
   }
-});
-
-export const totalPropertiesLikes = asyncHandler(async (req, res) => {
-  const result = await dashboard.totalPropertiesLikes(req.email);
-  res.status(200).json(result);
-});
-
-export const totalPropertiesViews = asyncHandler(async (req, res) => {
-  const result = await dashboard.totalPropertiesViews(req.email);
-  res.status(200).json(result);
 });
