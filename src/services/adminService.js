@@ -51,63 +51,57 @@ export async function findByPk(email, password = false, otp = false) {
 }
 
 export async function findAll(page = 1) {
-  try {
-    const attributes = { exclude: ['otp', 'otp_ttl', 'password'] };
-    if (page < 1) {
-      return await Admin.findAll({
-        attributes,
-        order: [['name', 'ASC']],
-      });
-    }
-
-    const limit = 6;
-    const countTotal = await Admin.count();
-
-    if (countTotal === 0) {
-      const error = new Error('Não existe nenhum Administrador cadastrado.');
-      error.status = 404;
-      throw error;
-    }
-
-    const lastPage = Math.ceil(countTotal / limit);
-    const offset = Number(limit * (page - 1));
-
-    const admins = await Admin.findAll({
+  const attributes = { exclude: ['otp', 'otp_ttl', 'password'] };
+  if (page < 1) {
+    return Admin.findAll({
       attributes,
       order: [['name', 'ASC']],
-      offset,
-      limit,
     });
+  }
 
-    if (admins.length === 0) {
-      const error = new Error('Não existe nenhum Administrador cadastrado.');
-      error.status = 404;
-      throw error;
-    }
+  const limit = 6;
+  const countTotal = await Admin.count();
 
-    const result = await Promise.all(admins.map(async (admin) => {
-      const editedAdmin = admin.dataValues;
-
-      editedAdmin.profile = await AdminPhoto.findOne({ where: { email: admin.email } });
-
-      return editedAdmin;
-    }));
-
-    const pagination = {
-      path: '/admin',
-      page,
-      prev_page_url: page - 1 >= 1 ? page - 1 : null,
-      next_page_url: Number(page) + 1 <= lastPage ? Number(page) + 1 : null,
-      lastPage,
-      total: countTotal,
-    };
-
-    return { result, pagination };
-  } catch (error) {
-    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    error.status = error.status || 500;
+  if (countTotal === 0) {
+    const error = new Error('Não existe nenhum Administrador cadastrado.');
+    error.status = 404;
     throw error;
   }
+
+  const lastPage = Math.ceil(countTotal / limit);
+  const offset = Number(limit * (page - 1));
+
+  const admins = await Admin.findAll({
+    attributes,
+    order: [['name', 'ASC']],
+    offset,
+    limit,
+  });
+
+  if (admins.length === 0) {
+    const error = new Error('Não existe nenhum Administrador cadastrado.');
+    error.status = 404;
+    throw error;
+  }
+
+  const result = await Promise.all(admins.map(async (admin) => {
+    const editedAdmin = admin.dataValues;
+
+    editedAdmin.profile = await AdminPhoto.findOne({ where: { email: admin.email } });
+
+    return editedAdmin;
+  }));
+
+  const pagination = {
+    path: '/admin',
+    page,
+    prev_page_url: page - 1 >= 1 ? page - 1 : null,
+    next_page_url: Number(page) + 1 <= lastPage ? Number(page) + 1 : null,
+    lastPage,
+    total: countTotal,
+  };
+
+  return { result, pagination };
 }
 
 export async function findByCpf(cpf, password = false, otp = false) {
@@ -281,12 +275,8 @@ export async function getLastPublishedProperties(page = 1, limit = 10) {
     if (property.realstate_email) editedProperty.email = editedProperty.realstate_email;
     if (property.realtor_email) editedProperty.email = editedProperty.realtor_email;
 
-    if ((property.owner_email && property.realtor_email)
-      || (property.owner_email && property.realstate_email)) {
-      editedProperty.shared = true;
-    } else {
-      editedProperty.shared = false;
-    }
+    editedProperty.shared = !!((property.owner_email && property.realtor_email)
+        || (property.owner_email && property.realstate_email));
 
     const seller = await find(editedProperty.email);
 
@@ -465,8 +455,8 @@ export async function denyUser(id, reason = false) {
   return { message };
 }
 
-export async function filterUsers(filter, page = 1, limit = 10) {
-  const offset = Number(limit * (page - 1));
+export async function filterUsers(filter, page = 1, limit = 12) {
+  const offset = Number((limit / 4) * (page - 1));
   const attributes = { exclude: ['otp', 'otp_ttl', 'password'] };
   const where = {};
   const order = [['createdAt', 'DESC']];
@@ -497,10 +487,10 @@ export async function filterUsers(filter, page = 1, limit = 10) {
   const lastPage = Math.ceil(total / limit);
 
   const [clients, owners, realtors, realstates] = await Promise.all([
-    Client.findAll({ where, attributes, limit, offset, order, raw: true }),
-    Owner.findAll({ where, attributes, limit, offset, order, raw: true }),
-    Realtor.findAll({ where, attributes, limit, offset, order, raw: true }),
-    Realstate.findAll({ where, attributes, limit, offset, order, raw: true }),
+    Client.findAll({ where, attributes, limit: (limit / 4), offset, order, raw: true }),
+    Owner.findAll({ where, attributes, limit: (limit / 4), offset, order, raw: true }),
+    Realtor.findAll({ where, attributes, limit: (limit / 4), offset, order, raw: true }),
+    Realstate.findAll({ where, attributes, limit: (limit / 4), offset, order, raw: true }),
   ]);
 
   const users = await Promise.all([
