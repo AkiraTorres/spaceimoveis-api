@@ -498,14 +498,8 @@ export async function filterUsers(filter, page = 1, limit = 12) {
       if (filter.type === 'owner') where.type = 'owner';
       if (filter.type === 'realtor') where.type = 'realtor';
       if (filter.type === 'realstate') where.type = 'realstate';
-
-      if (filter.type === 'realstate' && filter.name) {
-        where.company_name = { [Op.iLike]: `%${filter.name}%` };
-      } else if (filter.name) {
-        where.name = { [Op.iLike]: `%${filter.name}%` };
-      }
-    } else if (filter.name) where.name = { [Op.iLike]: `%${filter.name}%` };
-
+    }
+    if (filter.name) where.name = { [Op.iLike]: `%${filter.name}%` };
     if (filter.email) where.email = { [Op.iLike]: `%${filter.email}%` };
   }
 
@@ -522,13 +516,18 @@ export async function filterUsers(filter, page = 1, limit = 12) {
 
   const lastPage = Math.ceil(total / limit);
 
+  const whereRealstate = {};
+  if (where.type) whereRealstate.type = where.type;
+  if (where.email) whereRealstate.email = where.email;
+  if (where.name) whereRealstate.company_name = where.name;
+
   if (!where.type) {
     const offset = Number((limit / 4) * (page - 1));
     const [clients, owners, realtors, realstates] = await Promise.all([
       Client.findAll({ where, attributes, limit: (limit / 4), offset, order, raw: true }),
       Owner.findAll({ where, attributes, limit: (limit / 4), offset, order, raw: true }),
       Realtor.findAll({ where, attributes, limit: (limit / 4), offset, order, raw: true }),
-      Realstate.findAll({ where, attributes, limit: (limit / 4), offset, order, raw: true }),
+      Realstate.findAll({ where: whereRealstate, attributes, limit: (limit / 4), offset, order, raw: true }),
     ]);
 
     users = await Promise.all([
