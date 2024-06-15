@@ -257,7 +257,7 @@ export function validateUF(uf) {
 export function validateCreci(creci) {
   const sanitizedCreci = validator.escape(creci);
 
-  const creciRegex = /^(CRECI-)?([A-Z]{2}|)\s?\d{1,15}$/;
+  const creciRegex = /^(CRECI-)?[A-Z]{2}\s?\d{1,15}$/;
 
   if (!creciRegex.test(sanitizedCreci)) {
     throw new InvalidString('CRECI inválido');
