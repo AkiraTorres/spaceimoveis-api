@@ -94,3 +94,8 @@ export const filterUsers = asyncHandler(async (req, res) => {
   const result = await service.filterUsers(filter, page, limit);
   res.status(200).json(result);
 });
+
+export const usersRegisteredMonthly = asyncHandler(async (req, res) => {
+  const result = await service.usersRegisteredMonthly();
+  res.status(200).json(result);
+});

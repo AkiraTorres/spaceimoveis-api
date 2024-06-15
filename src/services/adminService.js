@@ -427,16 +427,16 @@ export async function denyUser(id, reason = false) {
   }
 
   if (user.type === 'client') {
-    Client.destroy({ where: { email: user.email } });
+    await Client.destroy({ where: { email: user.email } });
   } else if (user.type === 'owner') {
-    picture = await OwnerPhoto.destroy({ where: { email: user.email } });
-    Owner.destroy({ where: { email: user.email } });
+    await OwnerPhoto.destroy({ where: { email: user.email } });
+    await Owner.destroy({ where: { email: user.email } });
   } else if (user.type === 'realtor') {
-    picture = await RealtorPhoto.destroy({ where: { email: user.email } });
-    Realtor.destroy({ where: { email: user.email } });
+    await RealtorPhoto.destroy({ where: { email: user.email } });
+    await Realtor.destroy({ where: { email: user.email } });
   } else if (user.type === 'realstate') {
-    picture = await RealstatePhoto.destroy({ where: { email: user.email } });
-    Realstate.destroy({ where: { email: user.email } });
+    await RealstatePhoto.destroy({ where: { email: user.email } });
+    await Realstate.destroy({ where: { email: user.email } });
   }
 
   let message = 'Usuário apagado com sucesso.';
@@ -557,4 +557,36 @@ export async function filterUsers(filter, page = 1, limit = 12) {
   };
 
   return { users, pagination };
+}
+
+export async function usersRegisteredMonthly() {
+  const now = new Date();
+  const beginYear = new Date(now.getFullYear() - 1, 11, 31);
+
+  const monthNames = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+  ];
+
+  const where = { createdAt: { [Op.between]: [beginYear, now] }};
+  const attributes = { exclude: ['password', 'otp', 'otp_ttl'] }
+
+  const [clients, owners, realtors, realstates] = await Promise.all([
+    Client.findAll({ where, attributes, raw: true }),
+    Owner.findAll({ where, attributes, raw: true }),
+    Realtor.findAll({ where, attributes, raw: true }),
+    Realstate.findAll({ where, attributes, raw: true }),
+  ]);
+
+  const users = [...clients, ...owners, ...realtors, ...realstates];
+
+  let dataset = [];
+
+  for (let i = 0; i <= now.getMonth(); i++) {
+    const total = users.filter((user) => user.createdAt.getMonth() === i);
+
+    dataset = [...dataset, { month: monthNames[i], total: total.length }];
+  }
+
+  return dataset;
 }
