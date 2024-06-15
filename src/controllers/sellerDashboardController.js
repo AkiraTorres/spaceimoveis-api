@@ -11,3 +11,13 @@ export const totalPropertiesViews = asyncHandler(async (req, res) => {
   const result = await service.totalPropertiesViews(req.email);
   res.status(200).json(result);
 });
+
+export const propertiesLikesMonthly = asyncHandler(async (req, res) => {
+  const result = await service.propertiesLikesMonthly(req.email);
+  res.status(200).json(result);
+});
+
+export const propertiesViewsMonthly = asyncHandler(async (req, res) => {
+  const result = await service.propertiesViewsMonthly(req.email);
+  res.status(200).json(result);
+});
