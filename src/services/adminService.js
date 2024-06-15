@@ -456,8 +456,8 @@ export async function denyUser(id, reason = false) {
 }
 
 export async function filterUsers(filter, page = 1, limit = 12) {
-  const offset = Number((limit / 4) * (page - 1));
   const attributes = { exclude: ['otp', 'otp_ttl', 'password'] };
+  let users = [];
   const where = {};
   const order = [['createdAt', 'DESC']];
 
@@ -486,31 +486,61 @@ export async function filterUsers(filter, page = 1, limit = 12) {
 
   const lastPage = Math.ceil(total / limit);
 
-  const [clients, owners, realtors, realstates] = await Promise.all([
-    Client.findAll({ where, attributes, limit: (limit / 4), offset, order, raw: true }),
-    Owner.findAll({ where, attributes, limit: (limit / 4), offset, order, raw: true }),
-    Realtor.findAll({ where, attributes, limit: (limit / 4), offset, order, raw: true }),
-    Realstate.findAll({ where, attributes, limit: (limit / 4), offset, order, raw: true }),
-  ]);
+  if (!where.type) {
+    const offset = Number((limit / 4) * (page - 1));
+    const [clients, owners, realtors, realstates] = await Promise.all([
+      Client.findAll({ where, attributes, limit: (limit / 4), offset, order, raw: true }),
+      Owner.findAll({ where, attributes, limit: (limit / 4), offset, order, raw: true }),
+      Realtor.findAll({ where, attributes, limit: (limit / 4), offset, order, raw: true }),
+      Realstate.findAll({ where, attributes, limit: (limit / 4), offset, order, raw: true }),
+    ]);
 
-  const users = await Promise.all([
-    ...clients,
-    ...owners.map(async (owner) => {
-      const edited = owner;
-      edited.picture = await OwnerPhoto.findAll({ where: { email: owner.email }, raw: true });
-      return edited;
-    }),
-    ...realtors.map(async (realtor) => {
-      const edited = realtor;
-      edited.picture = await RealtorPhoto.findAll({ where: { email: realtor.email }, raw: true });
-      return edited;
-    }),
-    ...realstates.map(async (realstate) => {
-      const edited = realstate;
-      edited.picture = await RealstatePhoto.findAll({ where: { email: realstate.email }, raw: true });
-      return edited;
-    }),
-  ]);
+    users = await Promise.all([
+      ...clients,
+      ...owners.map(async (owner) => {
+        const edited = owner;
+        edited.picture = await OwnerPhoto.findAll({ where: { email: owner.email }, raw: true });
+        return edited;
+      }),
+      ...realtors.map(async (realtor) => {
+        const edited = realtor;
+        edited.picture = await RealtorPhoto.findAll({ where: { email: realtor.email }, raw: true });
+        return edited;
+      }),
+      ...realstates.map(async (realstate) => {
+        const edited = realstate;
+        edited.picture = await RealstatePhoto.findAll({ where: { email: realstate.email }, raw: true });
+        return edited;
+      }),
+    ]);
+  } else {
+    const offset = Number(limit * (page - 1));
+    const [clients, owners, realtors, realstates] = await Promise.all([
+      Client.findAll({ where, attributes, limit, offset, order, raw: true }),
+      Owner.findAll({ where, attributes, limit, offset, order, raw: true }),
+      Realtor.findAll({ where, attributes, limit, offset, order, raw: true }),
+      Realstate.findAll({ where, attributes, limit, offset, order, raw: true }),
+    ]);
+
+    users = await Promise.all([
+      ...clients,
+      ...owners.map(async (owner) => {
+        const edited = owner;
+        edited.picture = await OwnerPhoto.findAll({ where: { email: owner.email }, raw: true });
+        return edited;
+      }),
+      ...realtors.map(async (realtor) => {
+        const edited = realtor;
+        edited.picture = await RealtorPhoto.findAll({ where: { email: realtor.email }, raw: true });
+        return edited;
+      }),
+      ...realstates.map(async (realstate) => {
+        const edited = realstate;
+        edited.picture = await RealstatePhoto.findAll({ where: { email: realstate.email }, raw: true });
+        return edited;
+      }),
+    ]);
+  }
 
   const pagination = {
     path: '/admin/users/filter',
