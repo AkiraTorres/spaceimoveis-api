@@ -358,15 +358,15 @@ export async function denyProperty(id, reason = false) {
   const validatedReason = reason ? ` \n Motivo: ${validateString(reason)}.` : '';
   const property = await Property.findByPk(validatedId);
 
-  const emailBody = reason
-    ? `Sua conta foi recusada pela administração.${validatedReason}`
-    : 'Sua conta foi recusada pela administração.';
-
   if (!property) {
     const error = new Error('Property not found');
     error.status = 404;
     throw error;
   }
+
+  const emailBody = reason
+    ? `Seu imóvel foi recusado pela administração.${validatedReason}`
+    : 'Seu imóvel foi recusado pela administração.';
 
   const seller = await find(property.owner_email || property.realtor_email || property.realstate_email);
 
@@ -388,6 +388,37 @@ export async function denyProperty(id, reason = false) {
     from: process.env.EMAIL_ADDRESS,
     to: seller.email,
     subject: 'Anúncio de imóvel negado.',
+    text: emailBody,
+  };
+
+  sgMail
+    .send(mailOptions)
+    .catch(() => { message += ' Mas o email não pode ser enviado.'; });
+
+  return { message };
+}
+
+export async function approveProperty(id) {
+  const validatedId = validateString(id);
+
+  const property = await Property.findByPk(id);
+  if (!property) {
+    const error = new Error('Não foi possível encontrar um imóvel com o id informado.');
+    error.status = 404;
+    throw error;
+  }
+
+  Property.update({ verified: true }, { where: { id: property.id } });
+
+  const emailBody = 'Seu imóvel foi aprovado pela administração!';
+  const seller = await find(property.owner_email || property.realtor_email || property.realstate_email);
+
+  let message = 'Imóvel aprovado com sucesso!';
+
+  const mailOptions = {
+    from: process.env.EMAIL_ADDRESS,
+    to: seller.email,
+    subject: 'Anúncio de imóvel aprovado.',
     text: emailBody,
   };
 
@@ -568,8 +599,8 @@ export async function usersRegisteredMonthly() {
     'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
   ];
 
-  const where = { createdAt: { [Op.between]: [beginYear, now] }};
-  const attributes = { exclude: ['password', 'otp', 'otp_ttl'] }
+  const where = { createdAt: { [Op.between]: [beginYear, now] } };
+  const attributes = { exclude: ['password', 'otp', 'otp_ttl'] };
 
   const [clients, owners, realtors, realstates] = await Promise.all([
     Client.findAll({ where, attributes, raw: true }),

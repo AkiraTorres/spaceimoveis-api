@@ -61,7 +61,7 @@ app.all('*', (req, res) => {
 // eslint-disable-next-line no-unused-vars
 app.use((error, req, res, next) => {
   const status = error.status || 500;
-  const message = error.message || 'Internal server error';
+  const message = status === 500 ? 'Internal Server Error' : error.message;
   res.status(status).json({ message });
 });
 
