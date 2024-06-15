@@ -63,20 +63,26 @@ export const getLastRegisteredUsers = asyncHandler(async (req, res) => {
   res.status(200).json(result);
 });
 
+export const approveProperty = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const result = await service.approveProperty(id);
+  res.status(200).json(result);
+});
+
 export const denyProperty = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { reason } = req.body;
 
-  await service.denyProperty(id, reason);
-  res.status(200).send();
+  const result = await service.denyProperty(id, reason);
+  res.status(200).json(result);
 });
 
 export const denyUser = asyncHandler(async (req, res) => {
   const { email } = req.params;
   const { reason } = req.body;
 
-  await service.denyUser(email, reason);
-  res.status(200).send();
+  const result = await service.denyUser(email, reason);
+  res.status(200).json(result);
 });
 
 export const filterProperties = asyncHandler(async (req, res) => {

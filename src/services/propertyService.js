@@ -66,7 +66,7 @@ async function checkHighlightLimit(email, propertyId) {
   }
 } */
 
-export async function findAll(page = 1, isHighlighted = false, isPublished = true, limit = 6) {
+export async function findAll(page = 1, isHighlighted = false, isPublished = true, limit = 6) rou{
   if (page < 1) {
     const error = new Error('A página deve ser maior que 0');
     error.status = 400;
