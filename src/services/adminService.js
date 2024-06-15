@@ -236,14 +236,7 @@ export async function getLastPublishedProperties(page = 1, limit = 10) {
   const date = new Date();
   date.setDate(date.getDate() - 3);
 
-  const total = await Property.count({ where: { createdAt: { [Op.gte]: date } }, raw: true });
-
-  if (total === 0) {
-    const error = new Error('No properties found');
-    error.status = 404;
-    throw error;
-  }
-
+  const total = await Property.count({ where: { createdAt: { [Op.gte]: date } } });
   const lastPage = Math.ceil(total / limit);
   const offset = Number(limit * (page - 1));
 
@@ -253,12 +246,6 @@ export async function getLastPublishedProperties(page = 1, limit = 10) {
     offset,
     raw: true,
   });
-
-  if (props.length === 0) {
-    const error = new Error('No properties found');
-    error.status = 404;
-    throw error;
-  }
 
   const pagination = {
     path: '/admin/properties/new',
@@ -270,14 +257,13 @@ export async function getLastPublishedProperties(page = 1, limit = 10) {
   };
 
   const properties = await Promise.all(props.map(async (property) => {
-    const editedProperty = property.dataValues;
+    const editedProperty = property;
     if (property.owner_email) editedProperty.email = editedProperty.owner_email;
     if (property.realstate_email) editedProperty.email = editedProperty.realstate_email;
     if (property.realtor_email) editedProperty.email = editedProperty.realtor_email;
 
     editedProperty.shared = !!((property.owner_email && property.realtor_email)
         || (property.owner_email && property.realstate_email));
-
     const seller = await find(editedProperty.email);
 
     const pictures = await Photo.findAll({ where: { property_id: property.id }, order: [['type', 'ASC']] });
