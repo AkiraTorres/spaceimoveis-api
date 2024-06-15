@@ -296,7 +296,7 @@ export async function getMostSeenPropertiesBySeller(email, limit = 6) {
     raw: true,
   });
 
-  const properties = await Promise.all(props.map(async (property) => {
+  return Promise.all(props.map(async (property) => {
     const editedProperty = property;
 
     if (property.owner_email === email) editedProperty.email = editedProperty.owner_email;
@@ -309,8 +309,6 @@ export async function getMostSeenPropertiesBySeller(email, limit = 6) {
     editedProperty.pictures = await Photo.findAll({ where: { property_id: property.id }, order: [['type', 'ASC']] });
     return editedProperty;
   }));
-
-  return properties;
 }
 
 export async function create(data, files) {
@@ -548,7 +546,7 @@ export async function update(id, data, files, sellerEmail) {
 
       newCover.type = 'cover';
       await Photo.update(newCover, { where: { id: newCover.id } });
-    } else if (!oldCover || oldCover === undefined) {
+    } else if (!oldCover) {
       newCover.type = 'cover';
       await Photo.update(newCover, { where: { id: newCover.id } });
     }
@@ -643,7 +641,7 @@ export async function publish(id, email) {
 
 export async function filter(data, page = 1, isHighlighted = false, isPublished = true, limit = 6, verified = null, path = '/properties/filter') {
   const offset = Number(limit * (page - 1));
-  let where = verified || {};
+  let where = verified ? { verified } : {};
   const order = [['updatedAt', 'DESC']];
   let minPrice = 0;
   let maxPrice = 999999999;
@@ -791,12 +789,8 @@ export async function filter(data, page = 1, isHighlighted = false, isPublished 
     if (property.realstate_email) editedProperty.email = editedProperty.realstate_email;
     if (property.realtor_email) editedProperty.email = editedProperty.realtor_email;
 
-    if ((property.owner_email && property.realtor_email)
-      || (property.owner_email && property.realstate_email)) {
-      editedProperty.shared = true;
-    } else {
-      editedProperty.shared = false;
-    }
+    editedProperty.shared = !!((property.owner_email && property.realtor_email)
+        || (property.owner_email && property.realstate_email));
 
     const seller = await find(editedProperty.email);
 
