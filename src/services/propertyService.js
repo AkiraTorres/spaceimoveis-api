@@ -74,14 +74,14 @@ export async function findAll(page = 1, isHighlighted = false, isPublished = tru
   }
 
   const countTotal = await Property.count({
-    where: { is_highlighted: isHighlighted, is_published: isPublished, verified: true },
+    where: { is_highlighted: isHighlighted, is_published: isPublished, verified: 'verified' },
   });
 
   const lastPage = Math.ceil(countTotal / limit);
   const offset = Number(limit * (page - 1));
 
   const props = await Property.findAll({
-    where: { is_highlighted: isHighlighted, is_published: isPublished, verified: true },
+    where: { is_highlighted: isHighlighted, is_published: isPublished, verified: 'verified' },
     order: [['updatedAt', 'DESC']],
     offset,
     limit,
@@ -124,7 +124,7 @@ export async function findAll(page = 1, isHighlighted = false, isPublished = tru
 }
 
 export async function recommendedProperties(isHighlighted = true) {
-  const where = { is_highlighted: isHighlighted, verified: true };
+  const where = { is_highlighted: isHighlighted, verified: 'verified' };
   const order = [['updatedAt', 'DESC']];
 
   const props = await Property.findAll({ where, order });
@@ -290,7 +290,7 @@ export async function getMostSeenPropertiesBySeller(email, limit = 6) {
   }
 
   const props = await Property.findAll({
-    where: { [`${user.type}_email`]: user.email, verified: true },
+    where: { [`${user.type}_email`]: user.email, verified: 'verified' },
     order: [['times_seen', 'DESC']],
     limit,
     raw: true,
@@ -711,7 +711,6 @@ export async function filter(data, page = 1, isHighlighted = false, isPublished 
     if (data.garden !== undefined) where.garden = validateBoolean(data.garden);
     if (data.porch !== undefined) where.porch = validateBoolean(data.porch);
     if (data.slab !== undefined) where.slab = validateBoolean(data.slab);
-    if (data.verified !== undefined) where.verified = validateBoolean(data.verified);
 
     if (data.gatedCommunity !== undefined) {
       where.gated_community = validateBoolean(data.gatedCommunity);

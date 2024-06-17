@@ -236,12 +236,12 @@ export async function getLastPublishedProperties(page = 1, limit = 10) {
   const date = new Date();
   date.setDate(date.getDate() - 3);
 
-  const total = await Property.count({ where: { createdAt: { [Op.gte]: date }, verified: false } });
+  const total = await Property.count({ where: { createdAt: { [Op.gte]: date }, verified: 'pending' } });
   const lastPage = Math.ceil(total / limit);
   const offset = Number(limit * (page - 1));
 
   const props = await Property.findAll({
-    where: { createdAt: { [Op.gte]: date }, verified: false },
+    where: { createdAt: { [Op.gte]: date }, verified: 'pending' },
     limit,
     offset,
     raw: true,
@@ -394,7 +394,7 @@ export async function approveProperty(id) {
     throw error;
   }
 
-  Property.update({ verified: true }, { where: { id: property.id } });
+  Property.update({ verified: 'verified' }, { where: { id: property.id } });
 
   const emailBody = 'Seu imóvel foi aprovado pela administração!';
   const seller = await find(property.owner_email || property.realtor_email || property.realstate_email);
