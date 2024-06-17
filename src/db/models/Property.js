@@ -228,6 +228,11 @@ const Property = sequelize.define('properties', {
     allowNull: false,
     defaultValue: 0,
   },
+  verified: {
+    type: DataTypes.ENUM('pending', 'verified', 'rejected'),
+    defaultValue: 'pending',
+    allowNull: false,
+  },
 });
 
 export default Property;

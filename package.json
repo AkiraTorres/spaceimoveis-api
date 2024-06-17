@@ -4,7 +4,7 @@
   "description": "",
   "main": "src/index.js",
   "engines": {
-    "node": "20"
+    "node": "^20"
   },
   "type": "module",
   "scripts": {

@@ -1,4 +1,4 @@
-FROM node:20
+FROM node
 
 WORKDIR /src
 
@@ -9,7 +9,5 @@ EXPOSE 3000
 RUN rm -rf node_modules
 
 RUN npm i
-
-CMD ["npm", "build"]
 
 CMD ["npm", "start"]
