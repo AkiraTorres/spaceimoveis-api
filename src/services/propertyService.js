@@ -639,7 +639,7 @@ export async function publish(id, email) {
   return { message: 'Imóvel publicado com sucesso' };
 }
 
-export async function filter(data, page = 1, isHighlighted = false, isPublished = true, limit = 6, verified = true, path = '/properties/filter') {
+export async function filter(data, verified, page = 1, isHighlighted = false, isPublished = true, limit = 6, path = '/properties/filter') {
   const offset = Number(limit * (page - 1));
   let where = verified ? { verified: 'verified' } : {};
   const order = [['updatedAt', 'DESC']];

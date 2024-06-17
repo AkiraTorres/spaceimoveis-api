@@ -75,7 +75,7 @@ export const filter = asyncHandler(async (req, res) => {
   const data = req.body;
   const { page = 1, isHighlighted = false, isPublished = true, limit = 6, verified = true } = req.query;
 
-  const result = await service.filter(data, page, isHighlighted, isPublished, limit, verified);
+  const result = await service.filter(data, verified, page, isHighlighted, isPublished, limit);
   res.status(200).json(result);
 });
 
