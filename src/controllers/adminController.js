@@ -86,10 +86,10 @@ export const denyUser = asyncHandler(async (req, res) => {
 });
 
 export const filterProperties = asyncHandler(async (req, res) => {
-  const { page = 1, isHighlighted = false, isPublished = true, limit = 6 } = req.query;
+  const { page = 1, isHighlighted = false, isPublished = true, limit = 6, verified = false } = req.query;
   const filter = req.body;
 
-  const result = await propertyService.filter(filter, page, isHighlighted, isPublished, limit, null, '/admin/properties/filter');
+  const result = await propertyService.filter(filter, page, isHighlighted, isPublished, limit, verified, '/admin/properties/filter');
   res.status(200).json(result);
 });
 
