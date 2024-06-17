@@ -236,12 +236,17 @@ export async function getLastPublishedProperties(page = 1, limit = 10) {
   const date = new Date();
   date.setDate(date.getDate() - 3);
 
-  const total = await Property.count({ where: { updatedAt: { [Op.gte]: date }, verified: 'pending' } });
+  const where = {
+    updatedAt: { [Op.gte]: date },
+    verified: { [Op.not]: 'verified'}
+  };
+
+  const total = await Property.count({ where });
   const lastPage = Math.ceil(total / limit);
   const offset = Number(limit * (page - 1));
 
   const props = await Property.findAll({
-    where: { updatedAt: { [Op.gte]: date }, verified: 'pending' },
+    where,
     limit,
     offset,
     raw: true,
@@ -345,30 +350,20 @@ export async function denyProperty(id, reason = false) {
   const property = await Property.findByPk(validatedId);
 
   if (!property) {
-    const error = new Error('Property not found');
+    const error = new Error('Não foi possível encontrar um imóvel com o id informado.');
     error.status = 404;
     throw error;
   }
 
   const emailBody = reason
-    ? `Seu imóvel foi recusado pela administração.${validatedReason}`
-    : 'Seu imóvel foi recusado pela administração.';
+    ? `Seu imóvel foi recusado pela administração. ${validatedReason}\nPor favor, edite o seu imóvel para resolver este problema.`
+    : 'Seu imóvel foi recusado pela administração.\nPor favor, edite o seu imóvel para resolver este problema.';
 
   const seller = await find(property.owner_email || property.realtor_email || property.realstate_email);
 
-  const photos = await Photo.findAll({ where: { property_id: validatedId }, raw: true });
+  await Property.update({ verified: 'rejected' }, { where: { id: property.id } });
 
-  if (photos.length > 0) {
-    await Promise.all(photos.map(async (photo) => {
-      const storageRef = ref(storage, `images/properties/${validatedId}/${photo.name}`);
-      await deleteObject(storageRef);
-    }));
-  }
-
-  await Photo.destroy({ where: { property_id: validatedId } });
-  await Property.destroy({ where: { id: validatedId } });
-
-  let message = 'Usuário apagado com sucesso.';
+  let message = 'Anúncio rejeitado.';
 
   const mailOptions = {
     from: process.env.EMAIL_ADDRESS,
@@ -394,7 +389,7 @@ export async function approveProperty(id) {
     throw error;
   }
 
-  Property.update({ verified: 'verified' }, { where: { id: property.id } });
+  await Property.update({ verified: 'verified' }, { where: { id: property.id } });
 
   const emailBody = 'Seu imóvel foi aprovado pela administração!';
   const seller = await find(property.owner_email || property.realtor_email || property.realstate_email);
