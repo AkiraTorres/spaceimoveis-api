@@ -513,6 +513,7 @@ export async function update(id, data, files, sellerEmail) {
   }
 
   if (property.is_highlighted) property.is_published = true;
+  property.verified = 'pending';
 
   await Property.update(property, { where: { id: validatedId } });
 
