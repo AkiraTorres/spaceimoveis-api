@@ -21,7 +21,6 @@ const ReasonRejected = sequelize.define('reason_rejected_properties', {
     type: DataTypes.STRING,
     allowNull: false,
   },
-  timestamps: false,
-});
+}, { timestamps: false });
 
 export default ReasonRejected;
