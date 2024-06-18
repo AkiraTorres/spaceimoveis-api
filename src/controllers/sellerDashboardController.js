@@ -39,6 +39,6 @@ export const properties = asyncHandler(async (req, res) => {
   const data = req.body;
   data.email = email;
 
-  const result = await filter(filter, false, page, isHighlighted, isPublished, limit, '/dashboard/properties/filter');
+  const result = await filter(data, false, page, isHighlighted, isPublished, limit, '/dashboard/properties/filter');
   res.status(200).json(result);
 });
