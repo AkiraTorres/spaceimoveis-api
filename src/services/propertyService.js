@@ -19,6 +19,7 @@ import { getPropertyTotalFavorites } from './favoriteService.js';
 import { find } from './globalService.js';
 
 import firebaseConfig from '../config/firebase.js';
+import ReasonRejectect from "../db/models/ReasonRejectect.js";
 
 const app = initializeApp(firebaseConfig);
 const storage = getStorage(app);
@@ -792,6 +793,8 @@ export async function filter(data, verified, page = 1, isHighlighted = false, is
 
     editedProperty.shared = !!((property.owner_email && property.realtor_email)
         || (property.owner_email && property.realstate_email));
+
+    if (editedProperty.verified === 'rejected') editedProperty.reason = await ReasonRejectect.findOne({ where: { property_id: property.id } });
 
     const seller = await find(editedProperty.email);
 
