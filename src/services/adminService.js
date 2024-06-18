@@ -239,7 +239,7 @@ export async function getLastPublishedProperties(page = 1, limit = 10) {
 
   const where = {
     updatedAt: { [Op.gte]: date },
-    verified: { [Op.not]: 'verified'}
+    verified: 'pending',
   };
 
   const total = await Property.count({ where });
