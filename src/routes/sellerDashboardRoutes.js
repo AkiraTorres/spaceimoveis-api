@@ -12,5 +12,6 @@ router.get('/views', verifyGoogleToken, verifyJwt, controller.totalPropertiesVie
 router.get('/likes/monthly', verifyGoogleToken, verifyJwt, controller.propertiesLikesMonthly);
 router.get('/views/monthly', verifyGoogleToken, verifyJwt, controller.propertiesViewsMonthly);
 router.get('/top/properties', verifyGoogleToken, verifyJwt, controller.topProperties);
+router.put('/properties/filter', verifyGoogleToken, verifyJwt, controller.properties);
 
 export default router;
