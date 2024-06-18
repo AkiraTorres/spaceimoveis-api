@@ -21,7 +21,7 @@ import { validateCpf, validateEmail, validatePassword, validateString } from '..
 import { find } from './globalService.js';
 
 import firebaseConfig from '../config/firebase.js';
-import ReasonRejectect from "../db/models/ReasonRejectect.js";
+import ReasonRejected from "../db/models/ReasonRejected.js";
 
 const app = initializeApp(firebaseConfig);
 const storage = getStorage(app);
@@ -362,7 +362,7 @@ export async function denyProperty(id, reason = false) {
 
   const seller = await find(property.owner_email || property.realtor_email || property.realstate_email);
 
-  await ReasonRejectect.create({ property_id: property.id, reason: reason || 'Sem motivo informado.' });
+  await ReasonRejected.create({ property_id: property.id, reason: reason || 'Sem motivo informado.' });
   await Property.update({ verified: 'rejected' }, { where: { id: property.id } });
 
   let message = 'Anúncio rejeitado.';

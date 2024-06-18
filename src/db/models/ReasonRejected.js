@@ -1,6 +1,6 @@
 import { sequelize, DataTypes } from "../Conn.js";
 
-const ReasonRejectect = sequelize.define('reason_rejected_properties', {
+const ReasonRejected = sequelize.define('reason_rejected_properties', {
   id: {
     type: DataTypes.UUID,
     primaryKey: true,
@@ -24,4 +24,4 @@ const ReasonRejectect = sequelize.define('reason_rejected_properties', {
   timestamps: false,
 });
 
-export default ReasonRejectect;
+export default ReasonRejected;
