@@ -33,7 +33,7 @@ export const topProperties = asyncHandler(async (req, res) => {
   res.status(200).json(result);
 });
 
-export const properties = asyncHandler(async (req, res) => {
+export const propertiesFilter = asyncHandler(async (req, res) => {
   const { email } = req;
   const { page = 1, isHighlighted = false, isPublished = true, limit = 6 } = req.query;
   const data = req.body;

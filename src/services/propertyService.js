@@ -659,7 +659,7 @@ export async function filter(data, verified, page = 1, isHighlighted = false, is
       where = {
         [Op.and]: [
           { owner_email: { [Op.not]: null } },
-          { [Op.and]: [
+          { [Op.or]: [
             { realstate_email: { [Op.not]: null } },
             { realtor_email: { [Op.not]: null } },
           ] },
