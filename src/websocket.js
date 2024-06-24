@@ -9,7 +9,7 @@ io.on('connection', socket => {
   socket.on("open_chat", async (data, callback) => {
     socket.join(data.chatId);
 
-    const messagesRoom = await findMessages(data.chatId, data.username);
+    const messagesRoom = await findMessages(data.chatId, data.email);
     callback(messagesRoom);
   });
 
@@ -17,7 +17,7 @@ io.on('connection', socket => {
     // Salvar as mensagens
     const msgData = {
       chatId: data.chatId,
-      sender: data.username,
+      sender: data.email,
       text: data.message,
       createdAt: new Date(),
     };
