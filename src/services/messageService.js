@@ -1,16 +1,14 @@
 import Message from "../db/models/Message.js";
-import crypto from "crypto";
+import OwnerPhoto from "../db/models/OwnerPhoto.js";
+import RealtorPhoto from "../db/models/RealtorPhoto.js";
+import RealstatePhoto from "../db/models/RealstatePhoto.js";
 
-import {findUserChats} from "./chatService.js";
-import {validateEmail, validateString} from "../validators/inputValidators.js";
-import {find} from "./globalService.js";
-
-const algorithm = 'aes-256-cbc';
-const key = crypto.randomBytes(32);
-const iv = crypto.randomBytes(16);
+import { findUserChats } from "./chatService.js";
+import { validateEmail, validateString } from "../validators/inputValidators.js";
+import { find } from "./globalService.js";
 
 // TODO: precisa salvar as mensagens criptografadas no db
-export async function createMessage({chatId, sender, text}) {
+export async function createMessage({ chatId, sender, text }) {
   const validatedEmail = validateEmail(sender);
   const validatedChatId = validateString(chatId);
   const validatedText = validateString(text);
@@ -28,7 +26,18 @@ export async function createMessage({chatId, sender, text}) {
     text: validatedText,
   }
 
-  const msg = Message.create(data);
+  const msg = await Message.create(data);
+
+  msg.username = user.name;
+
+  if (user.type === 'owner') {
+    msg.profile = await OwnerPhoto.findOne({ where: { email: user.email } });
+  } else if (user.type === 'realtor') {
+    msg.profile = await RealtorPhoto.findOne({ where: { email: user.email } });
+  } else if (user.type === 'realstate') {
+    msg.profile = await RealstatePhoto.findOne({ where: { email: user.email } });
+  }
+
   return msg;
 }
 
@@ -51,8 +60,22 @@ export async function findMessages(chatId, email) {
   }
 
   const messages = await Message.findAll({ where: { chatId }, raw: true });
-  return messages;
-  // return messages.map(msg => msg.text = decrypt(msg.text));
+
+  const response = Promise.all(messages.map(async msg => {
+    const editedMsg = msg;
+    editedMsg.username = user.name;
+
+    if (user.type === 'owner') {
+      editedMsg.profile = await OwnerPhoto.findOne({ where: { email: user.email } });
+    } else if (user.type === 'realtor') {
+      editedMsg.profile = await RealtorPhoto.findOne({ where: { email: user.email } });
+    } else if (user.type === 'realstate') {
+      editedMsg.profile = await RealstatePhoto.findOne({ where: { email: user.email } });
+    }
+    return editedMsg;
+  }));
+
+  return response;
 }
 
 export async function deleteMessage(id, sender) {

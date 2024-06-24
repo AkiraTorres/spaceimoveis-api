@@ -9,12 +9,12 @@ export async function create(email1, email2) {
   const validatedEmail1 = validateEmail(email1);
   const validatedEmail2 = validateEmail(email2);
 
-  // const user1 = await find(validatedEmail1);
-  // const user2 = await find(validatedEmail2);
-  //
-  // if (!user1 || !user2) {
-  //   throw new Error('Usuário não encontrado');
-  // }
+  const user1 = await find(validatedEmail1);
+  const user2 = await find(validatedEmail2);
+
+  if (!user1 || !user2) {
+    throw new Error('Usuário não encontrado');
+  }
 
   let chat = await Chat.findOne({ where: {
       [Op.or]: [

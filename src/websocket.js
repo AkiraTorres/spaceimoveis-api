@@ -1,9 +1,6 @@
 import { io } from "./server.js";
 import * as messageService from "./services/messageService.js";
-import * as chatService from "./services/chatService.js";
 import { findMessages } from "./services/messageService.js";
-
-const users = [];
 
 io.on('connection', socket => {
   socket.on("open_chat", async (data, callback) => {
@@ -14,7 +11,6 @@ io.on('connection', socket => {
   });
 
   socket.on("message", async data => {
-    // Salvar as mensagens
     const msgData = {
       chatId: data.chatId,
       sender: data.email,
@@ -22,12 +18,7 @@ io.on('connection', socket => {
       createdAt: new Date(),
     };
 
-    messageService.createMessage(msgData);
-
+    await messageService.createMessage(msgData);
     io.to(data.chatId).emit("message", msgData);
-    // messages.push(message);
-
-    // Enviar para os usuários da sala
-    // io.to(data.room).emit("message", message);
   });
 });
