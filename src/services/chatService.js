@@ -4,6 +4,9 @@ import Chat from "../db/models/Chat.js";
 import {validateEmail} from "../validators/inputValidators.js";
 import {find} from "./globalService.js";
 import {Op} from "sequelize";
+import OwnerPhoto from "../db/models/OwnerPhoto.js";
+import RealtorPhoto from "../db/models/RealtorPhoto.js";
+import RealstatePhoto from "../db/models/RealstatePhoto.js";
 
 export async function create(email1, email2) {
   const validatedEmail1 = validateEmail(email1);
@@ -27,6 +30,16 @@ export async function create(email1, email2) {
     chat = await Chat.create({ id: uuid(), user1: email1, user2: email2 });
   }
 
+  chat.receiverName = user2.name;
+
+  if (user2.type === 'owner') {
+    chat.receiverProfile = await OwnerPhoto.findOne({ where: { email: user2.email } });
+  } else if (user2.type === 'realtor') {
+    chat.receiverProfile = await RealtorPhoto.findOne({ where: { email: user2.email } });
+  } else if (user2.type === 'realstate') {
+    chat.receiverProfile = await RealstatePhoto.findOne({ where: { email: user2.email } });
+  }
+
   return chat;
 }
 
@@ -39,11 +52,27 @@ export async function findUserChats(email) {
     throw new Error('Usuário não encontrado');
   }
 
-  return await Chat.findAll({
+  const chats = await Chat.findAll({
     where: {
       [Op.or]: [{user1: validatedEmail}, {user2: validatedEmail}]
     }
   });
+
+  return Promise.all(chats.map(async chat => {
+    const receiver = chat.user1 === validatedEmail ? chat.user2 : chat.user1;
+    const user = await find(receiver);
+    chat.receiverName = user.name;
+
+    if (user.type === 'owner') {
+      chat.receiverProfile = await OwnerPhoto.findOne({ where: { email: user.email } });
+    } else if (user.type === 'realtor') {
+      chat.receiverProfile = await RealtorPhoto.findOne({ where: { email: user.email } });
+    } else if (user.type === 'realstate') {
+      chat.receiverProfile = await RealstatePhoto.findOne({ where: { email: user.email } });
+    }
+
+    return chat;
+  }));
 }
 
 export async function findChat(email1, email2) {
@@ -57,10 +86,26 @@ export async function findChat(email1, email2) {
     throw new Error('Usuário não encontrado');
   }
 
-  return await Chat.findOne({ where: {
+  const chat = await Chat.findOne({ where: {
       [Op.and]: [
         { [Op.or]: [{user1: validatedEmail1}, {user2: validatedEmail2}] },
         { [Op.or]: [{user1: validatedEmail2}, {user2: validatedEmail1}] },
       ]
   }});
+
+  if (!chat) {
+    throw new Error('Chat não encontrado');
+  }
+
+  chat.receiverName = user2.name;
+
+  if (user2.type === 'owner') {
+    chat.receiverProfile = await OwnerPhoto.findOne({ where: { email: user2.email } });
+  } else if (user2.type === 'realtor') {
+    chat.receiverProfile = await RealtorPhoto.findOne({ where: { email: user2.email } });
+  } else if (user2.type === 'realstate') {
+    chat.receiverProfile = await RealstatePhoto.findOne({ where: { email: user2.email } });
+  }
+
+  return chat;
 }
