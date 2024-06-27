@@ -124,7 +124,7 @@ export async function findChatByChatId(chatId, s) {
   chat.senderEmail = senderUser.email;
   chat.senderProfile = senderUser.profile;
   chat.receiverName = receiverUser.name;
-  chat.receiverEmail = receiverUser
-  chat.receiverProfile = receiverUser
+  chat.receiverEmail = receiverUser.profile;
+  chat.receiverProfile = receiverUser.profile;
   return chat;
 }
