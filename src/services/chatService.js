@@ -72,32 +72,33 @@ export async function findUserChats(email) {
   });
 
   return Promise.all(chats.map(async chat => {
-    const r = chat.user1 === validatedEmail ? chat.user2 : chat.user1;
+    const editedChat = chat;
+    const r = editedChat.user1 === validatedEmail ? editedChat.user2 : editedChat.user1;
     const receiver = await find(r);
-    chat.receiverName = receiver.name;
-    chat.senderName = user.name;
+    editedChat.receiverName = receiver.name;
+    editedChat.senderName = user.name;
 
     if (receiver.type === 'client') {
-      chat.receiverProfile = null;
+      editedChat.receiverProfile = null;
     } else if (receiver.type === 'owner') {
-      chat.receiverProfile = await OwnerPhoto.findOne({ where: { email: receiver.email } });
+      editedChat.receiverProfile = await OwnerPhoto.findOne({ where: { email: receiver.email } });
     } else if (receiver.type === 'realtor') {
-      chat.receiverProfile = await RealtorPhoto.findOne({ where: { email: receiver.email } });
+      editedChat.receiverProfile = await RealtorPhoto.findOne({ where: { email: receiver.email } });
     } else if (receiver.type === 'realstate') {
-      chat.receiverProfile = await RealstatePhoto.findOne({ where: { email: receiver.email } });
+      editedChat.receiverProfile = await RealstatePhoto.findOne({ where: { email: receiver.email } });
     }
 
     if (user.type === 'client') {
-      chat.receiverProfile = null;
+      editedChat.receiverProfile = null;
     } else if (user.type === 'owner') {
-      chat.senderProfile = await OwnerPhoto.findOne({ where: { email: user.email } });
+      editedChat.senderProfile = await OwnerPhoto.findOne({ where: { email: user.email } });
     } else if (user.type === 'realtor') {
-      chat.senderProfile = await RealtorPhoto.findOne({ where: { email: user.email } });
+      editedChat.senderProfile = await RealtorPhoto.findOne({ where: { email: user.email } });
     } else if (user.type === 'realstate') {
-      chat.senderProfile = await RealstatePhoto.findOne({ where: { email: user.email } });
+      editedChat.senderProfile = await RealstatePhoto.findOne({ where: { email: user.email } });
     }
 
-    return chat;
+    return editedChat;
   }));
 }
 
