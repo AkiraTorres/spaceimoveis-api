@@ -1,9 +1,9 @@
 import {v4 as uuid} from 'uuid';
 
 import Chat from "../db/models/Chat.js";
-import {validateEmail, validateString} from "../validators/inputValidators.js";
-import {find} from "./globalService.js";
-import {Op} from "sequelize";
+import { validateEmail } from "../validators/inputValidators.js";
+import { find } from "./globalService.js";
+import { Op } from "sequelize";
 import OwnerPhoto from "../db/models/OwnerPhoto.js";
 import RealtorPhoto from "../db/models/RealtorPhoto.js";
 import RealstatePhoto from "../db/models/RealstatePhoto.js";
@@ -151,8 +151,7 @@ export async function findChat(email1, email2) {
 }
 
 export async function findChatByChatId(chatId, s) {
-  const validatedChatId = validateString(chatId);
-  const chat = await Chat.findByPk(validatedChatId);
+  const chat = await Chat.findByPk(chatId);
 
   if (!chat) {
     throw new Error('Chat não encontrado');
