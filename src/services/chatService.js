@@ -4,9 +4,6 @@ import Chat from "../db/models/Chat.js";
 import { validateEmail } from "../validators/inputValidators.js";
 import { find } from "./globalService.js";
 import { Op } from "sequelize";
-import OwnerPhoto from "../db/models/OwnerPhoto.js";
-import RealtorPhoto from "../db/models/RealtorPhoto.js";
-import RealstatePhoto from "../db/models/RealstatePhoto.js";
 
 export async function create(email1, email2) {
   const validatedEmail1 = validateEmail(email1);
@@ -30,33 +27,8 @@ export async function create(email1, email2) {
     chat = await Chat.create({ id: uuid(), user1: email1, user2: email2 });
   }
 
-  chat.receiverName = chat.user1 === email1 ? user2.name : user1.name;
-  chat.senderName = chat.user1 === email1 ? user1.name : user2.name;
-
-  let user2Profile;
-  let user1Profile;
-  if (user2.type === 'client') {
-    user2Profile = null;
-  } else if (user2.type === 'owner') {
-    user2Profile = await OwnerPhoto.findOne({ where: { email: user2.email } });
-  } else if (user2.type === 'realtor') {
-    user2Profile = await RealtorPhoto.findOne({ where: { email: user2.email } });
-  } else if (user2.type === 'realstate') {
-    user2Profile = await RealstatePhoto.findOne({ where: { email: user2.email } });
-  }
-
-  if (user1.type === 'client') {
-    user1Profile = null;
-  } else if (user1.type === 'owner') {
-    user1Profile = await OwnerPhoto.findOne({ where: { email: user1.email } });
-  } else if (user1.type === 'realtor') {
-    user1Profile = await RealtorPhoto.findOne({ where: { email: user1.email } });
-  } else if (user1.type === 'realstate') {
-    user1Profile = await RealstatePhoto.findOne({ where: { email: user1.email } });
-  }
-
-  chat.receiverProfile = chat.user1 === email1 ? user2Profile : user1Profile;
-  chat.senderProfile = chat.user1 === email1 ? user1Profile : user2Profile;
+  chat.senderUser = user1.email === email1 ? user1: user2;
+  chat.receiverUser = user1.email === email1 ? user2: user1;
 
   return chat;
 }
@@ -78,30 +50,11 @@ export async function findUserChats(email) {
 
   return Promise.all(chats.map(async chat => {
     const editedChat = chat;
-    const r = editedChat.user1 === validatedEmail ? editedChat.user2 : editedChat.user1;
-    const receiver = await find(r);
-    editedChat.receiverName = receiver.name;
-    editedChat.senderName = user.name;
+    const user1 = await find(chat.user1);
+    const user2 = await find(chat.user2);
 
-    if (receiver.type === 'client') {
-      editedChat.receiverProfile = null;
-    } else if (receiver.type === 'owner') {
-      editedChat.receiverProfile = await OwnerPhoto.findOne({ where: { email: receiver.email } });
-    } else if (receiver.type === 'realtor') {
-      editedChat.receiverProfile = await RealtorPhoto.findOne({ where: { email: receiver.email } });
-    } else if (receiver.type === 'realstate') {
-      editedChat.receiverProfile = await RealstatePhoto.findOne({ where: { email: receiver.email } });
-    }
-
-    if (user.type === 'client') {
-      editedChat.receiverProfile = null;
-    } else if (user.type === 'owner') {
-      editedChat.senderProfile = await OwnerPhoto.findOne({ where: { email: user.email } });
-    } else if (user.type === 'realtor') {
-      editedChat.senderProfile = await RealtorPhoto.findOne({ where: { email: user.email } });
-    } else if (user.type === 'realstate') {
-      editedChat.senderProfile = await RealstatePhoto.findOne({ where: { email: user.email } });
-    }
+    chat.senderUser = user1.email === email ? user1: user2;
+    chat.receiverUser = user1.email === email ? user2: user1;
 
     return editedChat;
   }));
@@ -129,28 +82,8 @@ export async function findChat(email1, email2) {
     throw new Error('Chat não encontrado');
   }
 
-  chat.senderName = user1.name;
-  chat.receiverName = user2.name;
-
-  if (user1.type === 'client') {
-    chat.receiverProfile = null;
-  } else if (user1.type === 'owner') {
-    chat.receiverProfile = await OwnerPhoto.findOne({ where: { email: user1.email } });
-  } else if (user1.type === 'realtor') {
-    chat.receiverProfile = await RealtorPhoto.findOne({ where: { email: user1.email } });
-  } else if (user1.type === 'realstate') {
-    chat.receiverProfile = await RealstatePhoto.findOne({ where: { email: user1.email } });
-  }
-
-  if (user2.type === 'client') {
-    chat.senderProfile = null;
-  } else if (user2.type === 'owner') {
-    chat.senderProfile = await OwnerPhoto.findOne({ where: { email: user2.email } });
-  } else if (user2.type === 'realtor') {
-    chat.senderProfile = await RealtorPhoto.findOne({ where: { email: user2.email } });
-  } else if (user2.type === 'realstate') {
-    chat.senderProfile = await RealstatePhoto.findOne({ where: { email: user2.email } });
-  }
+  chat.senderUser = user1;
+  chat.receiverUser = user2;
 
   return chat;
 }
@@ -165,34 +98,8 @@ export async function findChatByChatId(chatId, s) {
   const user1 = await find(chat.user1);
   const user2 = await find(chat.user2);
 
-  chat.receiverName = chat.user1 === s ? user2.name : user1.name;
-  chat.senderName = chat.user1 === s ? user1.name : user2.name;
-
-  let user2Profile;
-  let user1Profile;
-  if (user2.type === 'client') {
-    user2Profile = null;
-  } else if (user2.type === 'owner') {
-    user2Profile = await OwnerPhoto.findOne({ where: { email: user2.email } });
-  } else if (user2.type === 'realtor') {
-    user2Profile = await RealtorPhoto.findOne({ where: { email: user2.email } });
-  } else if (user2.type === 'realstate') {
-    user2Profile = await RealstatePhoto.findOne({ where: { email: user2.email } });
-  }
-
-  if (user1.type === 'client') {
-    user1Profile = null;
-  } else if (user1.type === 'owner') {
-    user1Profile = await OwnerPhoto.findOne({ where: { email: user1.email } });
-  } else if (user1.type === 'realtor') {
-    user1Profile = await RealtorPhoto.findOne({ where: { email: user1.email } });
-  } else if (user1.type === 'realstate') {
-    user1Profile = await RealstatePhoto.findOne({ where: { email: user1.email } });
-  }
-
-  chat.receiverProfile = chat.user1 === s ? user2Profile : user1Profile;
-  chat.senderProfile = chat.user1 === s ? user1Profile : user2Profile;
-
+  chat.senderUser = user1.email === s ? user1: user2;
+  chat.receiverUser = user1.email === s ? user2: user1;
 
   return chat;
 }

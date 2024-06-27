@@ -27,13 +27,10 @@ export async function createMessage({ chatId, sender, text }) {
   const msg = m.get({ plain: true });
   const chat = await findChatByChatId(validatedChatId, validatedEmail);
 
-  const senderName = user.name;
-  const receiverName = chat.receiverName;
+  const senderUser = chat.senderUser;
+  const receiverUser = chat.receiverUser;
 
-  const receiverProfile = chat.receiverProfile;
-  const senderProfile = chat.senderProfile;
-
-  return {...msg, senderName, receiverName, receiverProfile, senderProfile};
+  return {...msg, senderUser, receiverUser};
 }
 
 export async function findMessages(chatId, email) {
@@ -60,12 +57,10 @@ export async function findMessages(chatId, email) {
   return Promise.all(messages.map(async msg => {
     const editedMsg = msg;
 
-    editedMsg.senderName = user.name;
-    editedMsg.receiverName = chat.receiverName;
+    const senderUser = chat.senderUser;
+    const receiverUser = chat.receiverUser;
 
-    editedMsg.receiverProfile = chat.receiverProfile;
-    editedMsg.senderProfile = chat.senderProfile;
-    return editedMsg;
+    return {...editedMsg, senderUser, receiverUser};
   }));
 }
 
