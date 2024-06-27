@@ -1,9 +1,6 @@
 import Message from "../db/models/Message.js";
-import OwnerPhoto from "../db/models/OwnerPhoto.js";
-import RealtorPhoto from "../db/models/RealtorPhoto.js";
-import RealstatePhoto from "../db/models/RealstatePhoto.js";
 
-import { findUserChats } from "./chatService.js";
+import { findChatByChatId, findUserChats} from "./chatService.js";
 import { validateEmail, validateString } from "../validators/inputValidators.js";
 import { find } from "./globalService.js";
 
@@ -27,16 +24,13 @@ export async function createMessage({ chatId, sender, text }) {
   }
 
   const msg = await Message.create(data);
+  const chat = await findChatByChatId(validatedChatId);
 
-  msg.username = user.name;
+  msg.senderName = user.name;
+  msg.receiverName = chat.receiverName;
 
-  if (user.type === 'owner') {
-    msg.profile = await OwnerPhoto.findOne({ where: { email: user.email } });
-  } else if (user.type === 'realtor') {
-    msg.profile = await RealtorPhoto.findOne({ where: { email: user.email } });
-  } else if (user.type === 'realstate') {
-    msg.profile = await RealstatePhoto.findOne({ where: { email: user.email } });
-  }
+  msg.receiverProfile = chat.receiverProfile;
+  msg.senderProfile = chat.senderProfile;
 
   return msg;
 }
@@ -61,21 +55,17 @@ export async function findMessages(chatId, email) {
 
   const messages = await Message.findAll({ where: { chatId }, raw: true });
 
-  const response = Promise.all(messages.map(async msg => {
+  return Promise.all(messages.map(async msg => {
     const editedMsg = msg;
-    editedMsg.username = user.name;
+    const chat = await findChatByChatId(editedMsg.chatId);
 
-    if (user.type === 'owner') {
-      editedMsg.profile = await OwnerPhoto.findOne({ where: { email: user.email } });
-    } else if (user.type === 'realtor') {
-      editedMsg.profile = await RealtorPhoto.findOne({ where: { email: user.email } });
-    } else if (user.type === 'realstate') {
-      editedMsg.profile = await RealstatePhoto.findOne({ where: { email: user.email } });
-    }
+    editedMsg.senderName = user.name;
+    editedMsg.receiverName = chat.receiverName;
+
+    editedMsg.receiverProfile = chat.receiverProfile;
+    editedMsg.senderProfile = chat.senderProfile;
     return editedMsg;
   }));
-
-  return response;
 }
 
 export async function deleteMessage(id, sender) {

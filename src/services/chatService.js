@@ -1,7 +1,7 @@
 import {v4 as uuid} from 'uuid';
 
 import Chat from "../db/models/Chat.js";
-import {validateEmail} from "../validators/inputValidators.js";
+import {validateEmail, validateString} from "../validators/inputValidators.js";
 import {find} from "./globalService.js";
 import {Op} from "sequelize";
 import OwnerPhoto from "../db/models/OwnerPhoto.js";
@@ -33,7 +33,9 @@ export async function create(email1, email2) {
   chat.receiverName = user2.name;
   chat.senderName = user1.name;
 
-  if (user2.type === 'owner') {
+  if (user2.type === 'client') {
+    chat.receiverProfile = null;
+  } else if (user2.type === 'owner') {
     chat.receiverProfile = await OwnerPhoto.findOne({ where: { email: user2.email } });
   } else if (user2.type === 'realtor') {
     chat.receiverProfile = await RealtorPhoto.findOne({ where: { email: user2.email } });
@@ -41,7 +43,9 @@ export async function create(email1, email2) {
     chat.receiverProfile = await RealstatePhoto.findOne({ where: { email: user2.email } });
   }
 
-  if (user1.type === 'owner') {
+  if (user1.type === 'client') {
+    chat.receiverProfile = null;
+  } else if (user1.type === 'owner') {
     chat.senderProfile = await OwnerPhoto.findOne({ where: { email: user1.email } });
   } else if (user1.type === 'realtor') {
     chat.senderProfile = await RealtorPhoto.findOne({ where: { email: user1.email } });
@@ -73,7 +77,9 @@ export async function findUserChats(email) {
     chat.receiverName = receiver.name;
     chat.senderName = user.name;
 
-    if (receiver.type === 'owner') {
+    if (receiver.type === 'client') {
+      chat.receiverProfile = null;
+    } else if (receiver.type === 'owner') {
       chat.receiverProfile = await OwnerPhoto.findOne({ where: { email: receiver.email } });
     } else if (receiver.type === 'realtor') {
       chat.receiverProfile = await RealtorPhoto.findOne({ where: { email: receiver.email } });
@@ -81,7 +87,9 @@ export async function findUserChats(email) {
       chat.receiverProfile = await RealstatePhoto.findOne({ where: { email: receiver.email } });
     }
 
-    if (user.type === 'owner') {
+    if (user.type === 'client') {
+      chat.receiverProfile = null;
+    } else if (user.type === 'owner') {
       chat.senderProfile = await OwnerPhoto.findOne({ where: { email: user.email } });
     } else if (user.type === 'realtor') {
       chat.senderProfile = await RealtorPhoto.findOne({ where: { email: user.email } });
@@ -115,9 +123,22 @@ export async function findChat(email1, email2) {
     throw new Error('Chat não encontrado');
   }
 
+  chat.senderName = user1.name;
   chat.receiverName = user2.name;
 
-  if (user2.type === 'owner') {
+  if (user1.type === 'client') {
+    chat.receiverProfile = null;
+  } else if (user1.type === 'owner') {
+    chat.receiverProfile = await OwnerPhoto.findOne({ where: { email: user1.email } });
+  } else if (user1.type === 'realtor') {
+    chat.receiverProfile = await RealtorPhoto.findOne({ where: { email: user1.email } });
+  } else if (user1.type === 'realstate') {
+    chat.receiverProfile = await RealstatePhoto.findOne({ where: { email: user1.email } });
+  }
+
+  if (user2.type === 'client') {
+    chat.receiverProfile = null;
+  } else if (user2.type === 'owner') {
     chat.receiverProfile = await OwnerPhoto.findOne({ where: { email: user2.email } });
   } else if (user2.type === 'realtor') {
     chat.receiverProfile = await RealtorPhoto.findOne({ where: { email: user2.email } });
@@ -126,4 +147,9 @@ export async function findChat(email1, email2) {
   }
 
   return chat;
+}
+
+export async function findChatByChatId(chatId) {
+  const validatedChatId = validateString(chatId);
+  return Chat.findByPk(validatedChatId);
 }
