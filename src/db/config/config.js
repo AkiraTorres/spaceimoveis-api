@@ -10,7 +10,8 @@ export default {
     host: process.env.DB_HOST,
     port: process.env.DB_PORT,
     dialect: process.env.DB_DIALECT,
-    timezone: "America/Recife",
+    dialectOptions: { useUTC:false },
+    timezone:"-03:00",
   },
   test: {
     username: process.env.DB_USER,
@@ -19,12 +20,13 @@ export default {
     host: process.env.DB_HOST,
     port: process.env.DB_PORT,
     dialect: process.env.DB_DIALECT,
-    timezone: "America/Recife",
+    timezone:"-03:00",
     ssl: true,
     dialectOptions: {
       ssl: {
         require: true,
         rejectUnauthorized: false,
+        useUTC:false,
       },
     },
     logging: false,
@@ -36,7 +38,8 @@ export default {
     host: process.env.DB_HOST,
     port: process.env.DB_PORT,
     dialect: process.env.DB_DIALECT,
-    timezone: "America/Recife",
+    dialectOptions: { useUTC:false },
+    timezone:"-03:00",
     logging: false,
   },
 };
