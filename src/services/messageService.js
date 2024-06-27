@@ -53,11 +53,11 @@ export async function findMessages(chatId, email) {
     throw error;
   }
 
+  const chat = await findChatByChatId(chatId);
   const messages = await Message.findAll({ where: { chatId }, raw: true });
 
   return Promise.all(messages.map(async msg => {
     const editedMsg = msg;
-    const chat = await findChatByChatId(editedMsg.chatId);
 
     editedMsg.senderName = user.name;
     editedMsg.receiverName = chat.receiverName;
