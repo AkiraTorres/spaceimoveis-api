@@ -24,7 +24,7 @@ export async function createMessage({ chatId, sender, text }) {
   }
 
   const msg = await Message.create(data);
-  const chat = await findChatByChatId(validatedChatId);
+  const chat = await findChatByChatId(validatedChatId, sender);
 
   msg.senderName = user.name;
   msg.receiverName = chat.receiverName;
