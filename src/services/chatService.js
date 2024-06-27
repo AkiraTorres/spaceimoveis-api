@@ -30,28 +30,33 @@ export async function create(email1, email2) {
     chat = await Chat.create({ id: uuid(), user1: email1, user2: email2 });
   }
 
-  chat.receiverName = user2.name;
-  chat.senderName = user1.name;
+  chat.receiverName = chat.user1 === email1 ? user2.name : user1.name;
+  chat.senderName = chat.user1 === email1 ? user1.name : user2.name;
 
+  let user2Profile;
+  let user1Profile;
   if (user2.type === 'client') {
-    chat.receiverProfile = null;
+    user2Profile = null;
   } else if (user2.type === 'owner') {
-    chat.receiverProfile = await OwnerPhoto.findOne({ where: { email: user2.email } });
+    user2Profile = await OwnerPhoto.findOne({ where: { email: user2.email } });
   } else if (user2.type === 'realtor') {
-    chat.receiverProfile = await RealtorPhoto.findOne({ where: { email: user2.email } });
+    user2Profile = await RealtorPhoto.findOne({ where: { email: user2.email } });
   } else if (user2.type === 'realstate') {
-    chat.receiverProfile = await RealstatePhoto.findOne({ where: { email: user2.email } });
+    user2Profile = await RealstatePhoto.findOne({ where: { email: user2.email } });
   }
 
   if (user1.type === 'client') {
-    chat.receiverProfile = null;
+    user1Profile = null;
   } else if (user1.type === 'owner') {
-    chat.senderProfile = await OwnerPhoto.findOne({ where: { email: user1.email } });
+    user1Profile = await OwnerPhoto.findOne({ where: { email: user1.email } });
   } else if (user1.type === 'realtor') {
-    chat.senderProfile = await RealtorPhoto.findOne({ where: { email: user1.email } });
+    user1Profile = await RealtorPhoto.findOne({ where: { email: user1.email } });
   } else if (user1.type === 'realstate') {
-    chat.senderProfile = await RealstatePhoto.findOne({ where: { email: user1.email } });
+    user1Profile = await RealstatePhoto.findOne({ where: { email: user1.email } });
   }
+
+  chat.receiverProfile = chat.user1 === email1 ? user2Profile : user1Profile;
+  chat.senderProfile = chat.user1 === email1 ? user1Profile : user2Profile;
 
   return chat;
 }
@@ -157,34 +162,37 @@ export async function findChatByChatId(chatId, s) {
     throw new Error('Chat não encontrado');
   }
 
-  const receiverEmail = chat.user1 === s ? chat.user2 : chat.user1;
-  const senderEmail = chat.user2 === s ? chat.user2 : chat.user1;
+  const user1 = await find(chat.user1);
+  const user2 = await find(chat.user2);
 
-  const receiver = await find(receiverEmail);
-  const sender = await find(senderEmail);
+  chat.receiverName = chat.user1 === s ? user2.name : user1.name;
+  chat.senderName = chat.user1 === s ? user1.name : user2.name;
 
-  chat.senderName = receiver.name;
-  chat.receiverName = sender.name;
-
-  if (receiver.type === 'client') {
-    chat.receiverProfile = null;
-  } else if (receiver.type === 'owner') {
-    chat.receiverProfile = await OwnerPhoto.findOne({ where: { email: receiver.email } });
-  } else if (receiver.type === 'realtor') {
-    chat.receiverProfile = await RealtorPhoto.findOne({ where: { email: receiver.email } });
-  } else if (receiver.type === 'realstate') {
-    chat.receiverProfile = await RealstatePhoto.findOne({ where: { email: receiver.email } });
+  let user2Profile;
+  let user1Profile;
+  if (user2.type === 'client') {
+    user2Profile = null;
+  } else if (user2.type === 'owner') {
+    user2Profile = await OwnerPhoto.findOne({ where: { email: user2.email } });
+  } else if (user2.type === 'realtor') {
+    user2Profile = await RealtorPhoto.findOne({ where: { email: user2.email } });
+  } else if (user2.type === 'realstate') {
+    user2Profile = await RealstatePhoto.findOne({ where: { email: user2.email } });
   }
 
-  if (sender.type === 'client') {
-    chat.senderProfile = null;
-  } else if (sender.type === 'owner') {
-    chat.senderProfile = await OwnerPhoto.findOne({ where: { email: sender.email } });
-  } else if (sender.type === 'realtor') {
-    chat.senderProfile = await RealtorPhoto.findOne({ where: { email: sender.email } });
-  } else if (sender.type === 'realstate') {
-    chat.senderProfile = await RealstatePhoto.findOne({ where: { email: sender.email } });
+  if (user1.type === 'client') {
+    user1Profile = null;
+  } else if (user1.type === 'owner') {
+    user1Profile = await OwnerPhoto.findOne({ where: { email: user1.email } });
+  } else if (user1.type === 'realtor') {
+    user1Profile = await RealtorPhoto.findOne({ where: { email: user1.email } });
+  } else if (user1.type === 'realstate') {
+    user1Profile = await RealstatePhoto.findOne({ where: { email: user1.email } });
   }
+
+  chat.receiverProfile = chat.user1 === s ? user2Profile : user1Profile;
+  chat.senderProfile = chat.user1 === s ? user1Profile : user2Profile;
+
 
   return chat;
 }
