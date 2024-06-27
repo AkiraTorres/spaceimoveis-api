@@ -23,7 +23,8 @@ export async function createMessage({ chatId, sender, text }) {
     text: validatedText,
   }
 
-  const msg = await Message.create(data);
+  const m = await Message.create(data);
+  const msg = m.get({ plain: true });
   const chat = await findChatByChatId(validatedChatId, validatedEmail);
 
   const senderName = user.name;
@@ -32,7 +33,7 @@ export async function createMessage({ chatId, sender, text }) {
   const receiverProfile = chat.receiverProfile;
   const senderProfile = chat.senderProfile;
 
-  return {...(msg.dataValues()), senderName, receiverName, receiverProfile, senderProfile};
+  return {...msg, senderName, receiverName, receiverProfile, senderProfile};
 }
 
 export async function findMessages(chatId, email) {
