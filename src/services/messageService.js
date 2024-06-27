@@ -27,12 +27,14 @@ export async function createMessage({ chatId, sender, text }) {
   const msg = m.get({ plain: true });
   const chat = await findChatByChatId(validatedChatId, validatedEmail);
 
-  msg.senderName = chat.senderName;
-  msg.senderEmail = chat.senderEmail;
-  msg.senderProfile = chat.senderProfile;
-  msg.receiverName = chat.receiverName;
-  msg.receiverEmail = chat.receiverEmail
-  msg.receiverProfile = chat.receiverProfile
+  const receiver = chat.user1.email === user.email ? chat.user2 : chat.user1;
+
+  msg.senderName = user.name;
+  msg.senderEmail = user.email;
+  msg.senderProfile = user.profile;
+  msg.receiverName = receiver.name;
+  msg.receiverEmail = receiver.email;
+  msg.receiverProfile = receiver.profile;
 
   return msg;
 }
@@ -61,12 +63,15 @@ export async function findMessages(chatId, email) {
   return Promise.all(messages.map(async msg => {
     const editedMsg = msg;
 
-    editedMsg.senderName = chat.senderName;
-    editedMsg.senderEmail = chat.senderEmail;
-    editedMsg.senderProfile = chat.senderProfile;
-    editedMsg.receiverName = chat.receiverName;
-    editedMsg.receiverEmail = chat.receiverEmail
-    editedMsg.receiverProfile = chat.receiverProfile
+    const sender = chat.user1.email === editedMsg.sender ? chat.user1 : chat.user2;
+    const receiver = chat.user1.email === editedMsg.sender ? chat.user2 : chat.user1;
+
+    editedMsg.senderName = sender.name;
+    editedMsg.senderEmail = sender.email;
+    editedMsg.senderProfile = sender.profile;
+    editedMsg.receiverName = receiver.name;
+    editedMsg.receiverEmail = receiver.email;
+    editedMsg.receiverProfile = receiver.profile;
 
     return editedMsg;
   }));
