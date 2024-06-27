@@ -27,8 +27,15 @@ export async function create(email1, email2) {
     chat = await Chat.create({ id: uuid(), user1: email1, user2: email2 });
   }
 
-  chat.senderUser = user1.email === email1 ? user1: user2;
-  chat.receiverUser = user1.email === email1 ? user2: user1;
+  const senderUser = user1.email === email1 ? user1: user2;
+  const receiverUser = user1.email === email1 ? user2: user1;
+
+  chat.senderName = senderUser.name;
+  chat.senderEmail = senderUser.email;
+  chat.senderProfile = senderUser.profile;
+  chat.receiverName = receiverUser.name;
+  chat.receiverEmail = receiverUser
+  chat.receiverProfile = receiverUser
 
   return chat;
 }
@@ -53,9 +60,15 @@ export async function findUserChats(email) {
     const user1 = await find(chat.user1);
     const user2 = await find(chat.user2);
 
-    chat.senderUser = user1.email === email ? user1: user2;
-    chat.receiverUser = user1.email === email ? user2: user1;
+    const senderUser = user1.email === email ? user1: user2;
+    const receiverUser = user1.email === email ? user2: user1;
 
+    chat.senderName = senderUser.name;
+    chat.senderEmail = senderUser.email;
+    chat.senderProfile = senderUser.profile;
+    chat.receiverName = receiverUser.name;
+    chat.receiverEmail = receiverUser
+    chat.receiverProfile = receiverUser
     return editedChat;
   }));
 }
@@ -82,9 +95,15 @@ export async function findChat(email1, email2) {
     throw new Error('Chat não encontrado');
   }
 
-  chat.senderUser = user1;
-  chat.receiverUser = user2;
+  const senderUser = user1;
+  const receiverUser = user2;
 
+  chat.senderName = senderUser.name;
+  chat.senderEmail = senderUser.email;
+  chat.senderProfile = senderUser.profile;
+  chat.receiverName = receiverUser.name;
+  chat.receiverEmail = receiverUser
+  chat.receiverProfile = receiverUser
   return chat;
 }
 
@@ -98,8 +117,14 @@ export async function findChatByChatId(chatId, s) {
   const user1 = await find(chat.user1);
   const user2 = await find(chat.user2);
 
-  chat.senderUser = user1.email === s ? user1: user2;
-  chat.receiverUser = user1.email === s ? user2: user1;
+  const senderUser = user1.email === s ? user1: user2;
+  const receiverUser = user1.email === s ? user2: user1;
 
+  chat.senderName = senderUser.name;
+  chat.senderEmail = senderUser.email;
+  chat.senderProfile = senderUser.profile;
+  chat.receiverName = receiverUser.name;
+  chat.receiverEmail = receiverUser
+  chat.receiverProfile = receiverUser
   return chat;
 }
