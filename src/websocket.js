@@ -15,10 +15,9 @@ io.on('connection', socket => {
       chatId: data.chatId,
       sender: data.email,
       text: data.message,
-      createdAt: new Date(),
     };
 
-    await messageService.createMessage(msgData);
-    io.to(data.chatId).emit("message", msgData);
+    const msgRes = await messageService.createMessage(msgData);
+    io.to(data.chatId).emit("message", msgRes);
   });
 });

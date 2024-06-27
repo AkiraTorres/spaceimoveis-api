@@ -1,8 +1,8 @@
 import Message from "../db/models/Message.js";
 
-import { findChatByChatId, findUserChats} from "./chatService.js";
-import { validateEmail, validateString } from "../validators/inputValidators.js";
-import { find } from "./globalService.js";
+import {findChatByChatId, findUserChats} from "./chatService.js";
+import {validateEmail, validateString} from "../validators/inputValidators.js";
+import {find} from "./globalService.js";
 
 // TODO: precisa salvar as mensagens criptografadas no db
 export async function createMessage({ chatId, sender, text }) {
@@ -32,10 +32,7 @@ export async function createMessage({ chatId, sender, text }) {
   const receiverProfile = chat.receiverProfile;
   const senderProfile = chat.senderProfile;
 
-  const response = { ...msg, senderName, receiverName, receiverProfile, senderProfile };
-  console.log(response);
-
-  return response;
+  return {...msg.dataValues(), senderName, receiverName, receiverProfile, senderProfile};
 }
 
 export async function findMessages(chatId, email) {
