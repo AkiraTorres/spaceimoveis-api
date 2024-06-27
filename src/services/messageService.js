@@ -32,7 +32,10 @@ export async function createMessage({ chatId, sender, text }) {
   const receiverProfile = chat.receiverProfile;
   const senderProfile = chat.senderProfile;
 
-  return { ...msg, senderName, receiverName, receiverProfile, senderProfile };
+  const response = { ...msg, senderName, receiverName, receiverProfile, senderProfile };
+  console.log(response);
+
+  return response;
 }
 
 export async function findMessages(chatId, email) {
