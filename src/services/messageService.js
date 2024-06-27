@@ -24,15 +24,15 @@ export async function createMessage({ chatId, sender, text }) {
   }
 
   const msg = await Message.create(data);
-  const chat = await findChatByChatId(validatedChatId, sender);
+  const chat = await findChatByChatId(validatedChatId, validatedEmail);
 
-  msg.senderName = user.name;
-  msg.receiverName = chat.receiverName;
+  const senderName = user.name;
+  const receiverName = chat.receiverName;
 
-  msg.receiverProfile = chat.receiverProfile;
-  msg.senderProfile = chat.senderProfile;
+  const receiverProfile = chat.receiverProfile;
+  const senderProfile = chat.senderProfile;
 
-  return msg;
+  return { ...msg.dataValues(), senderName, receiverName, receiverProfile, senderProfile };
 }
 
 export async function findMessages(chatId, email) {
