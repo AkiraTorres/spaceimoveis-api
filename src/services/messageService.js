@@ -30,9 +30,9 @@ export async function createMessage({ chatId, sender, text }) {
   try {
     chat = await findChatByChatId(validatedChatId, validatedEmail);
   } catch (error) {
-    const error = new Error('Chat não encontrado');
-    error.status = 404;
-    throw error;
+    const e = new Error('Chat não encontrado');
+    e.status = 404;
+    throw e;
   }
 
   const receiver = chat.user1.email === user.email ? chat.user2 : chat.user1;
@@ -69,9 +69,9 @@ export async function findMessages(chatId, email) {
   try {
     chat = await findChatByChatId(chatId, validateEmail);
   } catch (error) {
-    const error = new Error('Chat não encontrado');
-    error.status = 404;
-    throw error;
+    const e = new Error('Chat não encontrado');
+    e.status = 404;
+    throw e;
   }
 
   const messages = await Message.findAll({ where: { chatId }, raw: true });
