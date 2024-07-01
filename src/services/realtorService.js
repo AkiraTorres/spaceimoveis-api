@@ -413,9 +413,9 @@ async function filter(data, page = 1) {
 
   if (data) {
     const { name, email, city, state, order, orderType } = data;
-    if (name) where.name = { [Op.substring]: validateString(name) };
+    if (name) where.name = { [Op.iLike]: `%${validateString(name)}%` };
     if (email) where.email = validateEmail(email);
-    if (city) where.city = validateString(city);
+    if (city) where.city = { [Op.iLike]: `%${validateString(city)}%` };
     if (state) where.state = validateUF(state);
     if (order) order[0][0] = validateString(order);
     if (orderType) order[0][1] = validateString(orderType);
