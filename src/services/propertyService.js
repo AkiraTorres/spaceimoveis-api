@@ -692,9 +692,9 @@ export async function filter(data, verified, page = 1, isHighlighted = false, is
     if (data.id) where.id = validateString(data.id);
     if (data.announcementType) where.announcement_type = validateString(data.announcementType);
     if (data.propertyType) where.property_type = validateString(data.propertyType);
-    if (data.city) where.city = validateString(data.city);
+    if (data.city) where.city = {[Op.iLike]: `%${validateString(data.city)}%`};
     if (data.state) where.state = validateString(data.state);
-    if (data.district) where.district = validateString(data.district);
+    if (data.district) where.district = {[Op.iLike]: `%${validateString(data.district)}%`};
     if (data.bedrooms) where.bedrooms = validateInteger(data.bedrooms);
     if (data.bathrooms) where.bathrooms = validateInteger(data.bathrooms);
     if (data.parkingSpaces) where.parking_spaces = validateInteger(data.parkingSpaces);
