@@ -20,4 +20,9 @@ io.on('connection', socket => {
     const msgRes = await messageService.createMessage(msgData);
     io.to(data.chatId).emit("message", msgRes);
   });
+
+  socket.on('delete_message', async data => {
+    await messageService.deleteMessage(data.id, data.email);
+    io.to(data.chatId).emit('delete_message', data.id);
+  });
 });

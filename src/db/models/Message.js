@@ -19,6 +19,11 @@ const Message = sequelize.define('messages', {
     type: DataTypes.STRING(16384),
     allowNull: false,
   },
+  isDeleted: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false,
+  },
   createdAt: {
     type: DataTypes.DATE,
     allowNull: false,

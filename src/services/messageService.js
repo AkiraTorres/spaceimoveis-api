@@ -116,6 +116,6 @@ export async function deleteMessage(id, sender) {
     throw error;
   }
 
-  await Message.destroy({ where: { id } });
+  await Message.update({ text: "", isDeleted: true }, { where: { id } });
   return { "message": "Mensagem deletada com sucesso" };
 }
