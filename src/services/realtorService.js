@@ -88,7 +88,6 @@ async function findByPk(email, password = false, otp = false) {
 }
 
 async function findAll(page) {
-  try {
     const attributes = { exclude: ['otp', 'otp_ttl', 'password'] };
     if (page < 1) {
       return await Realtor.findAll({
@@ -148,15 +147,9 @@ async function findAll(page) {
     ));
 
     return { result, pagination };
-  } catch (error) {
-    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    error.status = error.status || 500;
-    throw error;
-  }
 }
 
 async function findByCpf(cpf, password = false, otp = false) {
-  try {
     const validatedCpf = validateCpf(cpf);
     const attributes = { exclude: [] };
     if (!otp) attributes.exclude.push('otp', 'otp_ttl');
@@ -178,15 +171,9 @@ async function findByCpf(cpf, password = false, otp = false) {
     realtor.totalRatings = await RealtorRating.count({ where: { receiver_email: realtor.email } });
 
     return realtor;
-  } catch (error) {
-    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    error.status = error.status || 500;
-    throw error;
-  }
 }
 
 async function findByRg(rg, password = false, otp = false) {
-  try {
     const validatedRg = validateString(rg);
     const attributes = { exclude: [] };
     if (!otp) attributes.exclude.push('otp', 'otp_ttl');
@@ -207,15 +194,9 @@ async function findByRg(rg, password = false, otp = false) {
     realtor.totalRatings = await RealtorRating.count({ where: { receiver_email: realtor.email } });
 
     return realtor;
-  } catch (error) {
-    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    error.status = error.status || 500;
-    throw error;
-  }
 }
 
 async function create(data, photo) {
-  try {
     const realtor = {
       email: validateEmail(data.email),
       name: validateString(data.name, 'O campo nome é obrigatório'),
@@ -260,15 +241,9 @@ async function create(data, photo) {
     }
 
     return { ...newRealtor.dataValues, profile };
-  } catch (error) {
-    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    error.status = error.status || 500;
-    throw error;
-  }
 }
 
 async function update(email, data, photo) {
-  try {
     const validatedEmail = validateEmail(email);
 
     if ((!data && !photo) || (Object.keys(data).length === 0 && !photo)) {
@@ -336,15 +311,9 @@ async function update(email, data, photo) {
     }
 
     return { ...updatedRealtor, profile };
-  } catch (error) {
-    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    error.status = error.status || 500;
-    throw error;
-  }
 }
 
 async function elevate(email, data, photo) {
-  try {
     const validatedEmail = validateEmail(email);
 
     const client = await Client.findByPk(validatedEmail);
@@ -396,11 +365,6 @@ async function elevate(email, data, photo) {
     }
 
     return { ...newRealtor.dataValues, profile };
-  } catch (error) {
-    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    error.status = error.status || 500;
-    throw error;
-  }
 }
 
 async function filter(data, page = 1) {
@@ -457,7 +421,6 @@ async function filter(data, page = 1) {
 }
 
 async function destroy(email) {
-  try {
     const validatedEmail = validateEmail(email);
 
     if (!await Realtor.findByPk(validatedEmail)) {
@@ -473,11 +436,6 @@ async function destroy(email) {
 
     await Realtor.destroy({ where: { email: validatedEmail } });
     return { message: 'Usuário apagado com sucesso' };
-  } catch (error) {
-    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    error.status = error.status || 500;
-    throw error;
-  }
 }
 
 export { create, destroy, elevate, filter, findAll, findByCpf, findByPk, findByRg, update };

@@ -62,7 +62,6 @@ export async function getAvgRateByRealstate(receiverEmail) {
 }
 
 async function findByPk(email, password = false, otp = false) {
-  try {
     const validatedEmail = validateEmail(email);
     const attributes = { exclude: [] };
     if (!otp) attributes.exclude.push(['otp', 'otp_ttl']);
@@ -89,11 +88,6 @@ async function findByPk(email, password = false, otp = false) {
     });
 
     return realstate;
-  } catch (error) {
-    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    error.status = error.status || 500;
-    throw error;
-  }
 }
 
 async function findAll(page) {
@@ -162,7 +156,6 @@ async function findAll(page) {
 }
 
 async function findByCnpj(cnpj, password = false, otp = false) {
-  try {
     const validatedCnpj = validateCnpj(cnpj);
     const attributes = { exclude: [] };
     if (!otp) attributes.exclude.push('email');
@@ -189,15 +182,9 @@ async function findByCnpj(cnpj, password = false, otp = false) {
     });
 
     return realstate;
-  } catch (error) {
-    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    error.status = error.status || 500;
-    throw error;
-  }
 }
 
 async function findByCreci(creci, password = false, otp = false) {
-  try {
     const validatedCreci = validateCreci(creci);
     const attributes = { exclude: [] };
     if (!otp) attributes.exclude.push('email');
@@ -224,11 +211,6 @@ async function findByCreci(creci, password = false, otp = false) {
     });
 
     return realstate;
-  } catch (error) {
-    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    error.status = error.status || 500;
-    throw error;
-  }
 }
 
 async function create(data, photo) {
@@ -283,7 +265,6 @@ async function create(data, photo) {
 }
 
 async function update(email, data, photo) {
-  try {
     const validatedEmail = validateEmail(email);
 
     if ((!data && !photo) || (Object.keys(data).length === 0 && !photo)) {
@@ -349,15 +330,9 @@ async function update(email, data, photo) {
     }
 
     return { ...updatedRealstate.dataValues, profile };
-  } catch (error) {
-    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    error.status = error.status || 500;
-    throw error;
-  }
 }
 
 async function elevate(email, data, photo) {
-  try {
     const validatedEmail = validateEmail(email);
 
     const client = await Client.findByPk(validatedEmail);
@@ -407,11 +382,6 @@ async function elevate(email, data, photo) {
     }
 
     return { ...newRealstate.dataValues, profile };
-  } catch (error) {
-    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    error.status = error.status || 500;
-    throw error;
-  }
 }
 
 async function filter(data, page = 1) {
@@ -473,7 +443,6 @@ async function filter(data, page = 1) {
 }
 
 async function destroy(email) {
-  try {
     const validatedEmail = validateEmail(email);
 
     if (!await Realstate.findByPk(validatedEmail)) {
@@ -489,11 +458,6 @@ async function destroy(email) {
 
     await Realstate.destroy({ where: { email: validatedEmail } });
     return { message: 'Usuário apagado com sucesso' };
-  } catch (error) {
-    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    error.status = error.status || 500;
-    throw error;
-  }
 }
 
 export { create, destroy, elevate, filter, findAll, findByCnpj, findByCreci, findByPk, update };
