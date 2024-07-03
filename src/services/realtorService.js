@@ -1,7 +1,7 @@
-import { initializeApp } from 'firebase/app';
-import { deleteObject, getDownloadURL, getStorage, ref, uploadBytesResumable } from 'firebase/storage';
-import { Op } from 'sequelize';
-import { v4 as uuid } from 'uuid';
+import {initializeApp} from 'firebase/app';
+import {deleteObject, getDownloadURL, getStorage, ref, uploadBytesResumable} from 'firebase/storage';
+import {Op} from 'sequelize';
+import {v4 as uuid} from 'uuid';
 
 import Client from '../db/models/Client.js';
 import Property from '../db/models/Property.js';
@@ -10,7 +10,6 @@ import RealtorPhoto from '../db/models/RealtorPhoto.js';
 import RealtorRating from '../db/models/RealtorRating.js';
 
 // import { getAvgRateByReceiver } from './ratingService.js';
-
 import ClientNotFound from '../errors/clientErrors/clientNotFound.js';
 import NoRealtorsFound from '../errors/realtorErrors/noRealtorsFound.js';
 import RealtorNotFound from '../errors/realtorErrors/realtorNotFound.js';
@@ -61,8 +60,7 @@ async function getAvgRateByReceiver(receiverEmail) {
 
   const total = ratings.length;
   const sum = ratings.reduce((acc, curr) => acc + curr.rating, 0);
-  const avg = ((sum / total) / 2).toFixed(2);
-  return avg;
+  return ((sum / total) / 2).toFixed(2);
 }
 
 async function findByPk(email, password = false, otp = false) {

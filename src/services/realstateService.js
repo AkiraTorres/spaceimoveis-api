@@ -1,7 +1,7 @@
-import { initializeApp } from 'firebase/app';
-import { deleteObject, getDownloadURL, getStorage, ref, uploadBytesResumable } from 'firebase/storage';
-import { Op } from 'sequelize';
-import { v4 as uuid } from 'uuid';
+import {initializeApp} from 'firebase/app';
+import {deleteObject, getDownloadURL, getStorage, ref, uploadBytesResumable} from 'firebase/storage';
+import {Op} from 'sequelize';
+import {v4 as uuid} from 'uuid';
 
 import Client from '../db/models/Client.js';
 import Realstate from '../db/models/Realstate.js';
@@ -16,9 +16,11 @@ import {
   validateCnpj,
   validateCreci,
   validateEmail,
-  validateIfUniqueCnpj, validateIfUniqueCreci,
+  validateIfUniqueCnpj,
+  validateIfUniqueCreci,
   validateIfUniqueEmail,
-  validatePassword, validatePhone,
+  validatePassword,
+  validatePhone,
   validateString,
   validateUF,
 } from '../validators/inputValidators.js';
@@ -56,8 +58,7 @@ export async function getAvgRateByRealstate(receiverEmail) {
 
   const total = ratings.length;
   const sum = ratings.reduce((acc, curr) => acc + curr.rating, 0);
-  const avg = ((sum / total) / 2).toFixed(2);
-  return avg;
+  return ((sum / total) / 2).toFixed(2);
 }
 
 async function findByPk(email, password = false, otp = false) {
