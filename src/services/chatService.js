@@ -9,8 +9,8 @@ export async function create(email1, email2) {
   const validatedEmail1 = validateEmail(email1);
   const validatedEmail2 = validateEmail(email2);
 
-  const user1 = await find(validatedEmail1);
-  const user2 = await find(validatedEmail2);
+  const user1 = await find(validatedEmail1, false, false, true);
+  const user2 = await find(validatedEmail2, false, false, true);
 
   if (!user1 || !user2) {
     throw new Error('Usuário não encontrado');
@@ -36,7 +36,7 @@ export async function create(email1, email2) {
 export async function findUserChats(email) {
   const validatedEmail = validateEmail(email);
 
-  const user = await find(validatedEmail);
+  const user = await find(validatedEmail, false, false, true);
 
   if (!user) {
     throw new Error('Usuário não encontrado');
@@ -50,8 +50,8 @@ export async function findUserChats(email) {
 
   return Promise.all(chats.map(async chat => {
     const editedChat = chat;
-    const user1 = await find(chat.user1);
-    const user2 = await find(chat.user2);
+    const user1 = await find(chat.user1, false, false, true);
+    const user2 = await find(chat.user2, false, false, true);
 
     editedChat.user1 = user1;
     editedChat.user2 = user2;
@@ -64,8 +64,8 @@ export async function findChat(email1, email2) {
   const validatedEmail1 = validateEmail(email1);
   const validatedEmail2 = validateEmail(email2);
 
-  const user1 = await find(validatedEmail1);
-  const user2 = await find(validatedEmail2);
+  const user1 = await find(validatedEmail1, false, false, true);
+  const user2 = await find(validatedEmail2, false, false, true);
 
   if (!user1 || !user2) {
     throw new Error('Usuário não encontrado');
@@ -95,8 +95,8 @@ export async function findChatByChatId(chatId) {
     throw new Error('Chat não encontrado');
   }
 
-  chat.user1 = await find(chat.user1);
-  chat.user2 = await find(chat.user2);
+  chat.user1 = await find(chat.user1, false, false, true);
+  chat.user2 = await find(chat.user2, false, false, true);
 
   return chat;
 }

@@ -10,7 +10,7 @@ export async function createMessage({ chatId, sender, text }) {
   const validatedChatId = validateString(chatId);
   const validatedText = validateString(text);
 
-  const user = await find(validatedEmail);
+  const user = await find(validatedEmail, false, false, true);
   if (!user) {
     const error = new Error('Usuário não encontrado');
     error.status = 404;
@@ -50,14 +50,14 @@ export async function createMessage({ chatId, sender, text }) {
 export async function findMessages(chatId, email) {
   const validatedEmail = validateEmail(email);
 
-  const user = await find(validatedEmail);
+  const user = await find(validatedEmail, false, false, true);
   if (!user) {
     const error = new Error('Usuário não encontrado');
     error.status = 404;
     throw error;
   }
 
-  const chats = await findUserChats(validatedEmail);
+  const chats = await findUserChats(validatedEmail, false, false, true);
 
   if (!chats || !chats.find(chat => chat.id === chatId)) {
     const error =  Error('Chat não encontrado');
@@ -96,7 +96,7 @@ export async function findMessages(chatId, email) {
 export async function deleteMessage(id, sender) {
   const validatedEmail = validateEmail(sender);
   const message = await Message.findByPk(id);
-  const user = await find(validatedEmail);
+  const user = await find(validatedEmail, false, false, true);
 
   if (!user) {
     const error = new Error('Usuário não encontrado');

@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 import { v4 as uuid } from 'uuid';
 
 import { Op } from 'sequelize';
-import Client from '../db/models/Client.js';
+import Client from '../db/models/Client.js'
 import Owner from '../db/models/Owner.js';
 import Photo from '../db/models/Photo.js';
 import Property from '../db/models/Property.js';
@@ -13,6 +13,7 @@ import ShareToRealstate from '../db/models/ShareToRealstate.js';
 import ShareToRealtor from '../db/models/ShareToRealtor.js';
 import UserMessages from '../db/models/UserMessages.js';
 
+import * as adminService from './adminService.js';
 import * as clientService from './clientService.js';
 import * as ownerService from './ownerService.js';
 import * as realstateService from './realstateService.js';
@@ -38,7 +39,7 @@ export async function findAll() {
   }
 }
 
-export async function find(email, pass = false, otp = false) {
+export async function find(email, pass = false, otp = false, allowAdm = false) {
   if (email) {
     try {
       return await clientService.findByPk(email, pass, otp);
@@ -55,6 +56,12 @@ export async function find(email, pass = false, otp = false) {
     try {
       return await realstateService.findByPk(email, pass, otp);
     } catch (err) { /* */ }
+
+    if (allowAdm) {
+      try {
+        return await adminService.findByPk(email, pass, otp);
+      } catch (err) { /* */ }
+    }
   }
   const error = new Error('Usuário não encontrado');
   error.status = 404;
