@@ -214,7 +214,6 @@ async function findByCreci(creci, password = false, otp = false) {
 }
 
 async function create(data, photo) {
-  try {
     const userData = {
       email: validateEmail(data.email),
       company_name: validateString(data.company_name, 'O campo razão social é obrigatório'),
@@ -231,6 +230,7 @@ async function create(data, photo) {
       social_one: data.socialOne ? validateString(data.socialOne) : null,
       social_two: data.socialTwo ? validateString(data.socialTwo) : null,
       bio: data.bio ? validateString(data.bio) : null,
+      idPhone: data.idPhone ? validateString(data.idPhone) : null,
       subscription: data.subscription ? validateString(data.subscription) : 'free',
     };
 
@@ -257,11 +257,6 @@ async function create(data, photo) {
     }
 
     return { ...newRealstate.dataValues, profile };
-  } catch (error) {
-    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    error.status = error.status || 500;
-    throw error;
-  }
 }
 
 async function update(email, data, photo) {
@@ -293,10 +288,8 @@ async function update(email, data, photo) {
         bio: data.bio ? validateString(data.bio) : oldRealstate.bio,
         social_one: data.socialOne ? validateString(data.socialOne) : oldRealstate.social_one,
         social_two: data.socialTwo ? validateString(data.socialTwo) : oldRealstate.social_two,
-
-        subscription: data.subscription
-          ? validateString(data.subscription)
-          : oldRealstate.subscription,
+        idPhone: data.idPhone ? validateString(data.idPhone) : oldRealstate.idPhone,
+        subscription: data.subscription ? validateString(data.subscription) : oldRealstate.subscription,
       };
 
       if (realstate.email !== oldRealstate.email) await validateIfUniqueEmail(realstate.email);
@@ -356,6 +349,7 @@ async function elevate(email, data, photo) {
       bio: data.bio ? validateString(data.bio) : null,
       social_one: data.socialOne ? validateString(data.socialOne) : null,
       social_two: data.socialTwo ? validateString(data.socialTwo) : null,
+      idPhone: data.idPhone ? validateString(data.idPhone) : null,
       subscription: data.subscription ? validateString(data.subscription) : 'free',
     };
 

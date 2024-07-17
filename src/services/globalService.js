@@ -25,18 +25,12 @@ dotenv.config();
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 export async function findAll() {
-  try {
     const clients = await clientService.findAll(0);
     const owners = await ownerService.findAll(0);
     const realtors = await realtorService.findAll(0);
     const realstate = await realstateService.findAll(0);
 
     return { ...clients, ...owners, ...realtors, ...realstate };
-  } catch (error) {
-    error.status = error.status || 500;
-    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    throw error;
-  }
 }
 
 export async function find(email, pass = false, otp = false, allowAdm = false) {
@@ -69,7 +63,6 @@ export async function find(email, pass = false, otp = false, allowAdm = false) {
 }
 
 export async function changePassword(email, newPassword) {
-  try {
     const validatedEmail = validateEmail(email);
 
     const user = await find(validatedEmail, true);
@@ -93,11 +86,6 @@ export async function changePassword(email, newPassword) {
     if (result === 0) throw new Error('Erro ao atualizar a senha');
 
     return find(validatedEmail);
-  } catch (error) {
-    error.status = error.status || 500;
-    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    throw error;
-  }
 }
 
 export async function rescuePassword(email) {

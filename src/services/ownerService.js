@@ -29,7 +29,6 @@ const app = initializeApp(firebaseConfig);
 const storage = getStorage(app);
 
 async function findAll(page) {
-  try {
     if (page < 1) {
       return await Owner.findAll({
         attributes: { exclude: ['otp', 'otp_ttl', 'password'] },
@@ -77,11 +76,6 @@ async function findAll(page) {
     };
 
     return { result, pagination };
-  } catch (error) {
-    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    error.status = error.status || 500;
-    throw error;
-  }
 }
 
 async function findByPk(email, password = false, otp = false) {
@@ -106,7 +100,6 @@ async function findByPk(email, password = false, otp = false) {
 }
 
 async function findByCpf(cpf, password = false, otp = false) {
-  try {
     const validatedCpf = validateCpf(cpf);
     const attributes = { exclude: [] };
     if (!otp) attributes.exclude.push('otp', 'otp_ttl');
@@ -125,15 +118,9 @@ async function findByCpf(cpf, password = false, otp = false) {
     const properties = await Property.findAll({ where: { owner_email: realtor.email } });
 
     return { ...realtor.dataValues, profile, properties };
-  } catch (error) {
-    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    error.status = error.status || 500;
-    throw error;
-  }
 }
 
 async function findByRg(rg, password = false, otp = false) {
-  try {
     const validatedRg = validateString(rg);
     const attributes = { exclude: [] };
     if (!otp) attributes.exclude.push('otp', 'otp_ttl');
@@ -152,15 +139,9 @@ async function findByRg(rg, password = false, otp = false) {
     const properties = await Property.findAll({ where: { owner_email: realtor.email } });
 
     return { ...realtor.dataValues, profile, properties };
-  } catch (error) {
-    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    error.status = error.status || 500;
-    throw error;
-  }
 }
 
 async function create(data, photo) {
-  try {
     const owner = {
       email: validateEmail(data.email),
       name: validateString(data.name, 'O campo nome é obrigatório'),
@@ -175,6 +156,7 @@ async function create(data, photo) {
       city: validateString(data.city, 'O campo cidade é obrigatório'),
       state: validateUF(data.state),
       bio: data.bio ? validateString(data.bio) : null,
+      idPhone: data.idPhone ? validateString(data.idPhone) : null,
     };
 
     await validateIfUniqueEmail(owner.email);
@@ -200,15 +182,9 @@ async function create(data, photo) {
     }
 
     return { ...newOwner.dataValues, profile };
-  } catch (error) {
-    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    error.status = error.status || 500;
-    throw error;
-  }
 }
 
 async function update(email, data, photo) {
-  try {
     const validatedEmail = validateEmail(email);
 
     if ((!data && !photo) || (Object.keys(data).length === 0 && !photo)) {
@@ -235,6 +211,7 @@ async function update(email, data, photo) {
         city: data.city ? validateString(data.city, 'O campo cidade é obrigatório') : oldOwner.city,
         state: data.state ? validateUF(data.state) : oldOwner.state,
         bio: data.bio ? validateString(data.bio) : oldOwner.bio,
+        idPhone: data.idPhone ? validateString(data.idPhone) : oldOwner.idPhone,
       };
 
       if (owner.email !== validatedEmail) await validateIfUniqueEmail(owner.email);
@@ -268,15 +245,9 @@ async function update(email, data, photo) {
     }
 
     return { ...updatedOwner, profile };
-  } catch (error) {
-    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    error.status = error.status || 500;
-    throw error;
-  }
 }
 
 async function elevate(email, data, photo) {
-  try {
     const validatedEmail = validateEmail(email);
 
     const client = await Client.findByPk(validatedEmail);
@@ -298,6 +269,7 @@ async function elevate(email, data, photo) {
       city: validateString(data.city, 'O campo cidade é obrigatório'),
       state: validateUF(data.state),
       bio: data.bio ? validateString(data.bio) : null,
+      idPhone: data.idPhone ? validateString(data.idPhone) : null,
     };
 
     await validateIfUniqueRg(owner.rg);
@@ -323,15 +295,9 @@ async function elevate(email, data, photo) {
     }
 
     return { ...newOwner.dataValues, profile };
-  } catch (error) {
-    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    error.status = error.status || 500;
-    throw error;
-  }
 }
 
 async function destroy(email) {
-  try {
     const validatedEmail = validateEmail(email);
 
     if (!await Owner.findByPk(validatedEmail)) {
@@ -347,11 +313,6 @@ async function destroy(email) {
 
     await Owner.destroy({ where: { email: validatedEmail } });
     return { message: 'Usuário apagado com sucesso' };
-  } catch (error) {
-    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    error.status = error.status || 500;
-    throw error;
-  }
 }
 
 export { create, destroy, elevate, findAll, findByCpf, findByPk, findByRg, update };

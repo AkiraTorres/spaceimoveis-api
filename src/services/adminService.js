@@ -133,6 +133,7 @@ export async function create(data, photo) {
     name: validateString(data.name, "O campo 'nome' é obrigatório"),
     password: validatePassword(data.password, "O campo 'senha' é obrigatório"),
     cpf: validateCpf(data.cpf, "O campo 'cpf' é obrigatório"),
+    idPhone: data.idPhone ? validateString(data.idPhone) : null,
   };
 
   // await validateIfUniqueEmail(admin.email);
@@ -179,6 +180,7 @@ export async function update(email, data, photo) {
       email: data.email ? validateEmail(data.email) : oldAdmin.email,
       name: data.name ? validateString(data.name, 'O campo nome é obrigatório') : oldAdmin.name,
       cpf: data.cpf ? validateCpf(data.cpf) : oldAdmin.cpf,
+      idPhone: data.idPhone ? validateString(data.idPhone) : oldAdmin.idPhone,
     };
 
     // if (admin.email !== oldAdmin.email) await validateIfUniqueEmail(admin.email);

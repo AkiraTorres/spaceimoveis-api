@@ -5,7 +5,6 @@ import NoClientsFound from '../errors/clientErrors/noClientsFound.js';
 import { validateEmail, validateIfUniqueEmail, validatePassword, validatePhone, validateString } from '../validators/inputValidators.js';
 
 async function findAll(page) {
-  try {
     if (page < 1) {
       return await Client.findAll({
         attributes: { exclude: ['otp', 'otp_ttl', 'password'] },
@@ -44,11 +43,6 @@ async function findAll(page) {
     };
 
     return { clients, pagination };
-  } catch (error) {
-    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    error.status = error.status || 500;
-    throw error;
-  }
 }
 
 async function findByPk(email, password = false, otp = false) {
@@ -69,32 +63,20 @@ async function findByPk(email, password = false, otp = false) {
 }
 
 async function create(data) {
-  try {
-    const userData = {};
+    const client = {};
 
-    userData.email = validateEmail(data.email);
-    userData.name = validateString(data.name, 'O campo nome é obrigatório');
-
-    if (data.password) userData.password = validatePassword(data.password);
-    else userData.password = null;
-
-    if (data.phone) userData.phone = validatePhone(data.phone);
-    else userData.phone = null;
-
-    const client = userData;
+    client.email = validateEmail(data.email);
+    client.name = validateString(data.name, 'O campo nome é obrigatório');
+    client.password = validatePassword(data.password) || null;
+    client.phone = validatePhone(data.phone) || null;
+    client.idPhone = validateString(data.idPhone) || null;
 
     await validateIfUniqueEmail(client.email);
 
-    return await Client.create(client);
-  } catch (error) {
-    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    error.status = error.status || 500;
-    throw error;
-  }
+    return Client.create(client);
 }
 
 async function update(email, data) {
-  try {
     const validatedEmail = validateEmail(email);
 
     const oldClient = await Client.findByPk(validatedEmail);
@@ -103,38 +85,26 @@ async function update(email, data) {
     }
 
     const client = {
-      email: data.email || oldClient.email,
-      name: data.name || oldClient.name,
-      phone: data.phone || oldClient.phone,
+      email: validatedEmail(data.email) || oldClient.email,
+      name: validateString(data.name) || oldClient.name,
+      phone: validatePhone(data.phone) || oldClient.phone,
+      idPhone: validateString(data.idPhone) || oldClient.idPhone,
     };
 
-    client.email = validateEmail(client.email);
     if (client.email !== validatedEmail) await validateIfUniqueEmail(client.email);
-    client.name = validateString(client.name, 'O campo nome é obrigatório');
-    if (client.phone) client.phone = validatePhone(client.phone);
 
-    return await Client.update(client, { where: { email: validatedEmail } });
-  } catch (error) {
-    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    error.status = error.status || 500;
-    throw error;
-  }
+    return Client.update(client, { where: { email: validatedEmail } });
 }
 
 async function destroy(email) {
-  try {
     const validatedEmail = validateEmail(email);
 
     if (!await Client.findByPk(validatedEmail)) {
       throw new ClientNotFound();
     }
+
     await Client.destroy({ where: { email: validatedEmail } });
     return { message: 'Usuário apagado com sucesso' };
-  } catch (error) {
-    error.message = error.message || `Erro ao se conectar com o banco de dados: ${error}`;
-    error.status = error.status || 500;
-    throw error;
-  }
 }
 
 export { create, destroy, findAll, findByPk, update };
