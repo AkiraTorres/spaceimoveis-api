@@ -73,6 +73,10 @@ const Realstate = sequelize.define('realstates', {
     allowNull: true,
     defaultValue: 'free',
   },
+  idPhone: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+  },
   otp: {
     type: DataTypes.STRING,
     allowNull: true,
