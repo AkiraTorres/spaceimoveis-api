@@ -116,6 +116,7 @@ export async function createFileMessage({ chatId, sender, file, text }) {
   if (!user) {
     const error = new Error('Usuário não encontrado');
     error.status = 404;
+    console.error(error);
     throw error;
   }
 
@@ -123,12 +124,14 @@ export async function createFileMessage({ chatId, sender, file, text }) {
   if (!chat) {
     const error = new Error('Chat não encontrado');
     error.status = 404;
+    console.error(error);
     throw error;
   }
 
   if (!file) {
     const error = new Error('Arquivo não encontrado');
     error.status = 400;
+    console.error(error);
     throw error;
   }
 
