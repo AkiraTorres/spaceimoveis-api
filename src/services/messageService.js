@@ -139,7 +139,7 @@ export async function createFileMessage({ chatId, sender, file, text, type, file
     chatId: validatedChatId,
     sender: validatedEmail,
     text: validateString(validatedText),
-    file: file.buffer,
+    file: file,
     fileName: fileName,
     type: type,
   });
