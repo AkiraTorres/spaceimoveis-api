@@ -23,4 +23,6 @@ router.post('/', verifyJwt, upload.any(), controller.create);
 router.put('/:id', verifyJwt, matchSellerEmail, upload.any(), controller.update);
 router.delete('/:id', verifyJwt, matchSellerEmail, controller.destroy);
 
+router.post('/test-picture', upload.any(), controller.testPicture);
+
 export default router;

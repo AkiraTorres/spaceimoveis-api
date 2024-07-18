@@ -147,3 +147,15 @@ export const destroy = asyncHandler(async (req, res, next) => {
     next(error);
   }
 });
+
+export const testPicture = asyncHandler(async (req, res, next) => {
+  try {
+    const {files} = req;
+
+    console.log(files);
+
+    res.status(200).json({files});
+  } catch(error) {
+    next(error);
+  }
+});

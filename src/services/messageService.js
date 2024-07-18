@@ -1,9 +1,16 @@
+import { initializeApp } from 'firebase/app';
+import { deleteObject, getDownloadURL, getStorage, ref, uploadBytesResumable } from 'firebase/storage';
+
 import Message from "../db/models/Message.js";
+import MessageFile from "../db/models/MessageFile.js";
 
 import {findChatByChatId, findUserChats} from "./chatService.js";
 import {validateEmail, validateString} from "../validators/inputValidators.js";
 import {find} from "./globalService.js";
-import MessageFile from "../db/models/MessageFile.js";
+import firebaseConfig from '../config/firebase.js';
+
+const app = initializeApp(firebaseConfig);
+const storage = getStorage(app);
 
 // TODO: precisa salvar as mensagens criptografadas no db
 export async function createMessage({ chatId, sender, text }) {
@@ -135,11 +142,16 @@ export async function createFileMessage({ chatId, sender, file, text, type, file
     throw error;
   }
 
+  const storageRef = ref(storage, `files/${validatedChatId}/${file.originalname}`);
+  const metadata = { contentType: file.mimetype };
+  const snapshot = await uploadBytesResumable(storageRef, file.buffer, metadata);
+  const downloadUrl = await getDownloadURL(snapshot.ref);
+
   const m = await MessageFile.create({
     chatId: validatedChatId,
     sender: validatedEmail,
     text: validateString(validatedText),
-    file: file,
+    url: downloadUrl,
     fileName: fileName,
     type: type,
   });

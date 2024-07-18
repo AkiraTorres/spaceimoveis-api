@@ -21,9 +21,22 @@ io.on('connection', socket => {
     io.to(data.chatId).emit("message", msgRes);
   });
 
-  socket.on("upload", async data => {
-    const msgRes = await createFileMessage({chatId: data.chatId, sender: data.email, file: data.file, text: data.text, type: data.type, fileName: data.fileName});
-
+  socket.on("upload", async (data, callback) => {
+    console.log(data.file);
+    let msgRes;
+    try {
+      msgRes = await createFileMessage({
+        chatId: data.chatId,
+        sender: data.email,
+        file: data.file,
+        text: data.text,
+        type: data.type,
+        fileName: data.fileName
+      });
+    } catch (error) {
+      console.error(error);
+      callback(error);
+    }
     io.to(data.chatId).emit("message", msgRes);
   });
 
