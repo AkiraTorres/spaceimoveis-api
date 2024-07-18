@@ -24,6 +24,11 @@ const Message = sequelize.define('messages', {
     allowNull: false,
     defaultValue: false,
   },
+  type: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    defaultValue: 'text',
+  },
   createdAt: {
     type: DataTypes.DATE,
     allowNull: false,

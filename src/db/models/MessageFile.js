@@ -25,15 +25,15 @@ const MessageFile = sequelize.define('message_files', {
     type: DataTypes.STRING,
     allowNull: true,
   },
-  url: {
-    type: DataTypes.STRING,
+  file: {
+    type: DataTypes.STRING(2048),
     allowNull: false,
   },
   fileName: {
     type: DataTypes.STRING,
     allowNull: false,
   },
-  fileType: {
+  type: {
     type: DataTypes.STRING,
     allowNull: false,
   },
