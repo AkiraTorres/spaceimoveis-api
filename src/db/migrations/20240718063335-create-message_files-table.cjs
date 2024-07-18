@@ -11,7 +11,7 @@ module.exports = {
         defaultValue: Sequelize.DataTypes.UUID,
       },
       chatId: {
-        type: Sequelize.DataTypes.INTEGER,
+        type: Sequelize.DataTypes.UUID,
         allowNull: false,
         references: {
           model: 'chats',
