@@ -1,8 +1,15 @@
 import Message from "../db/models/Message.js";
+import { initializeApp } from "firebase/app";
+import { deleteObject, getDownloadURL, getStorage, ref, uploadBytesResumable } from "firebase/storage";
 
 import {findChatByChatId, findUserChats} from "./chatService.js";
 import {validateEmail, validateString} from "../validators/inputValidators.js";
 import {find} from "./globalService.js";
+import firebaseConfig from "../config/firebase.js";
+import MessageFile from "../db/models/MessageFile.js";
+
+const app = initializeApp(firebaseConfig);
+const storage = getStorage(app);
 
 // TODO: precisa salvar as mensagens criptografadas no db
 export async function createMessage({ chatId, sender, text }) {
@@ -14,6 +21,12 @@ export async function createMessage({ chatId, sender, text }) {
   if (!user) {
     const error = new Error('Usuário não encontrado');
     error.status = 404;
+    throw error;
+  }
+
+  if (!text || text === '') {
+    const error = new Error('Não se pode enviar uma mensagem vazia');
+    error.status = 400;
     throw error;
   }
 
@@ -74,7 +87,12 @@ export async function findMessages(chatId, email) {
     throw e;
   }
 
-  const messages = await Message.findAll({ where: { chatId }, raw: true });
+  const messages = await Promise.all(
+    await Message.findAll({ where: { chatId }, raw: true }),
+    await MessageFile.findAll({ where: { chatId }, raw: true }),
+  );
+
+  messages.sort((a, b) => a.createdAt - b.createdAt);
 
   return Promise.all(messages.map(async msg => {
     const editedMsg = msg;
@@ -91,6 +109,59 @@ export async function findMessages(chatId, email) {
 
     return editedMsg;
   }));
+}
+
+export async function createFileMessage({ chatId, sender, file, text }) {
+  const validatedEmail = validateEmail(sender);
+  const validatedChatId = validateString(chatId);
+  const validatedText = validateString(text);
+
+  const user = await find(validatedEmail, false, false, true);
+  if (!user) {
+    const error = new Error('Usuário não encontrado');
+    error.status = 404;
+    throw error;
+  }
+
+  const chat = await findChatByChatId(validatedChatId);
+  if (!chat) {
+    const error = new Error('Chat não encontrado');
+    error.status = 404;
+    throw error;
+  }
+
+  if (!file) {
+    const error = new Error('Arquivo não encontrado');
+    error.status = 400;
+    throw error;
+  }
+
+  const storageRef = ref(storage, `files/${validatedChatId}/${file.originalname}`);
+  const metadata = { contentType: file.mimetype };
+  const snapshot = await uploadBytesResumable(storageRef, file.buffer, metadata);
+  const downloadUrl = await getDownloadURL(snapshot.ref);
+
+  const m = await MessageFile.create({
+    chatId: validatedChatId,
+    sender: validatedEmail,
+    text: validateString(validatedText),
+    url: downloadUrl,
+    fileName: file.originalname,
+    fileType: file.mimetype,
+  });
+
+  const message = m.get({ plain: true });
+
+  const receiver = chat.user1.email === user.email ? chat.user2 : chat.user1;
+
+  message.senderName = user.name;
+  message.senderEmail = user.email;
+  message.senderProfile = user.profile;
+  message.receiverName = receiver.name;
+  message.receiverEmail = receiver.email;
+  message.receiverProfile = receiver.profile;
+
+  return message;
 }
 
 export async function deleteMessage(id, sender) {

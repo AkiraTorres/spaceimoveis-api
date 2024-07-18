@@ -4,7 +4,6 @@ const Photo = sequelize.define('photos', {
   id: {
     type: DataTypes.UUID,
     primaryKey: true,
-    autoIncrement: false,
     allowNull: false,
   },
   property_id: {

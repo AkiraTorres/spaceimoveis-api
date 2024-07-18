@@ -1,6 +1,7 @@
 import { io } from "./server.js";
+
 import * as messageService from "./services/messageService.js";
-import { findMessages } from "./services/messageService.js";
+import {createFileMessage, findMessages} from "./services/messageService.js";
 
 io.on('connection', socket => {
   socket.on("open_chat", async (data, callback) => {
@@ -19,6 +20,13 @@ io.on('connection', socket => {
 
     const msgRes = await messageService.createMessage(msgData);
     io.to(data.chatId).emit("message", msgRes);
+  });
+
+  socket.on("upload", async data => {
+    console.log(data);
+    // const msgRes = await createFileMessage({chatId: data.chatId, sender: data.email, file: data.file, text: data.text});
+
+    // io.to(data.chatId).emit("message", msgRes);
   });
 
   socket.on('delete_message', async data => {

@@ -26,6 +26,7 @@ const io = new Server(httpServer, {
   cors: {
     origin: "*",
     credentials: true,
+    maxHttpBufferSize: 1e8,
     // methods: ["GET", "POST"]
   }
 });
