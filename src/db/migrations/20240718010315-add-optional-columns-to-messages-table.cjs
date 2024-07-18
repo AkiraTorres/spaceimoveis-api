@@ -17,16 +17,10 @@ module.exports = {
       type: Sequelize.STRING,
       allowNull: true,
     });
-
-    await queryInterface.addColumn()
   },
-
-  async down(queryInterface, Sequelize) {
-    /**
-     * Add reverting commands here.
-     *
-     * Example:
-     * await queryInterface.dropTable('users');
-     */
+  async down(queryInterface) {
+    await queryInterface.removeColumn('messages', 'is_read');
+    await queryInterface.removeColumn('messages', 'file');
+    await queryInterface.removeColumn('messages', 'file_type');
   }
 };
