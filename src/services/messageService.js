@@ -107,7 +107,7 @@ export async function findMessages(chatId, email) {
   }));
 }
 
-export async function createFileMessage({ chatId, sender, file, text }) {
+export async function createFileMessage({ chatId, sender, file, text, type, fileName }) {
   const validatedEmail = validateEmail(sender);
   const validatedChatId = validateString(chatId);
   const validatedText = validateString(text);
@@ -140,8 +140,8 @@ export async function createFileMessage({ chatId, sender, file, text }) {
     sender: validatedEmail,
     text: validateString(validatedText),
     file: file.buffer,
-    fileName: file.originalname,
-    type: file.mimetype,
+    fileName: fileName,
+    type: type,
   });
 
   const message = m.get({ plain: true });
