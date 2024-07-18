@@ -141,7 +141,7 @@ export async function createFileMessage({ chatId, sender, file, text }) {
     text: validateString(validatedText),
     file: file.buffer,
     fileName: file.originalname,
-    fileType: file.mimetype,
+    type: file.mimetype,
   });
 
   const message = m.get({ plain: true });
