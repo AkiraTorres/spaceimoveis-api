@@ -214,6 +214,7 @@ async function create(data, photo) {
       bio: data.bio ? validateString(data.bio) : null,
       social_one: data.socialOne ? validateString(data.socialOne) : null,
       social_two: data.socialTwo ? validateString(data.socialTwo) : null,
+      idPhone: data.idPhone ? validateString(data.idPhone) : null,
       subscription: data.subscription ? validateString(data.subscription) : 'free',
     };
 
@@ -273,10 +274,8 @@ async function update(email, data, photo) {
         bio: data.bio ? validateString(data.bio) : oldRealtor.bio,
         social_one: data.socialOne ? validateString(data.socialOne) : oldRealtor.social_one,
         social_two: data.socialTwo ? validateString(data.socialTwo) : oldRealtor.social_two,
-
-        subscription: data.subscription
-          ? validateString(data.subscription)
-          : oldRealtor.subscription,
+        idPhone: data.idPhone ? validateString(data.idPhone) : oldRealtor.idPhone,
+        subscription: data.subscription ? validateString(data.subscription) : oldRealtor.subscription,
       };
 
       if (realtor.email !== oldRealtor.email) await validateIfUniqueEmail(realtor.email);
@@ -338,6 +337,7 @@ async function elevate(email, data, photo) {
       bio: data.bio ? validateString(data.bio) : null,
       social_one: data.socialOne ? validateString(data.socialOne) : null,
       social_two: data.socialTwo ? validateString(data.socialTwo) : null,
+      idPhone: data.idPhone ? validateString(data.idPhone) : null,
       subscription: data.subscription ? validateString(data.subscription) : 'free',
     };
 
