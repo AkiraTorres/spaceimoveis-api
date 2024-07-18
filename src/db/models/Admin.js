@@ -22,7 +22,7 @@ const Admin = sequelize.define('admins', {
   },
   idPhone: {
     type: DataTypes.INTEGER,
-    allowNull: false,
+    allowNull: true,
   },
   otp: {
     type: DataTypes.STRING,

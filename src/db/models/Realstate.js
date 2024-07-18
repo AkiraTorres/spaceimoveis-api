@@ -75,7 +75,7 @@ const Realstate = sequelize.define('realstates', {
   },
   idPhone: {
     type: DataTypes.INTEGER,
-    allowNull: false,
+    allowNull: true,
   },
   otp: {
     type: DataTypes.STRING,

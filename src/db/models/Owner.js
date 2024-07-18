@@ -67,7 +67,7 @@ const Owner = sequelize.define('owners', {
   },
   idPhone: {
     type: DataTypes.INTEGER,
-    allowNull: false,
+    allowNull: true,
   },
   otp: {
     type: DataTypes.STRING,

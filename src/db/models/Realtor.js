@@ -79,7 +79,7 @@ const Realtor = sequelize.define('realtors', {
   },
   idPhone: {
     type: DataTypes.INTEGER,
-    allowNull: false,
+    allowNull: true,
   },
   otp: {
     type: DataTypes.STRING,
