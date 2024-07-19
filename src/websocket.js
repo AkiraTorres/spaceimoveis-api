@@ -35,7 +35,7 @@ io.on('connection', socket => {
       });
     } catch (error) {
       console.error(error);
-      callback(error);
+      return callback({ error: "Erro ao enviar arquivo" });
     }
     io.to(data.chatId).emit("message", msgRes);
   });
