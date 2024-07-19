@@ -5,7 +5,7 @@ const MessageFile = sequelize.define('message_files', {
     type: DataTypes.UUID,
     primaryKey: true,
     allowNull: false,
-    defaultValue: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
   },
   chatId: {
     type: DataTypes.UUID,
