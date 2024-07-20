@@ -26,7 +26,7 @@ const MessageFile = sequelize.define('message_files', {
     allowNull: true,
   },
   url: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING(2048),
     allowNull: false,
   },
   fileName: {
