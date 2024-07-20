@@ -1,5 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { deleteObject, getDownloadURL, getStorage, ref, uploadBytesResumable } from 'firebase/storage';
+import { v4 as uuid } from 'uuid';
 
 import Message from "../db/models/Message.js";
 import MessageFile from "../db/models/MessageFile.js";
@@ -142,12 +143,15 @@ export async function createFileMessage({ chatId, sender, file, text, type, file
     throw error;
   }
 
-  const storageRef = ref(storage, `files/${validatedChatId}/${fileName}`);
+  const msgId = uuid();
+
+  const storageRef = ref(storage, `files/${validatedChatId}/${msgId}`);
   const metadata = { contentType: file.mimetype };
   const snapshot = await uploadBytesResumable(storageRef, file.buffer, metadata);
   const downloadUrl = await getDownloadURL(snapshot.ref);
 
   const m = await MessageFile.create({
+    id: msgId,
     chatId: validatedChatId,
     sender: validatedEmail,
     text: validateString(validatedText),
