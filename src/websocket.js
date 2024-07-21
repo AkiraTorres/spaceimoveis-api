@@ -34,11 +34,11 @@ io.on('connection', socket => {
         cT: data.contentType,
         fileName: data.fileName
       });
+      io.to(data.chatId).emit("message", msgRes);
     } catch (error) {
       console.error(error);
-      callback({ error: error.message, status: error.status });
+      callback(error);
     }
-    io.to(data.chatId).emit("message", msgRes);
   });
 
   socket.on('delete_message', async data => {
