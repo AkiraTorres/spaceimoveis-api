@@ -146,8 +146,26 @@ export async function createFileMessage({ chatId, sender, file, text, type, file
 
   const msgId = uuid();
 
+  const fileExtension = fileName.split('.').get(-1);
+
+  let contentType = '';
+  if (type === 'image') {
+    contentType = `image/${fileExtension}`;
+  } else if (type === 'audio') {
+    contentType = `audio/${fileExtension}`;
+  } else if (type === 'video') {
+    contentType = `video/${fileExtension}`;
+  } else if (type === 'file') {
+    contentType = `application/${fileExtension}`;
+  } else {
+    const error = new Error('Tipo de arquivo inválido');
+    error.status = 400;
+    console.error(error);
+    throw error;
+  }
+
   const storageRef = ref(storage, `files/${validatedChatId}/${msgId}-${fileName}`);
-  const metadata = { contentType: file.mimetype };
+  const metadata = { contentType };
   const snapshot = await uploadBytesResumable(storageRef, file.buffer, metadata);
   const downloadUrl = await getDownloadURL(snapshot.ref);
 
@@ -158,7 +176,7 @@ export async function createFileMessage({ chatId, sender, file, text, type, file
     text: validatedText,
     url: downloadUrl,
     fileName: fileName,
-    type: type,
+    type: type, // TODO: alter type in the db to be a enum type with fields: image, audio, video, file
   });
 
   const message = m.get({ plain: true });
