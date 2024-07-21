@@ -118,7 +118,8 @@ export async function findMessages(chatId, email) {
 export async function createFileMessage({ chatId, sender, file, text, type, fileName }) {
   const validatedEmail = validateEmail(sender);
   const validatedChatId = validateString(chatId);
-  const validatedText = text === "" ? "" : validateString(text);
+  // const validatedText = text === "" ? "" : validateString(text);
+  const validatedText = text; // TODO: text can be empty, needs to change the validation string function later to add this option
 
   const user = await find(validatedEmail, false, false, true);
   if (!user) {
