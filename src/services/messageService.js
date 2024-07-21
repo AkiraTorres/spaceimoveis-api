@@ -118,7 +118,7 @@ export async function findMessages(chatId, email) {
 export async function createFileMessage({ chatId, sender, file, text, type, fileName }) {
   const validatedEmail = validateEmail(sender);
   const validatedChatId = validateString(chatId);
-  const validatedText = validateString(text);
+  const validatedText = text === "" ? "" : validateString(text);
 
   const user = await find(validatedEmail, false, false, true);
   if (!user) {
@@ -154,7 +154,7 @@ export async function createFileMessage({ chatId, sender, file, text, type, file
     id: msgId,
     chatId: validatedChatId,
     sender: validatedEmail,
-    text: validateString(validatedText),
+    text: validatedText,
     url: downloadUrl,
     fileName: fileName,
     type: type,
