@@ -144,7 +144,7 @@ export async function createFileMessage({ chatId, sender, file, text, type, file
     throw error;
   }
 
-  if (!contentType && type !== 'audio') {
+  if (!cT && type !== 'audio') {
     const error = new Error('Tipo de conteúdo não encontrado');
     error.status = 400;
     console.error(error);
