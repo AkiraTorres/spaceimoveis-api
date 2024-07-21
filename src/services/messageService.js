@@ -146,7 +146,7 @@ export async function createFileMessage({ chatId, sender, file, text, type, file
 
   const msgId = uuid();
 
-  const fileExtension = fileName.split('.').get(-1);
+  const fileExtension = fileName.split('.').pop();
 
   let contentType = '';
   if (type === 'image') {
