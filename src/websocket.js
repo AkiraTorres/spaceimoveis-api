@@ -31,6 +31,7 @@ io.on('connection', socket => {
         file: data.file,
         text: data.text,
         type: data.type,
+        cT: data.contentType,
         fileName: data.fileName
       });
     } catch (error) {

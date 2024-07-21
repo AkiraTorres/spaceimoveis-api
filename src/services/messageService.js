@@ -115,7 +115,7 @@ export async function findMessages(chatId, email) {
   }));
 }
 
-export async function createFileMessage({ chatId, sender, file, text, type, fileName }) {
+export async function createFileMessage({ chatId, sender, file, text, type, fileName, cT }) {
   const validatedEmail = validateEmail(sender);
   const validatedChatId = validateString(chatId);
   // const validatedText = text === "" ? "" : validateString(text);
@@ -144,25 +144,30 @@ export async function createFileMessage({ chatId, sender, file, text, type, file
     throw error;
   }
 
-  const msgId = uuid();
+  if (!contentType && type !== 'audio') {
+    const error = new Error('Tipo de conteúdo não encontrado');
+    error.status = 400;
+    console.error(error);
+    throw error
+  }
 
-  const fileExtension = fileName.split('.').pop();
+  if (!fileName) {
+    const error = new Error('Nome do arquivo não encontrado');
+    error.status = 400;
+    console.error(error);
+    throw error
+  }
 
-  let contentType = '';
-  if (type === 'image') {
-    contentType = `image/${fileExtension}`;
-  } else if (type === 'audio') {
-    contentType = `audio/${fileExtension}`;
-  } else if (type === 'video') {
-    contentType = `video/${fileExtension}`;
-  } else if (type === 'file') {
-    contentType = `application/${fileExtension}`;
-  } else {
+  if (!['audio', 'video', 'file', 'image'].includes(type)) {
     const error = new Error('Tipo de arquivo inválido');
     error.status = 400;
     console.error(error);
     throw error;
   }
+
+  const msgId = uuid();
+  let fileExtension = type === 'audio' ? fileName.split('.').pop() : cT.split('/').pop();
+  const contentType = type === 'audio' ? `image/${fileExtension}` : cT;
 
   const storageRef = ref(storage, `files/${validatedChatId}/${msgId}-${fileName}`);
   const metadata = { contentType };
