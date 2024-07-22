@@ -221,9 +221,9 @@ export async function deleteMessage(id, sender) {
   }
 
   if (message.type === 'text') {
-    await Message.update({ isDeleted: true }, { where: { validatedId } });
+    await Message.update({ isDeleted: true }, { where: { id: validatedId } });
   } else {
-    await MessageFile.update({ isDeleted: true }, { where: { validatedId } });
+    await MessageFile.update({ isDeleted: true }, { where: { id: validatedId } });
     const storageRef = ref(storage, `files/${message.chatId}/${validatedId}-${message.fileName}`);
     await deleteObject(storageRef);
   }
