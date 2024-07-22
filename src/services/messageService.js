@@ -115,7 +115,7 @@ export async function findMessages(chatId, email) {
   }));
 }
 
-export async function createFileMessage({ chatId, sender, file, text, type, fileName, cT }) {
+export async function createFileMessage({ chatId, sender, file, text, type, fileName, contentType }) {
   const validatedEmail = validateEmail(sender);
   const validatedChatId = validateString(chatId);
   // const validatedText = text === "" ? "" : validateString(text);
@@ -144,7 +144,7 @@ export async function createFileMessage({ chatId, sender, file, text, type, file
     throw error;
   }
 
-  if (!cT && type !== 'audio') {
+  if (!contentType && type !== 'audio') {
     const error = new Error('Tipo de conteúdo não encontrado');
     error.status = 400;
     console.error(error);
@@ -165,15 +165,12 @@ export async function createFileMessage({ chatId, sender, file, text, type, file
     throw error;
   }
 
-  const msgId = uuid();
-  let fileExtension = type === 'audio' ? fileName.split('.').pop() : cT.split('/').pop();
-  const contentType = type === 'audio' ? `image/${fileExtension}` : cT;
-
   const storageRef = ref(storage, `files/${validatedChatId}/${msgId}-${fileName}`);
   const metadata = { contentType };
   const snapshot = await uploadBytesResumable(storageRef, file.buffer, metadata);
   const downloadUrl = await getDownloadURL(snapshot.ref);
 
+  const msgId = uuid();
   const m = await MessageFile.create({
     id: msgId,
     chatId: validatedChatId,

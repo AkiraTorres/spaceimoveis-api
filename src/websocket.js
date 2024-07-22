@@ -31,7 +31,7 @@ io.on('connection', socket => {
         file: data.file,
         text: data.text,
         type: data.type,
-        cT: data.contentType,
+        contentType: data.contentType,
         fileName: data.fileName
       });
       io.to(data.chatId).emit("message", msgRes);
