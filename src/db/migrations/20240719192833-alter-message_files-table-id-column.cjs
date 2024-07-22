@@ -2,7 +2,7 @@
 
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
-  async up (queryInterface, Sequelize) {
+  async up(queryInterface, Sequelize) {
     await queryInterface.changeColumn('message_files', 'id', {
       type: Sequelize.DataTypes.UUID,
       primaryKey: true,
@@ -11,7 +11,7 @@ module.exports = {
     });
   },
 
-  async down (queryInterface, Sequelize) {
+  async down(queryInterface, Sequelize) {
     await queryInterface.changeColumn('message_files', 'id', {
       type: Sequelize.DataTypes.UUID,
       primaryKey: true,

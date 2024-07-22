@@ -33,6 +33,11 @@ const MessageFile = sequelize.define('message_files', {
     type: DataTypes.STRING,
     allowNull: false,
   },
+  isDeleted: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false,
+  },
   type: {
     type: DataTypes.STRING,
     allowNull: false,

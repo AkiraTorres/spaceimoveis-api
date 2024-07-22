@@ -200,7 +200,8 @@ export async function createFileMessage({ chatId, sender, file, text, type, file
 
 export async function deleteMessage(id, sender) {
   const validatedEmail = validateEmail(sender);
-  const message = await Message.findByPk(id);
+  const validatedId = validateString(id);
+  const message = await Message.findByPk(validatedId) === null ? await MessageFile.findByPk(validatedId) : await Message.findByPk(validatedId);
   const user = await find(validatedEmail, false, false, true);
 
   if (!user) {
@@ -221,6 +222,12 @@ export async function deleteMessage(id, sender) {
     throw error;
   }
 
-  await Message.update({ text: "", isDeleted: true }, { where: { id } });
+  if (message.type === 'text') {
+    await Message.update({ isDeleted: true }, { where: { validatedId } });
+  } else {
+    await MessageFile.update({ isDeleted: true }, { where: { validatedId } });
+    const storageRef = ref(storage, `files/${message.chatId}/${validatedId}-${message.fileName}`);
+    await deleteObject(storageRef);
+  }
   return { "message": "Mensagem deletada com sucesso" };
 }

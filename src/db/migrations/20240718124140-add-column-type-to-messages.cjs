@@ -2,7 +2,7 @@
 
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
-  async up (queryInterface, Sequelize) {
+  async up(queryInterface, Sequelize) {
     await queryInterface.addColumn('messages', 'type', {
       type: Sequelize.DataTypes.STRING,
       allowNull: false,
@@ -12,7 +12,7 @@ module.exports = {
     await queryInterface.renameColumn('message_files', 'fileType', 'type');
   },
 
-  async down (queryInterface, Sequelize) {
+  async down(queryInterface) {
     await queryInterface.renameColumn('message_files', 'type', 'fileType');
     await queryInterface.removeColumn('messages', 'type');
   }
