@@ -165,12 +165,13 @@ export async function createFileMessage({ chatId, sender, file, text, type, file
     throw error;
   }
 
+  const msgId = uuid();
+
   const storageRef = ref(storage, `files/${validatedChatId}/${msgId}-${fileName}`);
   const metadata = { contentType };
   const snapshot = await uploadBytesResumable(storageRef, file.buffer, metadata);
   const downloadUrl = await getDownloadURL(snapshot.ref);
 
-  const msgId = uuid();
   const m = await MessageFile.create({
     id: msgId,
     chatId: validatedChatId,
