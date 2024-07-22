@@ -22,7 +22,7 @@ io.on('connection', socket => {
   });
 
   socket.on("upload", async (data, callback) => {
-    console.log(data.file);
+    console.log(data);
     let msgRes;
     try {
       msgRes = await createFileMessage({
