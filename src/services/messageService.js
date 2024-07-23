@@ -177,6 +177,7 @@ export async function createFileMessage({ chatId, sender, file, text, type, file
     console.error(e);
     const error = new Error('Erro ao enviar arquivo');
     error.status = 500;
+    throw error;
   }
 
   const m = await MessageFile.create({
