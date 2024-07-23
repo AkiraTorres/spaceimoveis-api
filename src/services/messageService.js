@@ -167,18 +167,15 @@ export async function createFileMessage({ chatId, sender, file, text, type, file
 
   const msgId = uuid();
 
-  let downloadUrl;
-  try {
-    const storageRef = ref(storage, `files/${validatedChatId}/${msgId}-${fileName}`);
-    const metadata = { contentType };
-    const snapshot = await uploadBytes(storageRef, file.buffer, metadata);
-    downloadUrl = await getDownloadURL(snapshot.ref);
-  } catch (e) {
-    console.error(e);
-    const error = new Error('Erro ao enviar arquivo');
-    error.status = 500;
-    throw error;
+  const uint8Array = new Uint8Array((file.buffer).length / 2);
+  for (let i = 0; i < uint8Array.length; i++) {
+    uint8Array[i] = file.buffer.charCodeAt(i);
   }
+
+  const storageRef = ref(storage, `files/${validatedChatId}/${msgId}-${fileName}`);
+  const metadata = { contentType };
+  const snapshot = await uploadBytes(storageRef, uint8Array, metadata);
+  const downloadUrl = await getDownloadURL(snapshot.ref);
 
   const m = await MessageFile.create({
     id: msgId,

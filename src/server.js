@@ -27,7 +27,6 @@ const io = new Server(httpServer, {
     origin: "*",
     credentials: true,
     maxHttpBufferSize: 1e8,
-    httpCompression: false,
     // methods: ["GET", "POST"]
   }
 });
