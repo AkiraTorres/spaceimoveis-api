@@ -19,6 +19,7 @@ import realtorRoutes from './routes/realtorRoutes.js';
 import sellerDashboardRoutes from './routes/sellerDashboardRoutes.js';
 import chatRoutes from "./routes/chatRoutes.js";
 import messageRoutes from "./routes/messageRoutes.js";
+import followerRoutes from "./routes/followerRoutes.js";
 
 const app = Express();
 const httpServer = createServer(app);
@@ -46,6 +47,7 @@ app.use('/rating', ratingRoutes);
 app.use('/chat', chatRoutes);
 app.use('/message', messageRoutes);
 app.use('/dashboard', sellerDashboardRoutes);
+app.use('/follow', followerRoutes);
 
 app.get('/find/:email', globalController.find);
 app.get('/find', globalController.findAll);
