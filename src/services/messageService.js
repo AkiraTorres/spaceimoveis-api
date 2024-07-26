@@ -167,11 +167,13 @@ export async function createFileMessage({ chatId, sender, file, text, type, file
 
   const msgId = uuid();
 
+  const uploadFile = type === 'image' ? Buffer.from(file) : file.buffer;
+
   let downloadUrl;
   try {
     const storageRef = ref(storage, `files/${validatedChatId}/${msgId}-${fileName}`);
     const metadata = { contentType };
-    const snapshot = await uploadBytes(storageRef, file.buffer, metadata);
+    const snapshot = await uploadBytes(storageRef, uploadFile, metadata);
     downloadUrl = await getDownloadURL(snapshot.ref);
   } catch (e) {
     console.error(e);
