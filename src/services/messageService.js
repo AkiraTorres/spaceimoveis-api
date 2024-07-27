@@ -11,6 +11,7 @@ import {find} from "./globalService.js";
 import firebaseConfig from '../config/firebase.js';
 import fs from "fs/promises";
 import path from "path";
+import { fileURLToPath } from 'url';
 
 const app = initializeApp(firebaseConfig);
 const storage = getStorage(app);
@@ -172,6 +173,8 @@ export async function createFileMessage({ chatId, sender, file, text, type, file
   let uploadFile = file.buffer;
   if (type === 'image') {
     const buf = Buffer.from(file, 'base64');
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
     const imagePath = path.join(__dirname, 'public', 'tmp', 'image');
     await fs.mkdir(path.dirname(imagePath), { recursive: true });
     await fs.writeFile(imagePath, buf);
