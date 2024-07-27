@@ -1,7 +1,7 @@
 import { io } from "./server.js";
 import * as messageService from "./services/messageService.js";
 import {createFileMessage, findMessages} from "./services/messageService.js";
-import { writeFile } from "fs/promises";
+import fs from 'fs/promises';
 
 io.on('connection', socket => {
   socket.on("open_chat", async (data, callback) => {
@@ -45,7 +45,10 @@ io.on('connection', socket => {
   socket.on('image', async image => {
     // image is an array of bytes
     const buffer = Buffer.from(image, 'base64');
-    await writeFile('/tmp/image', buffer).catch(console.error); // fs.promises
+    await fs.writeFile('/tmp/image', buffer);
+
+    const img = await fs.readFile('/tmp/image');
+    console.log(img);
   });
 
   socket.on('delete_message', async data => {
