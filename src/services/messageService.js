@@ -168,6 +168,7 @@ export async function createFileMessage({ chatId, sender, file, text, type, file
   const msgId = uuid();
 
   const uploadFile = type === 'image' ? Buffer.from(file) : file.buffer;
+  console.log(uploadFile);
 
   let downloadUrl;
   try {
