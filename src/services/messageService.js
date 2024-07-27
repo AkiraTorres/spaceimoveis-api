@@ -9,6 +9,8 @@ import {findChatByChatId, findUserChats} from "./chatService.js";
 import {validateEmail, validateString} from "../validators/inputValidators.js";
 import {find} from "./globalService.js";
 import firebaseConfig from '../config/firebase.js';
+import fs from "fs/promises";
+import path from "path";
 
 const app = initializeApp(firebaseConfig);
 const storage = getStorage(app);
@@ -167,7 +169,15 @@ export async function createFileMessage({ chatId, sender, file, text, type, file
 
   const msgId = uuid();
 
-  const uploadFile = type === 'image' ? Buffer.from(file) : file.buffer;
+  let uploadFile = file.buffer;
+  if (type === 'image') {
+    const buf = Buffer.from(file, 'base64');
+    const imagePath = path.join(__dirname, 'public', 'tmp', 'image');
+    await fs.mkdir(path.dirname(imagePath), { recursive: true });
+    await fs.writeFile(imagePath, buf);
+    uploadFile = await fs.readFile(imagePath);
+  }
+
   console.log(uploadFile);
 
   let downloadUrl;
