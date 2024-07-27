@@ -44,6 +44,7 @@ io.on('connection', socket => {
 
   socket.on('image', async image => {
     // image is an array of bytes
+    console.log(image);
     const buffer = Buffer.from(image, 'base64');
     await fs.writeFile('/tmp/image', buffer);
 
