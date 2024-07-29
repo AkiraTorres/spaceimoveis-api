@@ -118,7 +118,7 @@ export async function findMessages(chatId, email) {
   }));
 }
 
-export async function createFileMessage({ chatId, sender, file, text, type, fileName, contentType }) {
+export async function createFileMessage({ chatId, sender, file, text, type, fileName, contentType, platform }) {
   const validatedEmail = validateEmail(sender);
   const validatedChatId = validateString(chatId);
   // const validatedText = text === "" ? "" : validateString(text);
@@ -171,11 +171,11 @@ export async function createFileMessage({ chatId, sender, file, text, type, file
   const msgId = uuid();
 
   let uploadFile = file.buffer;
-  if (type === 'image') {
+  if (type === 'image' || platform === 'mobile') {
     const buf = Buffer.from(file, 'base64');
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = path.dirname(__filename);
-    const imagePath = path.join(__dirname, 'public', 'tmp', 'image');
+    const imagePath = path.join(__dirname, 'public', 'tmp', 'files');
     await fs.mkdir(path.dirname(imagePath), { recursive: true });
     await fs.writeFile(imagePath, buf);
     uploadFile = await fs.readFile(imagePath);

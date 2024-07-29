@@ -32,7 +32,8 @@ io.on('connection', socket => {
         text: data.text,
         type: data.type,
         contentType: data.contentType,
-        fileName: data.fileName
+        fileName: data.fileName,
+        platform: data.platform,
       });
       io.to(data.chatId).emit("message", msgRes);
     } catch (error) {
