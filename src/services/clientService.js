@@ -63,13 +63,13 @@ async function findByPk(email, password = false, otp = false) {
 }
 
 async function create(data) {
-    const client = {};
-
-    client.email = validateEmail(data.email);
-    client.name = validateString(data.name, 'O campo nome é obrigatório');
-    client.password = validatePassword(data.password) || null;
-    client.phone = validatePhone(data.phone) || null;
-    client.idPhone = validateString(data.idPhone) || null;
+    const client = {
+      email: validateEmail(data.email),
+      name: validateString(data.name, 'O campo nome é obrigatório'),
+      password: data.password ? validatePassword(data.password) : null,
+      phone: data.phone ? validatePhone(data.phone) : null,
+      idPhone: data.idPhone ? validateString(data.idPhone) : null,
+    };
 
     await validateIfUniqueEmail(client.email);
 
@@ -85,10 +85,10 @@ async function update(email, data) {
     }
 
     const client = {
-      email: validatedEmail(data.email) || oldClient.email,
-      name: validateString(data.name) || oldClient.name,
-      phone: validatePhone(data.phone) || oldClient.phone,
-      idPhone: validateString(data.idPhone) || oldClient.idPhone,
+      email: data.email ? validateEmail(data.email) : oldClient.email,
+      name: data.name ? validateString(data.name, 'O campo nome é obrigatório') : oldClient.name,
+      phone: data.phone ? validatePhone(data.phone) : oldClient.phone,
+      idPhone: data.idPhone ? validateString(data.idPhone) : oldClient.idPhone,
     };
 
     if (client.email !== validatedEmail) await validateIfUniqueEmail(client.email);
