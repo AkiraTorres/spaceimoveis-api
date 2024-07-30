@@ -12,9 +12,20 @@ import firebaseConfig from '../config/firebase.js';
 import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath } from 'url';
+import ffmpeg from 'fluent-ffmpeg';
 
 const app = initializeApp(firebaseConfig);
 const storage = getStorage(app);
+
+const convertAacToWav = (inputPath, outputPath) => {
+  return new Promise((resolve, reject) => {
+    ffmpeg(inputPath)
+      .inputFormat('aac')
+      .audioCodec('pcm_s16le')
+      .format('wav')
+      .save(outputPath)
+  });
+};
 
 // TODO: precisa salvar as mensagens criptografadas no db
 export async function createMessage({ chatId, sender, text }) {
@@ -177,8 +188,16 @@ export async function createFileMessage({ chatId, sender, file, text, type, file
     const __dirname = path.dirname(__filename);
     const filePath = path.join(__dirname, 'public', 'tmp', 'files');
     await fs.mkdir(filePath, { recursive: true });
-    await fs.writeFile(path.join(filePath, fileName), buf);
-    uploadFile = await fs.readFile(path.join(filePath, fileName));
+    const fileFullPath = path.join(filePath, fileName);
+    await fs.writeFile(fileFullPath, buf);
+    uploadFile = await fs.readFile(fileFullPath);
+
+    if (type === 'audio') {
+      const wavFileName = fileName.replace(/\.aac$/, '.wav');
+      const wavFilePath = path.join(filePath, wavFileName);
+      await convertAacToWav(fileFullPath, wavFilePath);
+      uploadFile = await fs.readFile(wavFilePath);
+    }
   }
 
   console.log(uploadFile);
