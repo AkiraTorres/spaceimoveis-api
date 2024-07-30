@@ -32,6 +32,9 @@ export function validateEmail(email) {
 }
 
 export async function validateIfUniqueEmail(email) {
+  if (!email) {
+    throw new Error('Email não informado');
+  }
   if (
     await Client.findByPk(email)
     || await Owner.findByPk(email)
