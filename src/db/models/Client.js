@@ -24,7 +24,7 @@ const Client = sequelize.define('clients', {
     defaultValue: 'client',
   },
   idPhone: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.STRING,
     allowNull: true,
   },
   otp: {
