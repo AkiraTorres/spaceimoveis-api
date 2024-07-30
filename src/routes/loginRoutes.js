@@ -39,9 +39,10 @@ router.post('/google', async (req, res) => {
     const { googleToken } = req.body;
     const error = new Error('Email ou senha incorretos');
     error.status = 404;
-    const { email } = await verify.validateGoogleToken(googleToken).catch();
 
     if (!email) throw error;
+
+    const { email } = await verify.validateGoogleToken(googleToken).catch();
 
     const user = await find(email, false);
     if (!user) throw error;
