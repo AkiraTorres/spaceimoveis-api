@@ -194,13 +194,13 @@ export async function createFileMessage({ chatId, sender, file, text, type, file
     await fs.writeFile(fileFullPath, buf);
     uploadFile = await fs.readFile(fileFullPath);
 
-    if (type === 'audio') {
-      name = name.replace(/\.aac$/, '.wav');
-      ct = 'audio/wav';
-      const wavFilePath = path.join(filePath, name);
-      await convertAacToWav(fileFullPath, wavFilePath);
-      uploadFile = await fs.readFile(wavFilePath);
-    }
+    // if (type === 'audio') {
+    //   name = name.replace(/\.aac$/, '.wav');
+    //   ct = 'audio/wav';
+    //   const wavFilePath = path.join(filePath, name);
+    //   await convertAacToWav(fileFullPath, wavFilePath);
+    //   uploadFile = await fs.readFile(wavFilePath);
+    // }
   }
 
   console.log(uploadFile);
