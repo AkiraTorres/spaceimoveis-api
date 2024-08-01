@@ -182,19 +182,22 @@ export async function createFileMessage({ chatId, sender, file, text, type, file
   const msgId = uuid();
 
   let uploadFile = file.buffer;
+  let name = fileName;
+  let ct = contentType;
   if (type === 'image' || platform === 'mobile') {
     const buf = Buffer.from(file, 'base64');
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = path.dirname(__filename);
     const filePath = path.join(__dirname, 'public', 'tmp', 'files');
     await fs.mkdir(filePath, { recursive: true });
-    const fileFullPath = path.join(filePath, fileName);
+    const fileFullPath = path.join(filePath, name);
     await fs.writeFile(fileFullPath, buf);
     uploadFile = await fs.readFile(fileFullPath);
 
     if (type === 'audio') {
-      const wavFileName = fileName.replace(/\.aac$/, '.wav');
-      const wavFilePath = path.join(filePath, wavFileName);
+      name = name.replace(/\.aac$/, '.wav');
+      ct = 'audio/wav';
+      const wavFilePath = path.join(filePath, name);
       await convertAacToWav(fileFullPath, wavFilePath);
       uploadFile = await fs.readFile(wavFilePath);
     }
@@ -204,8 +207,8 @@ export async function createFileMessage({ chatId, sender, file, text, type, file
 
   let downloadUrl;
   try {
-    const storageRef = ref(storage, `files/${validatedChatId}/${msgId}-${fileName}`);
-    const metadata = { contentType };
+    const storageRef = ref(storage, `files/${validatedChatId}/${msgId}-${name}`);
+    const metadata = { contentType: ct };
     const snapshot = await uploadBytes(storageRef, uploadFile, metadata);
     downloadUrl = await getDownloadURL(snapshot.ref);
   } catch (e) {
