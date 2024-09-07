@@ -61,14 +61,15 @@ export async function loginAdmin({ email, password }) {
 }
 
 export function refresh({ refreshToken }) {
-  if (!refreshToken) throw new Error('Token not provided', 401);
+  if (!refreshToken) throw new Error('O token não foi fornecido', 401);
 
   try {
     const decoded = jwt.verify(refreshToken, JWT_SECRET);
     const accessToken = jwt.sign({ email: decoded.email }, JWT_SECRET, { expiresIn: '1h' });
+    const newRefreshToken = jwt.sign({ email: decoded.email }, JWT_SECRET, { expiresIn: '21d' });
 
-    return { accessToken };
+    return { accessToken, newRefreshToken };
   } catch (error) {
-    throw new Error('Token invalid', 401);
+    throw new Error('Token inválido', 401);
   }
 }
