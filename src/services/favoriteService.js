@@ -1,80 +1,55 @@
 import { v4 as uuid } from 'uuid';
+import prisma from '../config/prisma.js';
 
-import Favorite from '../db/models/Favorite.js';
-import { find } from './globalService.js';
+import ConfigurableError from '../errors/ConfigurableError.js';
 import { validateString } from '../validators/inputValidators.js';
+import UserService from './userService.js';
 
-async function setFavorite(clientEmail, propertyId) {
-  const validatedEmail = validateString(clientEmail);
-  const validatedPropertyId = validateString(propertyId);
-
-  const user = await find(validatedEmail);
-  if (!user) {
-    const error = new Error('Usuário não encontrado');
-    error.status = 404;
-    throw error;
+export default class FavoriteService {
+  constructor() {
+    this.userService = new UserService();
   }
 
-  const favorite = await Favorite.findOne({ where: {
-    [`${user.type}_email`]: validatedEmail,
-    property_id: validatedPropertyId,
-  } });
-  if (favorite) {
-    const error = new Error('Imóvel já favoritado');
-    error.status = 400;
-    throw error;
+  static async setFavorite(clientEmail, propertyId) {
+    const validatedEmail = validateString(clientEmail);
+    const validatedPropertyId = validateString(propertyId);
+
+    const user = await this.userService.find(validatedEmail);
+    if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
+
+    const favorite = await prisma.favorite.findFirst({ where: { userEmail: validatedEmail, propertyId: validatedPropertyId } });
+    if (favorite) throw new ConfigurableError('Imóvel já favoritado', 409);
+
+    return prisma.favorite.create({ id: uuid(), userEmail: validatedEmail, propertyId: validatedPropertyId });
   }
 
-  return Favorite.create({ id: uuid(), [`${user.type}_email`]: validatedEmail, property_id: validatedPropertyId });
+  static async getFavorites(clientEmail) {
+    const validatedEmail = validateString(clientEmail);
+
+    const user = await this.userService.find(validatedEmail);
+    if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
+
+    const favorites = await prisma.favorite.findAll({ where: { userEmail: validatedEmail } });
+
+    const favoritesIds = favorites.map((favorite) => favorite.propertyId);
+    return favoritesIds;
+  }
+
+  static async getPropertyTotalFavorites(propertyId) {
+    return prisma.favorite.count({ where: { propertyId: validateString(propertyId) } });
+  }
+
+  static async removeFavorite(clientEmail, propertyId) {
+    const validatedEmail = validateString(clientEmail);
+    const validatedPropertyId = validateString(propertyId);
+
+    const user = await this.userService.find(validatedEmail);
+    if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
+
+    const destroyed = await prisma.favorite.delete({ where: { userEmail: validatedEmail, propertyId: validatedPropertyId } });
+
+    if (!destroyed) throw new ConfigurableError('Imóvel não encontrado', 404);
+
+    return destroyed;
+  }
 }
-
-async function getFavorites(clientEmail) {
-  const validatedEmail = validateString(clientEmail);
-
-  const user = await find(validatedEmail);
-  if (!user) {
-    const error = new Error('Usuário não encontrado');
-    error.status = 404;
-    throw error;
-  }
-
-  const favorites = await Favorite.findAll({ where: { [`${user.type}_email`]: validatedEmail } });
-
-  const favoritesIds = favorites.map((favorite) => favorite.property_id);
-  return favoritesIds;
-}
-
-async function getPropertyTotalFavorites(propertyId) {
-  const validatedId = validateString(propertyId);
-
-  const totalFavorites = await Favorite.count({ where: { property_id: validatedId } });
-
-  return totalFavorites;
-}
-
-async function removeFavorite(clientEmail, propertyId) {
-  const validatedEmail = validateString(clientEmail);
-  const validatedPropertyId = validateString(propertyId);
-
-  const user = await find(validatedEmail);
-  if (!user) {
-    const error = new Error('Usuário não encontrado');
-    error.status = 404;
-    throw error;
-  }
-
-  const destroyed = await Favorite.destroy({ where: {
-    [`${user.type}_email`]: validatedEmail,
-    property_id: validatedPropertyId,
-  } });
-
-  if (!destroyed) {
-    const error = new Error('Imóvel não encontrado');
-    error.status = 404;
-    throw error;
-  }
-
-  return destroyed;
-}
-
-export { setFavorite, getFavorites, getPropertyTotalFavorites, removeFavorite };

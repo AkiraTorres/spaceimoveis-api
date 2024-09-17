@@ -1,6 +1,8 @@
 import asyncHandler from 'express-async-handler';
 
-import * as service from '../services/favoriteService.js';
+import FavoriteService from '../services/favoriteService.js';
+
+const service = new FavoriteService();
 
 export const setFavorite = asyncHandler(async (req, res, next) => {
   try {
