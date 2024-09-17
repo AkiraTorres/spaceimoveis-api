@@ -2,21 +2,7 @@ import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
 import validator from 'validator';
 
-import Client from '../db/models/Client.js';
-import Owner from '../db/models/Owner.js';
-import Realstate from '../db/models/Realstate.js';
-import Realtor from '../db/models/Realtor.js';
-import CnpjAlreadyExists from '../errors/cnpjAlreadyExists.js';
-import CpfAlreadyExists from '../errors/cpfAlreadyExists.js';
-import CreciAlreadyExists from '../errors/creciAlreadyExists.js';
-import EmailAlreadyExists from '../errors/emailAlreadyExists.js';
-import InsecurePassword from '../errors/insecurePassword.js';
-import InvalidCpf from '../errors/invalidCpf.js';
-import InvalidEmail from '../errors/invalidEmail.js';
-import InvalidInteger from '../errors/invalidInteger.js';
-import InvalidPhone from '../errors/invalidPhone.js';
-import InvalidString from '../errors/invalidString.js';
-import RgAlreadyExists from '../errors/rgAlreadyExists.js';
+import ConfigurableError from '../errors/ConfigurableError.js';
 
 dotenv.config();
 const salt = process.env.CRYPT_SALT;
@@ -26,94 +12,72 @@ export function validateEmail(email) {
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-  if (!emailRegex.test(sanitizedEmail)) throw new InvalidEmail();
+  if (!emailRegex.test(sanitizedEmail)) throw new ConfigurableError('Email inválido', 422);
 
   return sanitizedEmail;
 }
 
-export async function validateIfUniqueEmail(email) {
-  if (!email) {
-    throw new Error('Email não informado');
-  }
-  if (
-    await Client.findByPk(email)
-    || await Owner.findByPk(email)
-    || await Realtor.findByPk(email)
-    || await Realstate.findByPk(email)) {
-    throw new EmailAlreadyExists();
-  }
-}
-
-export function validateString(string, msg = '') {
-  if (string === undefined || string === '') throw new InvalidString(msg || 'O campo é obrigatório');
+export function validateString(string, msg = 'O campo é obrigatório') {
+  if (string === undefined || string === '') throw new ConfigurableError(msg, 422);
 
   const sanitizedString = validator.escape(string);
 
   if (sanitizedString.length === 0 || sanitizedString === '' || sanitizedString === undefined) {
-    if (msg !== '') {
-      throw new InvalidString(msg);
-    }
-    throw new InvalidString();
+    throw new ConfigurableError(msg, 422);
   }
 
   return sanitizedString;
 }
 
-export function validateInteger(integer, msg = '') {
+export function validateInteger(integer, msg = 'O campo é obrigatório e deve ser um número inteiro') {
   const int = typeof integer === 'string' ? integer.replace(/\./g, '') : integer;
 
   const sanitizedInteger = parseInt(int, 10);
 
   if (sanitizedInteger === undefined || !Number.isInteger(sanitizedInteger)) {
-    if (msg !== '') {
-      throw new InvalidInteger(msg);
-    }
-    throw new InvalidInteger();
+    throw new ConfigurableError(msg, 422);
   }
 
   return sanitizedInteger;
 }
 
-export function validatePrice(p, msg = '') {
+export function validatePrice(p, msg = "O campo 'preço' é obrigatório e deve ser um número") {
   const price = typeof p === 'string' ? p.replace(/\./g, '') : p;
-
   const sanitizedPrice = parseInt(price, 10);
 
   if (!sanitizedPrice || !Number.isInteger(sanitizedPrice)) {
-    if (msg !== '') {
-      throw new InvalidInteger(msg);
-    }
-    throw new InvalidInteger();
+    throw new ConfigurableError(msg, 422);
   }
 
   return sanitizedPrice;
 }
 
-export function validateBoolean(bool, msg = '') {
+export function validateBoolean(bool, msg = 'O campo é obrigatório') {
   if (bool === false || bool === true) return bool;
+  if (bool === null) {
+    throw new ConfigurableError(msg, 422);
+  }
 
   const sanitizedBool = validator.escape(bool);
 
-  if (sanitizedBool === 'true') return true;
-  if (sanitizedBool === 'false') return false;
+  if (sanitizedBool in ['True', 'true']) return true;
+  if (sanitizedBool in ['False', 'false']) return false;
 
-  if (msg !== '') {
-    throw new InvalidString(msg);
-  }
-  throw new InvalidString();
+  throw new ConfigurableError('O campo deve ser uma condicional válida (True/False)', 400);
 }
 
 export function validatePassword(password) {
   const sanitizedPassword = validator.escape(password);
 
   if (sanitizedPassword.length === 0 || sanitizedPassword === '' || sanitizedPassword === undefined) {
-    throw new InsecurePassword('O campo senha é obrigatório');
+    throw new ConfigurableError('O campo senha é obrigatório', 422);
   }
 
   const sanitizedPasswordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*()_+])[0-9a-zA-Z!@#$%^&*()_+]{8,}$/;
 
   if (!sanitizedPasswordRegex.test(sanitizedPassword)) {
-    throw new InsecurePassword();
+    throw new ConfigurableError(`A senha é muito fraca. Ela deve conter pelo menos 8 caracteres, incluindo ao menos um
+                            dígito, uma letra minúscula, uma letra maiúscula e um caractere especial (!@#$%^&*()_+)`, 400);
   }
 
   return bcrypt.hashSync(sanitizedPassword, salt);
@@ -123,13 +87,13 @@ export function validatePhone(phone) {
   const sanitizedPhone = validator.escape(phone);
 
   if (sanitizedPhone.length === 0 || sanitizedPhone === '' || sanitizedPhone === undefined) {
-    throw new InvalidPhone('O campo telefone é obrigatório');
+    throw new ConfigurableError('O campo telefone é obrigatório', 422);
   }
 
   const brazilianPhoneNumberRegex = /^(?:\+|00)?(?:55)?(?:\s|-|\.)?(?:(?:\(?\d{2}\)?)(?:\s|-|\.)?)?(?:9\d{4}|\d{4})[-. ]?\d{4}$/;
 
   if (!brazilianPhoneNumberRegex.test(sanitizedPhone)) {
-    throw new InvalidPhone();
+    throw new ConfigurableError('O telefone informado é inválido', 400);
   }
 
   return sanitizedPhone;
@@ -138,7 +102,7 @@ export function validatePhone(phone) {
 export function validateCpf(cpf) {
   const validatedCpf = cpf.replace(/[^\d]+/g, '');
 
-  if (validatedCpf.length !== 11 || /^(\d)\1{10}$/.test(validatedCpf)) throw new InvalidCpf();
+  if (validatedCpf.length !== 11 || /^(\d)\1{10}$/.test(validatedCpf)) throw new ConfigurableError('CPF inválido', 400);
 
   let sum = 0;
   let remainder;
@@ -148,7 +112,7 @@ export function validateCpf(cpf) {
 
   if ((remainder === 10) || (remainder === 11)) remainder = 0;
 
-  if (remainder !== parseInt(validatedCpf.substring(9, 10), 10)) throw new InvalidCpf();
+  if (remainder !== parseInt(validatedCpf.substring(9, 10), 10)) throw new ConfigurableError('CPF inválido', 400);
 
   sum = 0;
 
@@ -157,36 +121,17 @@ export function validateCpf(cpf) {
 
   if ((remainder === 10) || (remainder === 11)) remainder = 0;
 
-  if (remainder !== parseInt(validatedCpf.substring(10, 11), 10)) throw new InvalidCpf();
+  if (remainder !== parseInt(validatedCpf.substring(10, 11), 10)) throw new ConfigurableError('CPF inválido', 400);
 
-  return validatedCpf; // valid
-}
-
-export async function validateIfUniqueCpf(cpf) {
-  if (
-    await Owner.findOne({ where: { cpf } })
-    || await Realtor.findOne({ where: { cpf } })) {
-    throw new CpfAlreadyExists();
-  }
-}
-
-export async function validateIfUniqueRg(rg) {
-  if (
-    await Owner.findOne({ where: { rg } })
-    || await Realtor.findOne({ where: { rg } })) {
-    throw new RgAlreadyExists();
-  }
+  return validatedCpf;
 }
 
 export function validateCnpj(cnpj) {
   const validatedCnpj = validator.escape(cnpj).replace(/\D/g, '');
 
-  const error = new Error('CNPJ Inválido');
-  error.status = 400;
+  if (validatedCnpj.length !== 14) throw new ConfigurableError('CNPJ Inválido', 400);
 
-  if (validatedCnpj.length !== 14) throw error;
-
-  if (/^(\d)\1{13}$/.test(validatedCnpj)) throw error;
+  if (/^(\d)\1{13}$/.test(validatedCnpj)) throw new ConfigurableError('CNPJ Inválido', 400);
 
   let sum = 0;
   let position = 5;
@@ -198,7 +143,7 @@ export function validateCnpj(cnpj) {
     }
   }
   let result = sum % 11 < 2 ? 0 : 11 - (sum % 11);
-  if (parseInt(validatedCnpj.charAt(12), 10) !== result) throw error;
+  if (parseInt(validatedCnpj.charAt(12), 10) !== result) throw new ConfigurableError('CNPJ Inválido', 400);
 
   sum = 0;
   position = 6;
@@ -210,28 +155,22 @@ export function validateCnpj(cnpj) {
     }
   }
   result = sum % 11 < 2 ? 0 : 11 - (sum % 11);
-  if (parseInt(validatedCnpj.charAt(13), 10) !== result) throw error;
+  if (parseInt(validatedCnpj.charAt(13), 10) !== result) throw new ConfigurableError('CNPJ Inválido', 400);
 
   return validatedCnpj;
-}
-
-export async function validateIfUniqueCnpj(cnpj) {
-  if (await Realstate.findOne({ where: { cnpj } })) {
-    throw new CnpjAlreadyExists();
-  }
 }
 
 export function validateCep(cep) {
   const sanitizedCep = validator.escape(cep);
 
   if (sanitizedCep.length === 0 || sanitizedCep === '' || sanitizedCep === undefined) {
-    throw new InvalidString('O campo CEP é obrigatório');
+    throw new ConfigurableError('O campo CEP é obrigatório', 422);
   }
 
   const brazilianCepRegex = /^\d{5}-?\d{3}$/;
 
   if (!brazilianCepRegex.test(sanitizedCep)) {
-    throw new InvalidString('CEP inválido');
+    throw new ConfigurableError('CEP inválido', 400);
   }
 
   return sanitizedCep;
@@ -239,7 +178,7 @@ export function validateCep(cep) {
 
 export function validateUF(uf) {
   if (uf.length === 0 || uf === '' || uf === undefined) {
-    throw new InvalidString('O campo estado é obrigatório');
+    throw new ConfigurableError('O campo estado é obrigatório', 422);
   }
 
   const sanitizedUf = validator.escape(uf.toUpperCase().trim());
@@ -251,7 +190,7 @@ export function validateUF(uf) {
   ];
 
   if (!validUfs.includes(sanitizedUf)) {
-    throw new InvalidString('Estado inválido');
+    throw new ConfigurableError('Estado inválido', 400);
   }
 
   return sanitizedUf;
@@ -263,27 +202,29 @@ export function validateCreci(creci) {
   const creciRegex = /^(CRECI-)?[A-Z]{2}\s?\d{1,15}$/;
 
   if (!creciRegex.test(sanitizedCreci)) {
-    throw new InvalidString('CRECI inválido');
+    throw new ConfigurableError('CRECI inválido', 400);
   }
 
   return sanitizedCreci;
 }
 
-export async function validateIfUniqueCreci(creci) {
-  if (
-    await Realtor.findOne({ where: { creci } })
-    || await Realstate.findOne({ where: { creci } })) {
-    throw new CreciAlreadyExists();
+export function validateFurnished(furnished, msg = "O campo 'mobiliado' é obrigatório'") {
+  // const sanitizedFurnished = validator.escape(furnished);
+  if (furnished === null) {
+    throw new ConfigurableError(msg, 422);
   }
+
+  if (furnished === 'yes' || furnished === 'no' || furnished === 'partial') return furnished;
+
+  throw new ConfigurableError('O campo mobiliado deve ser um valor válido (yes/no/partial)', 400);
 }
 
-export function validateFurnished(furnished, msg) {
-  // const sanitizedFurnished = validator.escape(furnished);
-
-  if (furnished === 'not-furnished' || furnished === 'semi-furnished' || furnished === 'furnished') return furnished;
-
-  if (msg !== '') {
-    throw new InvalidString(msg);
+export function validateUserType(type) {
+  if (type === null) {
+    throw new ConfigurableError("O campo 'tipo' é obrigatório", 422);
   }
-  throw new InvalidString('O campo mobiliado deve ser um valor válido');
+
+  if (type === 'client' || type === 'owner' || type === 'realtor' || type === 'realstate' || type === 'admin') return type;
+
+  throw new ConfigurableError('Tipo de usuário inválido deve possuir um valor válido (client/owner/realtor/realstate/admin)', 400);
 }
