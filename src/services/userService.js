@@ -29,25 +29,18 @@ export default class UserService {
     return excludeFromObject(editedUser, ['otp', 'otp_ttl', 'password']);
   }
 
-  static async find(params) {
-    let email = null;
-    let cpf = null;
-    let creci = null;
+  static async find(params, type = null) {
+    const where = { active: true };
 
-    if (params.email) email = validateEmail(params.email);
-    if (params.cpf) cpf = validateCpf(params.cpf);
-    if (params.creci) creci = validateString(params.creci);
-    if (!email && !cpf && !creci) throw new ConfigurableError('Deve ser fornecido email, cpf ou creci', 422);
+    if (!params.email && !params.cpf && !params.creci) throw new ConfigurableError('Deve ser fornecido email, cpf ou creci', 422);
+    if (params.email) where.email = validateEmail(params.email);
+    if (params.cpf) where.cpf = validateCpf(params.cpf);
+    if (params.creci) where.creci = validateString(params.creci);
+    if (type) where.type = validateUserType(type, "O campo 'tipo' é obrigatório");
 
     let user = null;
 
-    if (email) {
-      user = await prisma.user.findUnique({ where: { email, active: true } });
-    } else if (cpf) {
-      user = await prisma.user.findUnique({ where: { cpf, active: true } });
-    } else if (creci) {
-      user = await prisma.user.findUnique({ where: { creci, active: true } });
-    }
+    user = await prisma.user.findUnique({ where });
 
     if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
 
