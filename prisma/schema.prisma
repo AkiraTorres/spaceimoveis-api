@@ -50,9 +50,6 @@ model UserInfo {
   idPhone      String? @map("id_phone")
   bio          String? @db.VarChar(1024)
   subscription String? @default("free")
-  photoUrl     String?
-  photoName    String?
-  photoType    String?
 
   user User @relation(fields: [email], references: [email])
 
@@ -60,13 +57,14 @@ model UserInfo {
 }
 
 model UserAddress {
-  email       String  @id @unique
-  address     String?
-  houseNumber String? @map("house_number")
-  cep         String?
-  district    String?
-  city        String?
-  state       String? @db.VarChar(2)
+  email        String  @id @unique
+  street       String?
+  cep          String?
+  number       String?
+  complement   String?
+  neighborhood String?
+  city         String?
+  state        String? @db.VarChar(2)
 
   user User @relation(fields: [email], references: [email])
 
@@ -220,14 +218,14 @@ model PropertiesPrices {
 }
 
 model PropertiesAddresses {
-  propertyId  String  @id @unique @map("property_id")
-  cep         String  @db.VarChar(9)
-  address     String
-  houseNumber String? @map("house_number")
-  city        String
-  state       String  @db.VarChar(2)
-  district    String
-  complement  String?
+  propertyId   String  @id @unique @map("property_id")
+  cep          String  @db.VarChar(9)
+  address      String
+  houseNumber  String? @map("house_number")
+  city         String
+  state        String  @db.VarChar(2)
+  neighborhood String
+  complement   String?
 
   property Property @relation(fields: [propertyId], references: [id])
 
