@@ -21,8 +21,10 @@ model User {
   type      Type      @default(client)
   otp       String?   @db.VarChar(6)
   otpTtl    DateTime? @map("otp_ttl")
+  active    Boolean   @default(true)
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @default(now()) @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
 
   userInfo           UserInfo?
   UserAddress        UserAddress?
@@ -201,7 +203,7 @@ model Property {
   PropertiesAddresses  PropertiesAddresses?
   PropertiesComodities PropertiesComodities?
   PropertyPictures     PropertyPictures[]
-  ReasonRejected       ReasonRejected[]
+  ReasonRejected       ReasonRejectedProperty[]
 
   @@map("properties")
 }
@@ -271,14 +273,14 @@ model PropertyPictures {
   @@map("property_pictures")
 }
 
-model ReasonRejected {
+model ReasonRejectedProperty {
   id         String @id @unique @default(uuid())
   propertyId String @map("property_id")
   reason     String
 
   property Property @relation(fields: [propertyId], references: [id])
 
-  @@map("reason_rejecteds")
+  @@map("reason_rejected_properties")
 }
 
 model UserMessages {
