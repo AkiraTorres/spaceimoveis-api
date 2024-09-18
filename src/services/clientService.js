@@ -7,8 +7,8 @@ import { validateEmail, validatePhone, validateString, validateUF, validateUserT
 import UserService from './userService.js';
 
 export default class ClientService extends UserService {
-  static async elevate(params, photo) {
-    const validatedEmail = validateEmail(params.email);
+  static async elevate(userEmail, params, photo) {
+    const validatedEmail = validateEmail(userEmail);
 
     const oldUser = await this.find({ email: validatedEmail }, 'client');
     if (!oldUser) throw new ConfigurableError('Cliente não encontrado', 404);
@@ -49,12 +49,12 @@ export default class ClientService extends UserService {
     let profile = await prisma.userPhoto.findUnique({ where: { email: oldUser.email } });
     if (photo) {
       if (profile) {
-        const storageRef = ref(this.storage, `images/admins/${oldUser.email}/${profile.name}`);
+        const storageRef = ref(this.storage, `images/${oldUser.type}s/${oldUser.email}/${profile.name}`);
         await prisma.userPhoto.delete({ where: { email: oldUser.email } });
         await deleteObject(storageRef);
       }
 
-      const storageRef = ref(this.storage, `images/admins/${data.email}/${photo.originalname}`);
+      const storageRef = ref(this.storage, `images/${oldUser.type}s/${data.email}/${photo.originalname}`);
       const metadata = { contentType: photo.mimetype };
       const snapshot = await uploadBytesResumable(storageRef, photo.buffer, metadata);
       const downloadUrl = await getDownloadURL(snapshot.ref);
