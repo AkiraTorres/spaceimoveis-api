@@ -3,15 +3,19 @@ import { v4 as uuid } from 'uuid';
 import prisma from '../config/prisma.js';
 import ConfigurableError from '../errors/ConfigurableError.js';
 import { validateEmail } from '../validators/inputValidators.js';
-import { find } from './globalService.js';
+import UserService from './userService.js';
 
 export default class ChatService {
+  constructor() {
+    this.userService = new UserService();
+  }
+
   static async create(email1, email2) {
     const validatedEmail1 = validateEmail(email1);
     const validatedEmail2 = validateEmail(email2);
 
-    const user1 = await find(validatedEmail1, false, false, true);
-    const user2 = await find(validatedEmail2, false, false, true);
+    const user1 = await this.userService.find(validatedEmail1, false, false, true);
+    const user2 = await this.userService.find(validatedEmail2, false, false, true);
 
     if (!user1 || !user2) throw new ConfigurableError('Usuário não encontrado', 404);
 
@@ -47,7 +51,7 @@ export default class ChatService {
   static async findUserChats(email) {
     const validatedEmail = validateEmail(email);
 
-    const user = await find(validatedEmail, false, false, true);
+    const user = await this.userService.find(validatedEmail, false, false, true);
 
     if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
 
@@ -62,8 +66,8 @@ export default class ChatService {
 
     return Promise.all(chats.map(async (chat) => {
       const editedChat = chat;
-      const user1 = await find(chat.user1, false, false, true);
-      const user2 = await find(chat.user2, false, false, true);
+      const user1 = await this.userService.find(chat.user1, false, false, true);
+      const user2 = await this.userService.find(chat.user2, false, false, true);
 
       editedChat.user1 = user1;
       editedChat.user2 = user2;
@@ -76,8 +80,8 @@ export default class ChatService {
     const validatedEmail1 = validateEmail(email1);
     const validatedEmail2 = validateEmail(email2);
 
-    const user1 = await find(validatedEmail1, false, false, true);
-    const user2 = await find(validatedEmail2, false, false, true);
+    const user1 = await this.userService.find(validatedEmail1, false, false, true);
+    const user2 = await this.userService.find(validatedEmail2, false, false, true);
 
     if (!user1 || !user2) throw new ConfigurableError('Usuário não encontrado', 404);
 
@@ -113,8 +117,8 @@ export default class ChatService {
 
     if (!chat) throw new ConfigurableError('Chat não encontrado', 404);
 
-    chat.user1 = await find(chat.user1, false, false, true);
-    chat.user2 = await find(chat.user2, false, false, true);
+    chat.user1 = await this.userService.find(chat.user1, false, false, true);
+    chat.user2 = await this.userService.find(chat.user2, false, false, true);
 
     return chat;
   }

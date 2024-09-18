@@ -1,7 +1,6 @@
 import prisma from '../config/prisma.js';
 import ConfigurableError from '../errors/ConfigurableError.js';
 import { validateEmail } from '../validators/inputValidators.js';
-import { find } from './globalService.js';
 import PropertyService from './propertyService.js';
 
 export default class SellerDashboardService {
@@ -12,7 +11,7 @@ export default class SellerDashboardService {
   static async totalPropertiesLikes(email) {
     const validatedEmail = validateEmail(email);
 
-    const user = await find(validatedEmail);
+    const user = await this.userService.find(validatedEmail);
     if (!user) throw new ConfigurableError('Usuário não encontrado com o email informado', 404);
 
     const ids = await prisma.property.findMany({ where: { advertiserEmail: validatedEmail }, select: { id: true } });
@@ -26,7 +25,7 @@ export default class SellerDashboardService {
   static async totalPropertiesViews(email) {
     const validatedEmail = validateEmail(email);
 
-    const user = await find(validatedEmail);
+    const user = await this.userService.find(validatedEmail);
     if (!user) throw new ConfigurableError('Usuário não encontrado com o email informado', 404);
 
     const total = await prisma.property.findMany({ where: { advertiserEmail: validatedEmail }, select: { id: true, timesSeen: true } })
@@ -40,7 +39,7 @@ export default class SellerDashboardService {
     const now = new Date();
     const beginYear = new Date(now.getFullYear() - 1, 11, 31);
 
-    const user = await find(validatedEmail);
+    const user = await this.userService.find(validatedEmail);
     if (!user) throw new ConfigurableError('Usuário não encontrado com o email informado', 404);
 
     const properties = await prisma.property.findMany({
@@ -105,7 +104,7 @@ export default class SellerDashboardService {
   static async topProperties(email) {
     const validatedEmail = validateEmail(email);
 
-    const user = await find(validatedEmail);
+    const user = await this.userService.find(validatedEmail);
     if (!user) throw new ConfigurableError('Usuário não encontrado com o email informado', 404);
 
     const properties = await prisma.property.findMany({ where: { advertiserEmail: validatedEmail } });
