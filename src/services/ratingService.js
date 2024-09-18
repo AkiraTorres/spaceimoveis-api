@@ -3,10 +3,6 @@ import { validateEmail, validateInteger, validateString } from '../validators/in
 import RealtorService from './realtorService.js';
 
 export default class RatingService {
-  constructor() {
-    this.realtorService = new RealtorService();
-  }
-
   static async getAllRatesByReceiver(receiverEmail, page = 1) {
     const validatedReceiverEmail = validateEmail(receiverEmail);
 
@@ -73,7 +69,7 @@ export default class RatingService {
   }
 
   static async getAvgRateByReceiver(receiverEmail) {
-    return this.realtorService().getAvgRateByReceiver(receiverEmail);
+    return RealtorService().getAvgRateByReceiver(receiverEmail);
   }
 
   static async setRate(senderEmail, receiverEmail, rating, comment) {

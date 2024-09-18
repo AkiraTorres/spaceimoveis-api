@@ -30,8 +30,6 @@ export default class PropertyService {
   constructor() {
     this.app = initializeApp(firebaseConfig);
     this.storage = getStorage(this.app);
-    this.userService = new UserService();
-    this.favoriteService = new FavoriteService();
   }
 
   static async checkHighlightLimit(email) {
@@ -52,8 +50,8 @@ export default class PropertyService {
 
     editedProperty.shared = await prisma.sharedProperties.findFirst({ where: { propertyId: property.id, email: property.email } });
 
-    const seller = await this.userService.find({ email: editedProperty.email });
-    const totalFavorites = await this.favoriteService.getPropertyTotalFavorites(property.id);
+    const seller = await UserService.find({ email: editedProperty.email });
+    const totalFavorites = await FavoriteService.getPropertyTotalFavorites(property.id);
     const pictures = await prisma.propertyPictures.findMany({ where: { propertyId: property.id }, orderBy: { type: 'asc' } });
 
     return { ...editedProperty, totalFavorites, pictures, seller };
@@ -130,7 +128,7 @@ export default class PropertyService {
   static async findBySellerEmail(email, page = 1, take = 6) {
     const validatedEmail = validateEmail(email);
 
-    const user = await this.userService.find(validatedEmail);
+    const user = await UserService.find(validatedEmail);
 
     if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
 
@@ -174,7 +172,7 @@ export default class PropertyService {
   }
 
   static async getAllPropertiesCities(email) {
-    const user = await this.userService.find(validateEmail(email));
+    const user = await UserService.find(validateEmail(email));
     if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
 
     const properties = await prisma.property.findMany({ where: { email: user.email }, attributes: { city: true } });
@@ -272,7 +270,7 @@ export default class PropertyService {
     if (params.yard !== undefined) commoditiesData.yard = validateBoolean(params.yard);
     if (params.elevator !== undefined) commoditiesData.elevator = validateBoolean(params.elevator);
 
-    const { subscription } = await this.userService.find(sellerEmail);
+    const { subscription } = await UserService.find(sellerEmail);
     if (subscription === 'free' || subscription === 'platinum') {
       if (data.isHighlighted) this.checkHighlightLimit(sellerEmail);
     }
@@ -601,10 +599,10 @@ export default class PropertyService {
     const validatedOwnerEmail = validateEmail(ownerEmail);
     const validatedGuestEmail = validateEmail(guestEmail);
 
-    const owner = await this.userService.find(validatedOwnerEmail, 'owner');
+    const owner = await UserService.find(validatedOwnerEmail, 'owner');
     if (!owner) throw new ConfigurableError('Dono do imóvel não encontrado', 404);
 
-    const guest = await this.userService.find(validatedGuestEmail);
+    const guest = await UserService.find(validatedGuestEmail);
     if (!guest) throw new ConfigurableError('O usuário que você tentou compartilhar o imóvel não encontrado', 404);
 
     const property = await prisma.property.findFirst(validatedPropertyId);
@@ -665,7 +663,7 @@ export default class PropertyService {
     const validatedEmail = validateEmail(email);
     const validatedPropertyId = validateString(propertyId);
 
-    const user = await this.userService.find(validatedEmail);
+    const user = await UserService.find(validatedEmail);
     if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
 
     const p = await prisma.sharedProperties.findFirst({ where: { propertyId: validatedPropertyId, accepted: false } });
@@ -680,7 +678,7 @@ export default class PropertyService {
     const validatedPropertyId = validateString(propertyId);
     let emailBody;
 
-    const user = await this.userService.find(validatedEmail);
+    const user = await UserService.find(validatedEmail);
     if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
 
     const sharedProperty = await prisma.sharedProperties.findFirst({ where: { propertyId: validatedPropertyId, email: validatedEmail } });
@@ -718,7 +716,7 @@ export default class PropertyService {
     const validatedReason = reason ? ` \nMotivo: ${validateString(reason)}.` : '';
     let emailBody;
 
-    const user = await this.userService.find(validatedEmail);
+    const user = await UserService.find(validatedEmail);
     if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
 
     const sharedProperty = await prisma.sharedProperties.findFirst({ where: { propertyId: validatedPropertyId, email: validatedEmail } });

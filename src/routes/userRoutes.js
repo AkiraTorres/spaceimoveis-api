@@ -13,3 +13,5 @@ router.post('/rescue/password', controller.rescuePassword);
 router.post('/reset/password', controller.resetPassword);
 
 router.post('/contact', controller.contact);
+
+export default router;

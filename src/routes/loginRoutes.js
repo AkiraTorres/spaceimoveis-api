@@ -10,8 +10,6 @@ dotenv.config();
 
 const router = Express.Router();
 
-const userService = new UserService();
-
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -20,7 +18,7 @@ router.post('/login', async (req, res) => {
 
     if (email === '' || password === '') throw error;
 
-    const user = await userService.find(email, true);
+    const user = await UserService.find(email, true);
     if (!user) throw error;
 
     const isValid = bcrypt.compareSync(password, user.password);
@@ -45,7 +43,7 @@ router.post('/google', async (req, res) => {
 
     if (!email) throw error;
 
-    const user = await userService.find(email, false);
+    const user = await UserService.find(email, false);
     if (!user) throw error;
 
     const loggedUser = { user, token: googleToken };
@@ -65,7 +63,7 @@ router.post('/login/admin', async (req, res) => {
 
     if (email === '' || password === '') throw error;
 
-    const user = await userService.find(email, 'admin');
+    const user = await UserService.find(email, 'admin');
     if (!user) throw error;
 
     const isValid = bcrypt.compareSync(password, user.password);

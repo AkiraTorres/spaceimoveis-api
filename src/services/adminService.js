@@ -18,11 +18,6 @@ dotenv.config();
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 export default class AdminService extends UserService {
-  constructor() {
-    super();
-    this.propertyService = new PropertyService();
-  }
-
   static async getLastPublishedProperties(page = 1, take = 10) {
     const date = new Date();
     date.setDate(date.getDate() - 3);
@@ -44,7 +39,7 @@ export default class AdminService extends UserService {
       total,
     };
 
-    const properties = await Promise.all(props.map(async (property) => this.propertyService.getPropertyDetails(property)));
+    const properties = await Promise.all(props.map(async (property) => PropertyService.getPropertyDetails(property)));
 
     return { properties, pagination };
   }

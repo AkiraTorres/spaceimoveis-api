@@ -4,10 +4,6 @@ import { validateEmail } from '../validators/inputValidators.js';
 import PropertyService from './propertyService.js';
 
 export default class SellerDashboardService {
-  constructor() {
-    this.propertyService = new PropertyService();
-  }
-
   static async totalPropertiesLikes(email) {
     const validatedEmail = validateEmail(email);
 
@@ -111,6 +107,6 @@ export default class SellerDashboardService {
 
     const sorted = properties.sort((a, b) => b.timesSeen - a.timesSeen);
 
-    return Promise.all(sorted.slice(0, 5).map(async (property) => this.propertyService.getPropertyDetails(property)));
+    return Promise.all(sorted.slice(0, 5).map(async (property) => PropertyService.getPropertyDetails(property)));
   }
 }

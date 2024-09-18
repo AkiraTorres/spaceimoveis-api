@@ -8,7 +8,7 @@ import verifyJwt from '../middlewares/verifyJwt.js';
 const router = Express.Router();
 
 router.get('/', controller.findAll);
-router.get('/:email', controller.findByPk);
+router.get('/:email', controller.find);
 router.post('/', controller.create);
 router.put('/:email', verifyGoogleToken, verifyJwt, matchEmail, controller.update);
 router.put('/:email/elevate', verifyGoogleToken, verifyJwt, matchEmail, controller.elevate);

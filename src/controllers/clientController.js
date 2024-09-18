@@ -2,12 +2,10 @@ import asyncHandler from 'express-async-handler';
 
 import ClientService from '../services/clientService.js';
 
-const service = new ClientService();
-
 export const findAll = asyncHandler(async (req, res, next) => {
   try {
     const { page = 1 } = req.query;
-    const result = await service.findAll(page, 'client');
+    const result = await ClientService.findAll(page, 'client');
     res.status(200).json(result);
   } catch (error) {
     next(error);
@@ -16,7 +14,7 @@ export const findAll = asyncHandler(async (req, res, next) => {
 
 export const find = asyncHandler(async (req, res, next) => {
   try {
-    const result = await service.find({ email: req.params.email }, 'client');
+    const result = await ClientService.find({ email: req.params.email }, 'client');
     res.status(200).json(result);
   } catch (error) {
     next(error);
@@ -31,7 +29,7 @@ export const create = asyncHandler(async (req, res, next) => {
     let clientData = {};
     if (data !== undefined) clientData = JSON.parse(data);
 
-    const result = await service.create(clientData, file);
+    const result = await ClientService.create(clientData, file);
     res.status(201).json(result);
   } catch (error) {
     next(error);
@@ -46,7 +44,7 @@ export const update = asyncHandler(async (req, res, next) => {
     let clientData = {};
     if (data !== undefined) clientData = JSON.parse(data);
 
-    const result = await service.update(req.params.email, clientData, file);
+    const result = await ClientService.update(req.params.email, clientData, file);
     res.status(200).json(result);
   } catch (error) {
     next(error);
@@ -55,7 +53,7 @@ export const update = asyncHandler(async (req, res, next) => {
 
 export const destroy = asyncHandler(async (req, res, next) => {
   try {
-    const result = await service.destroy(req.params.email);
+    const result = await ClientService.destroy(req.params.email);
     res.status(200).json(result);
   } catch (error) {
     next(error);
@@ -70,7 +68,7 @@ export const elevate = asyncHandler(async (req, res, next) => {
     let clientData = {};
     if (data !== undefined) clientData = JSON.parse(data);
 
-    const result = await service.elevate(req.params.email, clientData, file);
+    const result = await ClientService.elevate(req.params.email, clientData, file);
     res.status(200).json(result);
   } catch (error) {
     next(error);

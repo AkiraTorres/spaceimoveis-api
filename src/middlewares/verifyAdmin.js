@@ -3,9 +3,8 @@ import AdminService from '../services/adminService.js';
 export default async function verifyAdmin(req, res, next) {
   try {
     const { email } = req;
-    const adminService = new AdminService();
 
-    const admin = await adminService.find(email, 'admin');
+    const admin = await AdminService.find(email, 'admin');
     if (!admin) throw new Error('Unauthorized');
 
     next();

@@ -16,8 +16,6 @@ export default class MessageService {
   constructor() {
     this.app = initializeApp(firebaseConfig);
     this.storage = getStorage(this.app);
-    this.chatService = new ChatService();
-    this.userService = new UserService();
   }
 
   // TODO: precisa salvar as mensagens criptografadas no db
@@ -26,7 +24,7 @@ export default class MessageService {
     const validatedChatId = validateString(chatId);
     const validatedText = validateString(text);
 
-    const user = await this.userService.find(validatedEmail, false, false, true);
+    const user = await UserService.find(validatedEmail, false, false, true);
     if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
     if (!text || text === '') throw new ConfigurableError('Texto da mensagem não pode ser vazio', 400);
 
@@ -36,7 +34,7 @@ export default class MessageService {
 
     let chat;
     try {
-      chat = await this.chatService.findChatByChatId(validatedChatId, validatedEmail);
+      chat = await ChatService.findChatByChatId(validatedChatId, validatedEmail);
     } catch (error) {
       throw new ConfigurableError('Chat não encontrado', 404);
     }
@@ -56,15 +54,15 @@ export default class MessageService {
   static async findMessages(chatId, email) {
     const validatedEmail = validateEmail(email);
 
-    const user = await this.userService.find(validatedEmail);
+    const user = await UserService.find(validatedEmail);
     if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
 
-    const chats = await this.chatService.findUserChats(validatedEmail);
+    const chats = await ChatService.findUserChats(validatedEmail);
     if (!chats || !chats.find((chat) => chat.id === chatId)) throw new ConfigurableError('Chat não encontrado', 404);
 
     let chat;
     try {
-      chat = await this.chatService.findChatByChatId(chatId, validateEmail);
+      chat = await ChatService.findChatByChatId(chatId, validateEmail);
     } catch (error) {
       throw new ConfigurableError('Chat não encontrado', 404);
     }
@@ -96,10 +94,10 @@ export default class MessageService {
     const type = validateMessageType(t);
     const validatedText = text === '' || text === undefined ? '' : validateString(text);
 
-    const user = await this.userService.find(validatedEmail);
+    const user = await UserService.find(validatedEmail);
     if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
 
-    const chat = await this.chatService.findChatByChatId(validatedChatId);
+    const chat = await ChatService.findChatByChatId(validatedChatId);
     if (!chat) throw new ConfigurableError('Chat não encontrado', 404);
     if (!file) throw new ConfigurableError('Arquivo não encontrado', 400);
     if (!contentType && type !== 'audio') throw new ConfigurableError('Tipo de conteúdo não encontrado', 400);
@@ -163,7 +161,7 @@ export default class MessageService {
     const validatedEmail = validateEmail(sender);
     const validatedId = validateString(id);
     const message = await prisma.message.findFirst(validatedId) === null;
-    const user = await this.userService.find(validatedEmail);
+    const user = await UserService.find(validatedEmail);
 
     if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
     if (!message) throw new ConfigurableError('Mensagem não encontrada', 404);

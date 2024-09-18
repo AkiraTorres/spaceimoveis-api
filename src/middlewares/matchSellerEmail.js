@@ -1,6 +1,6 @@
-import prisma from '../config/prisma';
-import ConfigurableError from '../errors/ConfigurableError';
-import { validateString } from '../validators/inputValidators';
+import prisma from '../config/prisma.js';
+import ConfigurableError from '../errors/ConfigurableError.js';
+import { validateString } from '../validators/inputValidators.js';
 
 export default async function matchEmail(req, res, next) {
   try {

@@ -49,8 +49,8 @@ export default class UserService {
     return this.userDetails(user);
   }
 
-  static async findAll(page = 1, type = null, activate = true) {
-    const where = { activate: validateBoolean(activate) };
+  static async findAll(page = 1, type = null, active = true) {
+    const where = { active: validateBoolean(active) };
 
     if (page < 1 || !type) {
       const users = prisma.user.findMany({ where, orderBy: { name: 'asc' } });

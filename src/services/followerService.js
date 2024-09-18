@@ -4,18 +4,14 @@ import { validateEmail } from '../validators/inputValidators.js';
 import UserService from './userService.js';
 
 export default class FollowerService {
-  constructor() {
-    this.userService = new UserService();
-  }
-
   static async follow(followerEmail, followedEmail) {
     const validatedFollowerEmail = validateEmail(followerEmail);
     const validatedFollowedEmail = validateEmail(followedEmail);
 
-    const follower = await this.userService.find(validatedFollowerEmail);
+    const follower = await UserService.find(validatedFollowerEmail);
     if (!follower) throw new ConfigurableError('Seguidor não encontrado', 404);
 
-    const followed = await this.userService.find(validatedFollowedEmail);
+    const followed = await UserService.find(validatedFollowedEmail);
     if (!followed) throw new ConfigurableError('Seguido não encontrado', 404);
 
     const follow = await prisma.follower.findFirst({ where: { followerEmail: validatedFollowerEmail, followedEmail: validatedFollowedEmail } });
@@ -28,10 +24,10 @@ export default class FollowerService {
     const validatedFollowerEmail = validateEmail(followerEmail);
     const validatedFollowedEmail = validateEmail(followedEmail);
 
-    const follower = await this.userService.find(validatedFollowerEmail);
+    const follower = await UserService.find(validatedFollowerEmail);
     if (!follower) throw new ConfigurableError('Seguidor não encontrado', 404);
 
-    const followed = await this.userService.find(validatedFollowedEmail);
+    const followed = await UserService.find(validatedFollowedEmail);
     if (!followed) throw new ConfigurableError('Seguido não encontrado', 404);
 
     const follow = await prisma.follower.findFirst({ where: { followerEmail: validatedFollowerEmail, followedEmail: validatedFollowedEmail } });
@@ -43,7 +39,7 @@ export default class FollowerService {
   static async getFollowers(email) {
     const validatedEmail = validateEmail(email);
 
-    const followed = await this.userService.find(validatedEmail);
+    const followed = await UserService.find(validatedEmail);
     if (!followed) throw new ConfigurableError('Usuário não encontrado', 404);
 
     const followers = await prisma.follower.findMany({ where: { followedEmail: validatedEmail } });
@@ -55,7 +51,7 @@ export default class FollowerService {
   static async getFollowing(email) {
     const validatedEmail = validateEmail(email);
 
-    const follower = await this.userService.find(validatedEmail);
+    const follower = await UserService.find(validatedEmail);
     if (!follower) throw new ConfigurableError('Usuário não encontrado', 404);
 
     const following = await prisma.follower.findMany({ where: { followerEmail: validatedEmail } });
@@ -83,7 +79,7 @@ export default class FollowerService {
   static async getTotalFollowers(email) {
     const validatedEmail = validateEmail(email);
 
-    const followed = await this.userService.find(validatedEmail);
+    const followed = await UserService.find(validatedEmail);
     if (!followed) throw new ConfigurableError('Usuário não encontrado', 404);
 
     return prisma.follower.count({ where: { followedEmail: validatedEmail } });
@@ -92,7 +88,7 @@ export default class FollowerService {
   static async getTotalFollowing(email) {
     const validatedEmail = validateEmail(email);
 
-    const follower = await this.userService.find(validatedEmail);
+    const follower = await UserService.find(validatedEmail);
     if (!follower) {
       const error = new Error('User not found');
       error.status = 404;

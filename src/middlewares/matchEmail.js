@@ -1,4 +1,4 @@
-import ConfigurableError from '../errors/ConfigurableError';
+import ConfigurableError from '../errors/ConfigurableError.js';
 
 export default function matchEmail(req, res, next) {
   try {
