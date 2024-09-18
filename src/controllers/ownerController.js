@@ -1,6 +1,10 @@
 import asyncHandler from 'express-async-handler';
 
-import * as service from '../services/ownerService.js';
+import ClientService from '../services/clientService.js';
+import OwnerService from '../services/ownerService.js';
+
+const service = new OwnerService();
+const clientService = new ClientService();
 
 export const findAll = asyncHandler(async (req, res, next) => {
   try {
@@ -60,7 +64,7 @@ export const elevate = asyncHandler(async (req, res, next) => {
     let ownerData = {};
     if (data !== undefined) ownerData = JSON.parse(data);
 
-    const result = await service.elevate(req.params.email, ownerData, file);
+    const result = await clientService.elevate(req.params.email, ownerData, file);
     res.status(201).json(result);
   } catch (error) {
     next(error);
