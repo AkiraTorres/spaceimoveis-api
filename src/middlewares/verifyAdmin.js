@@ -1,15 +1,12 @@
-import Admin from '../db/models/Admin.js';
+import AdminService from '../services/adminService.js';
 
 export default async function verifyAdmin(req, res, next) {
   try {
     const { email } = req;
+    const adminService = new AdminService();
 
-    const admin = await Admin.findByPk(email);
-    if (!admin) {
-      const error = new Error('O e-mail informado não pertence a um administrador');
-      error.status = 401;
-      throw error;
-    }
+    const admin = await adminService.find(email, 'admin');
+    if (!admin) throw new Error('Unauthorized');
 
     next();
     return true;

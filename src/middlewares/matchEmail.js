@@ -1,12 +1,10 @@
-import EmailDontMatch from '../errors/emailDontMatch.js';
+import ConfigurableError from '../errors/ConfigurableError';
 
 export default function matchEmail(req, res, next) {
   try {
     const { email } = req.params;
 
-    if (email !== req.email) {
-      throw new EmailDontMatch();
-    }
+    if (email !== req.email) throw new ConfigurableError('Unauthorized', 401);
 
     next();
     return true;

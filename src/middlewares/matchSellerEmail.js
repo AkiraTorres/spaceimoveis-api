@@ -1,23 +1,16 @@
-import Property from '../db/models/Property.js';
-import EmailDontMatch from '../errors/emailDontMatch.js';
-import PropertyNotFound from '../errors/propertyErrors/propertyNotFound.js';
+import prisma from '../config/prisma';
+import ConfigurableError from '../errors/ConfigurableError';
+import { validateString } from '../validators/inputValidators';
 
 export default async function matchEmail(req, res, next) {
   try {
     const { id } = req.params;
 
-    const property = await Property.findByPk(id);
+    const property = await prisma.property.findFirst(validateString(id, 'O id da propriedade não foi informado'));
 
-    if (!property) {
-      throw new PropertyNotFound();
-    }
+    if (!property) throw new ConfigurableError('Unauthorized', 401);
 
-    if (
-      property.owner_email !== req.email
-      && property.realtor_email !== req.email
-      && property.realstate_email !== req.email) {
-      throw new EmailDontMatch();
-    }
+    if (property.advertiserEmail !== req.email) throw new ConfigurableError('Unauthorized', 401);
 
     next();
     return true;
