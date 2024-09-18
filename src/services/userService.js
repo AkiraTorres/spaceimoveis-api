@@ -15,13 +15,32 @@ export default class UserService {
     this.storage = getStorage(this.app);
   }
 
+  static async getAvgRateByReceiver(receiverEmail) {
+    const validatedReceiverEmail = validateEmail(receiverEmail);
+
+    const receiver = await prisma.user.findByPk(validatedReceiverEmail);
+    if (!receiver) throw new ConfigurableError('Usuário não encontrado', 404);
+
+    const where = { receiverEmail: validatedReceiverEmail };
+    const orderBy = { createdAt: 'desc' };
+
+    const ratings = await prisma.userRating.findAll({ where, orderBy });
+
+    if (ratings === 0) return ratings;
+
+    const total = ratings.length;
+    const sum = ratings.reduce((acc, curr) => acc + curr.rating, 0);
+    return ((sum / total) / 2).toFixed(2);
+  }
+
   static async userDetails(user) {
     const editedUser = user;
 
     editedUser.info = await prisma.userInfo.findUnique({ where: { email: user.email } });
     editedUser.address = await prisma.userAddress.findUnique({ where: { email: user.email } });
     editedUser.profile = await prisma.userPhoto.findUnique({ where: { email: user.email } });
-    editedUser.rating = await prisma.userRating.findUnique({ where: { email: user.email } });
+    editedUser.avgRating = await this.getAvgRateByReceiver(user.email);
+    editedUser.totalRatings = await prisma.userRating.count({ where: { email: user.email } });
     editedUser.favorites = await prisma.favorite.findMany({ where: { userEmail: user.email } });
     editedUser.followers = await prisma.follower.findMany({ where: { followedEmail: user.email } });
     editedUser.follow = await prisma.follower.findMany({ where: { followerEmail: user.email } });
