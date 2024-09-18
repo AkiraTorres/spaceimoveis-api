@@ -7,14 +7,14 @@ export default class RealtorService extends UserService {
   static async getAvgRateByReceiver(receiverEmail) {
     const validatedReceiverEmail = validateEmail(receiverEmail);
 
-    const receiver = await prisma.user.findByPk(validatedReceiverEmail);
+    const receiver = await prisma.user.findFirst(validatedReceiverEmail);
     if (!receiver) throw new ConfigurableError('Usuário não encontrado', 404);
     if (!(receiver.type in ['realtor', 'realstate'])) throw new Error('Usuário a receber a avaliação deve ser um corretor ou imobiliária.', 400);
 
     const where = { receiverEmail: validatedReceiverEmail };
     const orderBy = { createdAt: 'desc' };
 
-    const ratings = await prisma.userRating.findAll({ where, orderBy });
+    const ratings = await prisma.userRating.findMany({ where, orderBy });
 
     if (ratings === 0) return ratings;
 
@@ -66,7 +66,7 @@ export default class RealtorService extends UserService {
       total,
     };
 
-    const realtors = await prisma.user.findAll({ where, orderBy, skip, take });
+    const realtors = await prisma.user.findMany({ where, orderBy, skip, take });
     if (realtors.length === 0) throw new ConfigurableError('Nenhum corretor encontrado', 404);
 
     const result = await Promise.all(realtors.map(async (realtor) => this.userDetails(realtor)));

@@ -29,7 +29,7 @@ export default class FavoriteService {
     const user = await this.userService.find(validatedEmail);
     if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
 
-    const favorites = await prisma.favorite.findAll({ where: { userEmail: validatedEmail } });
+    const favorites = await prisma.favorite.findMany({ where: { userEmail: validatedEmail } });
 
     const favoritesIds = favorites.map((favorite) => favorite.propertyId);
     return favoritesIds;

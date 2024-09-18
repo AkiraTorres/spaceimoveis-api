@@ -51,7 +51,7 @@ export default class PropertyService {
 
     const seller = await this.userService.find({ email: editedProperty.email });
     const totalFavorites = await this.favoriteService.getPropertyTotalFavorites(property.id);
-    const pictures = await prisma.propertyPictures.findAll({ where: { propertyId: property.id }, orderBy: { type: 'asc' } });
+    const pictures = await prisma.propertyPictures.findMany({ where: { propertyId: property.id }, orderBy: { type: 'asc' } });
 
     return { ...editedProperty, totalFavorites, pictures, seller };
   }
@@ -64,7 +64,7 @@ export default class PropertyService {
     const lastPage = Math.ceil(countTotal / take);
     const skip = Number(take * (page - 1));
 
-    const props = await prisma.property.findAll({
+    const props = await prisma.property.findMany({
       where,
       orderBy: { updatedAt: 'desc' },
       skip,
@@ -96,7 +96,7 @@ export default class PropertyService {
     const where = { isHighlighted, verified: 'verified' };
     const orderBy = { updatedAt: 'desc' };
 
-    const props = await prisma.property.findAll({ where, orderBy });
+    const props = await prisma.property.findMany({ where, orderBy });
     let properties = await Promise.all(props.map(async (property) => this.propertyDetails(property)));
 
     const d = new Date();
@@ -144,7 +144,7 @@ export default class PropertyService {
       total,
     };
 
-    const props = await prisma.property.findAll({
+    const props = await prisma.property.findMany({
       where: { email: validatedEmail },
       orderBy: { updatedAt: 'desc' },
       take,
@@ -165,7 +165,7 @@ export default class PropertyService {
     const user = await find(validateEmail(email));
     if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
 
-    const properties = await prisma.property.findAll({ where: { email: user.email }, select: { id: true } });
+    const properties = await prisma.property.findMany({ where: { email: user.email }, select: { id: true } });
 
     return properties.map((property) => property.id);
   }
@@ -174,7 +174,7 @@ export default class PropertyService {
     const user = await this.userService.find(validateEmail(email));
     if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
 
-    const properties = await prisma.property.findAll({ where: { email: user.email }, attributes: { city: true } });
+    const properties = await prisma.property.findMany({ where: { email: user.email }, attributes: { city: true } });
     const cities = properties.map((property) => property.city);
     return [...new Set(cities)];
   }
@@ -199,7 +199,7 @@ export default class PropertyService {
     const user = await find(validateEmail(email));
     if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
 
-    const props = await prisma.property.findAll({
+    const props = await prisma.property.findMany({
       where: { email: user.email, verified: 'verified' },
       orderBy: { timesSeen: 'desc' },
       take,
@@ -376,7 +376,7 @@ export default class PropertyService {
     property.commodities = await prisma.propertiesCommodities.update({ where: { propertyId: validatedId }, data: updatedCommodities });
 
     if (params.oldPhotosUrls) oldPhotosUrls = params.oldPhotosUrls;
-    const oldPhotos = await prisma.propertyPictures.findAll({ where: { propertyId: validatedId, url: { not: { in: oldPhotosUrls } } } });
+    const oldPhotos = await prisma.propertyPictures.findMany({ where: { propertyId: validatedId, url: { not: { in: oldPhotosUrls } } } });
 
     // delete photos that the user didn't want to keep
     await Promise.all(oldPhotos.map(async (photo) => {
@@ -437,7 +437,7 @@ export default class PropertyService {
       }));
     }
 
-    const photos = await prisma.propertyPictures.findAll({ where: { propertyId: validatedId }, orderBy: { type: 'asc' } });
+    const photos = await prisma.propertyPictures.findMany({ where: { propertyId: validatedId }, orderBy: { type: 'asc' } });
 
     return { property, photos };
   }
@@ -476,7 +476,7 @@ export default class PropertyService {
     if (!property) throw new ConfigurableError('Imóvel não encontrado', 404);
     if (property.advertiserEmail !== email) throw new ConfigurableError('Você não tem permissão para arquivar este imóvel', 401);
 
-    const photos = await prisma.propertyPictures.findAll({ where: { propertyId: validatedId } });
+    const photos = await prisma.propertyPictures.findMany({ where: { propertyId: validatedId } });
 
     if (photos.length > 0) {
       await Promise.all(photos.map(async (photo) => {

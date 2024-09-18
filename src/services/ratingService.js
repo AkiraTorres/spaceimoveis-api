@@ -68,7 +68,7 @@ export default class RatingService {
       total,
     };
 
-    const result = await prisma.userRating.findAll({ where, take, skip, orderBy });
+    const result = await prisma.userRating.findMany({ where, take, skip, orderBy });
 
     return { result, pagination };
   }
@@ -131,7 +131,7 @@ export default class RatingService {
       total,
     };
 
-    const result = await prisma.userRating.findAll({ where, take, skip, orderBy });
+    const result = await prisma.userRating.findMany({ where, take, skip, orderBy });
     return { result, pagination };
   }
 
