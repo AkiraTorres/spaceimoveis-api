@@ -228,3 +228,23 @@ export function validateUserType(type) {
 
   throw new ConfigurableError('Tipo de usuário inválido deve possuir um valor válido (client/owner/realtor/realstate/admin)', 400);
 }
+
+export function validateAnnouncementType(type) {
+  if (type === null) {
+    throw new ConfigurableError("O campo 'tipo' é obrigatório", 422);
+  }
+
+  if (type === 'rent' || type === 'sale') return type;
+
+  throw new ConfigurableError('Tipo de anúncio inválido deve possuir um valor válido (rent/sale)', 400);
+}
+
+export function validatePropertyType(type) {
+  if (type === null) {
+    throw new ConfigurableError("O campo 'tipo' é obrigatório", 422);
+  }
+
+  if (type === 'house' || type === 'apartment' || type === 'land' || type === 'farm') return type;
+
+  throw new ConfigurableError('Tipo de propriedade inválido deve possuir um valor válido (house/apartment/land/farm)', 400);
+}
