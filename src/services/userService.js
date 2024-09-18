@@ -1,3 +1,4 @@
+import sgMail from '@sendgrid/mail';
 import dotenv from 'dotenv';
 import { initializeApp } from 'firebase/app';
 import { deleteObject, getDownloadURL, getStorage, ref, uploadBytesResumable } from 'firebase/storage';
@@ -9,6 +10,8 @@ import ConfigurableError from '../errors/ConfigurableError.js';
 import { validateBoolean, validateCnpj, validateCpf, validateCreci, validateEmail, validatePassword, validatePhone, validateString, validateUF, validateUserType } from '../validators/inputValidators.js';
 
 dotenv.config();
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
 export default class UserService {
   constructor() {
     this.app = initializeApp(firebaseConfig);
@@ -227,5 +230,75 @@ export default class UserService {
 
     await prisma.user.update({ where: { email: validatedEmail }, data: { active: false, deletedAt: new Date() } });
     return { message: 'Usuário apagado com sucesso' };
+  }
+
+  static async changePassword(email, newPassword) {
+    const validatedEmail = validateEmail(email);
+
+    const user = await this.find(validatedEmail);
+    if (!user) throw new Error('Email não encontrado');
+
+    const validatedPassword = validatePassword(newPassword);
+    if (user.password === validatedPassword) throw new ConfigurableError('A nova senha não pode ser igual à antiga', 422);
+
+    user.password = validatedPassword;
+    const result = await prisma.user.update({ where: { email: validatedEmail }, data: { password: validatedPassword } });
+    if (result === undefined) throw new ConfigurableError('Erro ao atualizar a senha', 500);
+
+    return this.userDetails(user);
+  }
+
+  static async rescuePassword(email) {
+    const receiverEmail = validateEmail(email);
+
+    const user = await this.find(receiverEmail);
+    if (!user) return { message: 'Usuário não encontrado.' };
+
+    const otp = Math.floor(1000 + Math.random() * 9000);
+    const otpTTL = new Date();
+    otpTTL.setMinutes(otpTTL.getMinutes() + 6);
+
+    await prisma.user.update({ where: { email: receiverEmail }, data: { otp: otp.toString(), otpTTL } });
+
+    const mailOptions = {
+      from: process.env.EMAIL_ADDRESS,
+      to: receiverEmail,
+      subject: 'Redefinição de Senha',
+      text: `Seu código para redefinição de senha é ${otp} e ele irá se espirar em 6 minutos`,
+    };
+
+    let response = 'Foi enviado um email para recuperar sua senha';
+
+    sgMail
+      .send(mailOptions)
+      .catch(() => { response = 'Ocorreu um erro ao enviar o email, tente novamente mais tarde.'; });
+
+    return { message: response };
+  }
+
+  static async resetPassword(email, password, otp) {
+    const validatedEmail = validateEmail(email);
+    const user = await this.find(validatedEmail, true, true);
+
+    if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
+
+    if (user.otp === otp && user.otp_ttl > new Date()) {
+      return this.changePassword(email, password);
+    }
+
+    throw new ConfigurableError('Código de verificação inválido ou expirado', 422);
+  }
+
+  static async contact({ name, email, message, type }) {
+    const newData = {
+      id: uuid(),
+      user_name: validateString(name, 'O campo nome é obrigatório'),
+      user_email: validateEmail(email, 'O campo email é obrigatório'),
+      user_type: type ? validateString(type) : null,
+      message: validateString(message, 'O campo mensagem é obrigatório'),
+    };
+    await prisma.userMessages.create(newData);
+
+    return { message: 'Mensagem enviada com sucesso!' };
   }
 }

@@ -2,34 +2,31 @@ import bodyParser from 'body-parser';
 import cors from 'cors';
 import Express from 'express';
 import { createServer } from 'http';
-import { Server } from "socket.io";
+import { Server } from 'socket.io';
 
-import * as globalController from './controllers/globalController.js';
-import { verifyGoogleToken } from './middlewares/verifyGoogle.cjs';
-import verifyJwt from './middlewares/verifyJwt.js';
 import adminRoutes from './routes/adminRoutes.js';
+import chatRoutes from './routes/chatRoutes.js';
 import clientRoutes from './routes/clientRoutes.js';
 import favoriteRoutes from './routes/favoriteRoutes.js';
+import followerRoutes from './routes/followerRoutes.js';
 import loginRoutes from './routes/loginRoutes.js';
+import messageRoutes from './routes/messageRoutes.js';
 import ownerRoutes from './routes/ownerRoutes.js';
 import propertyRoutes from './routes/propertyRoutes.js';
 import ratingRoutes from './routes/ratingRoutes.js';
 import realstateRoutes from './routes/realstateRoutes.js';
 import realtorRoutes from './routes/realtorRoutes.js';
 import sellerDashboardRoutes from './routes/sellerDashboardRoutes.js';
-import chatRoutes from "./routes/chatRoutes.js";
-import messageRoutes from "./routes/messageRoutes.js";
-import followerRoutes from "./routes/followerRoutes.js";
+import userRoutes from './routes/userRoutes.js';
 
 const app = Express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: "*",
+    origin: '*',
     credentials: true,
     maxHttpBufferSize: 1e8,
-    // methods: ["GET", "POST"]
-  }
+  },
 });
 
 app.use(cors());
@@ -49,20 +46,7 @@ app.use('/message', messageRoutes);
 app.use('/dashboard', sellerDashboardRoutes);
 app.use('/follow', followerRoutes);
 
-app.get('/find/:email', globalController.find);
-app.get('/find', globalController.findAll);
-app.post('/change/password', verifyGoogleToken, verifyJwt, globalController.changePassword);
-
-app.post('/rescue/password', globalController.rescuePassword);
-app.post('/reset/password', globalController.resetPassword);
-
-app.put('/share/:id', verifyGoogleToken, verifyJwt, globalController.shareProperty);
-app.get('/shared/:id', verifyGoogleToken, verifyJwt, globalController.getSharedProperties);
-app.get('/shared', verifyGoogleToken, verifyJwt, globalController.getSharedProperties);
-app.post('/share/confirm/:id', verifyGoogleToken, verifyJwt, globalController.confirmSharedProperty);
-app.post('/share/negate/:id', verifyGoogleToken, verifyJwt, globalController.negateSharedProperty);
-
-app.post('/contact', globalController.contact);
+app.use('/', userRoutes);
 
 app.use('/admin', adminRoutes);
 
@@ -77,4 +61,4 @@ app.use((error, req, res, next) => {
   res.status(status).json({ message });
 });
 
-export { httpServer, io }
+export { httpServer, io };
