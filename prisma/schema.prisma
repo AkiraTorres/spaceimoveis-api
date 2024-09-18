@@ -181,29 +181,29 @@ model Property {
   propertyType     PropertyType     @map("property_type")
   isHighlight      Boolean          @default(false) @map("is_highlight")
   isPublished      Boolean          @default(false) @map("is_published")
-  floor            Int?
-  size             Int?
-  bathrooms        Int?
-  bedrooms         Int?
-  parkingSpaces    Int?             @map("parking_spaces")
+  floor            Int              @default(1)
+  size             Int
+  bathrooms        Int              @default(0)
+  bedrooms         Int              @default(0)
+  parkingSpaces    Int              @default(0) @map("parking_spaces")
   description      String           @db.VarChar(1024)
   contact          String
   financiable      Boolean          @default(false)
   negotiable       Boolean          @default(false)
-  suites           Int?
+  suites           Int              @default(0)
   furnished        Furnished?
   verified         Verified         @default(pending)
   timesSeen        Int              @default(0) @map("times_seen")
 
   advertiser User @relation(fields: [advertiserEmail], references: [email])
 
-  SharedProperties     SharedProperties[]
-  Favorite             Favorite[]
-  PropertiesPrices     PropertiesPrices?
-  PropertiesAddresses  PropertiesAddresses?
-  PropertiesComodities PropertiesComodities?
-  PropertyPictures     PropertyPictures[]
-  ReasonRejected       ReasonRejectedProperty[]
+  SharedProperties      SharedProperties[]
+  Favorite              Favorite[]
+  PropertiesPrices      PropertiesPrices?
+  PropertiesAddresses   PropertiesAddresses?
+  PropertiesCommodities PropertiesCommodities?
+  PropertyPictures      PropertyPictures[]
+  ReasonRejected        ReasonRejectedProperty[]
 
   @@map("properties")
 }
@@ -224,7 +224,7 @@ model PropertiesAddresses {
   propertyId   String  @id @unique @map("property_id")
   cep          String  @db.VarChar(9)
   address      String
-  houseNumber  String? @map("house_number")
+  number       String? @map("number")
   city         String
   state        String  @db.VarChar(2)
   neighborhood String
@@ -235,7 +235,7 @@ model PropertiesAddresses {
   @@map("properties_addresses")
 }
 
-model PropertiesComodities {
+model PropertiesCommodities {
   propertyId     String  @id @unique @map("property_id")
   pool           Boolean @default(false)
   grill          Boolean @default(false)
