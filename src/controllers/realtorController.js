@@ -19,7 +19,7 @@ export const findAll = asyncHandler(async (req, res, next) => {
 
 export const findByPk = asyncHandler(async (req, res, next) => {
   try {
-    const result = await service.findByPk({ email: req.params.email, type: 'realtor' });
+    const result = await service.find({ email: req.params.email }, 'realtor');
     res.status(200).json(result);
   } catch (error) {
     next(error);

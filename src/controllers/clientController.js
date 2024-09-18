@@ -14,7 +14,7 @@ export const findAll = asyncHandler(async (req, res, next) => {
 
 export const find = asyncHandler(async (req, res, next) => {
   try {
-    const result = await ClientService.find({ email: req.params.email });
+    const result = await ClientService.find({ email: req.params.email }, 'client');
     res.status(200).json(result);
   } catch (error) {
     next(error);
