@@ -248,3 +248,13 @@ export function validatePropertyType(type) {
 
   throw new ConfigurableError('Tipo de propriedade inválido deve possuir um valor válido (house/apartment/land/farm)', 400);
 }
+
+export function validateMessageType(type) {
+  if (type === null) {
+    throw new ConfigurableError("O campo 'tipo' é obrigatório", 422);
+  }
+
+  if (type === 'text' || type === 'image' || type === 'audio' || type === 'video' || type === 'file') return type;
+
+  throw new ConfigurableError('Tipo de mensagem inválido deve possuir um valor válido (text/image/audio/video/file)', 400);
+}

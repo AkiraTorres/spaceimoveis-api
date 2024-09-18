@@ -157,15 +157,15 @@ model Follower {
 }
 
 model Message {
-  id          String   @id @unique @default(uuid())
+  id          String      @id @unique @default(uuid())
   chatId      String
   senderEmail String
-  text        String   @db.VarChar(16384)
-  url         String?  @db.VarChar(2048)
-  isDeleted   Boolean  @default(false) @map("is_deleted")
-  type        String   @default("text") @db.VarChar(25)
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+  text        String      @db.VarChar(16384)
+  url         String?     @db.VarChar(2048)
+  isDeleted   Boolean     @default(false) @map("is_deleted")
+  type        MessageType @default(text)
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @default(now()) @updatedAt @map("updated_at")
 
   chat   Chat @relation(fields: [chatId], references: [id])
   sender User @relation(fields: [senderEmail], references: [email])
@@ -315,6 +315,14 @@ enum Type {
   realstate
   admin
   property
+}
+
+enum MessageType {
+  text
+  image
+  video
+  audio
+  file
 }
 
 enum Furnished {
