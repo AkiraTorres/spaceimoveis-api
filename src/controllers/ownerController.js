@@ -10,7 +10,7 @@ export const findAll = asyncHandler(async (req, res, next) => {
   try {
     const { page = 1 } = req.query;
 
-    const result = await service.findAll(page);
+    const result = await service.findAll(page, 'owner');
     res.status(200).json(result);
   } catch (error) {
     next(error);
@@ -19,7 +19,7 @@ export const findAll = asyncHandler(async (req, res, next) => {
 
 export const findByPk = asyncHandler(async (req, res, next) => {
   try {
-    const result = await service.findByPk(req.params.email);
+    const result = await service.findByPk({ email: req.params.email, type: 'owner' });
     res.status(200).json(result);
   } catch (error) {
     next(error);
@@ -64,7 +64,7 @@ export const elevate = asyncHandler(async (req, res, next) => {
     let ownerData = {};
     if (data !== undefined) ownerData = JSON.parse(data);
 
-    const result = await clientService.elevate(req.params.email, ownerData, file);
+    const result = await clientService.elevate(req.params.email, ownerData, file, 'owner');
     res.status(201).json(result);
   } catch (error) {
     next(error);

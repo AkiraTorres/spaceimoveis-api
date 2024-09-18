@@ -7,23 +7,23 @@ import { validateEmail, validatePhone, validateString, validateUF, validateUserT
 import UserService from './userService.js';
 
 export default class ClientService extends UserService {
-  static async elevate(userEmail, params, photo) {
+  static async elevate(userEmail, params, photo, type) {
     const validatedEmail = validateEmail(userEmail);
 
     const oldUser = await this.find({ email: validatedEmail }, 'client');
     if (!oldUser) throw new ConfigurableError('Cliente não encontrado', 404);
 
-    if (!(params.type in ['owner', 'realtor', 'realstate'])) throw new ConfigurableError('Tipo de usuário inválido para elevação', 400);
+    if (!(type in ['owner', 'realtor', 'realstate'])) throw new ConfigurableError('Tipo de usuário inválido para elevação', 400);
 
-    if (params.type === 'owner' && !params.cpf) throw new ConfigurableError('CPF é obrigatório para elevar um cliente a proprietário', 400);
-    if (params.type === 'realtor' && !params.creci && !params.cpf) throw new ConfigurableError('CRECI e CPF são obrigatórios para elevar um cliente a corretor', 400);
-    if (params.type === 'realstate' && !params.cnpj) throw new ConfigurableError('CNPJ é obrigatório para elevar um cliente a imobiliária', 400);
+    if (type === 'owner' && !params.cpf) throw new ConfigurableError('CPF é obrigatório para elevar um cliente a proprietário', 400);
+    if (type === 'realtor' && !params.creci && !params.cpf) throw new ConfigurableError('CRECI e CPF são obrigatórios para elevar um cliente a corretor', 400);
+    if (type === 'realstate' && !params.cnpj) throw new ConfigurableError('CNPJ é obrigatório para elevar um cliente a imobiliária', 400);
 
     const data = {
       email: params.email ? validateEmail(params.email) : oldUser.email,
       name: params.name ? validateString(params.name, 'O campo nome é obrigatório') : oldUser.name,
       handler: params.email ? validateString((params.email).split('@')[0]) : oldUser.handler,
-      type: validateUserType(params.type),
+      type: validateUserType(type),
     };
 
     const info = {
