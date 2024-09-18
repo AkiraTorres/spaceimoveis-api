@@ -4,12 +4,13 @@ import Express from 'express';
 
 import verify from '../middlewares/verifyGoogle.cjs';
 import verifyJwt, { blacklist, generateJwt } from '../middlewares/verifyJwt.js';
-import { findByPk } from '../services/adminService.js';
-import { find } from '../services/globalService.js';
+import UserService from '../services/userService.js';
 
 dotenv.config();
 
 const router = Express.Router();
+
+const userService = new UserService();
 
 router.post('/login', async (req, res) => {
   try {
@@ -19,7 +20,7 @@ router.post('/login', async (req, res) => {
 
     if (email === '' || password === '') throw error;
 
-    const user = await find(email, true);
+    const user = await userService.find(email, true);
     if (!user) throw error;
 
     const isValid = bcrypt.compareSync(password, user.password);
@@ -44,7 +45,7 @@ router.post('/google', async (req, res) => {
 
     if (!email) throw error;
 
-    const user = await find(email, false);
+    const user = await userService.find(email, false);
     if (!user) throw error;
 
     const loggedUser = { user, token: googleToken };
@@ -64,7 +65,7 @@ router.post('/login/admin', async (req, res) => {
 
     if (email === '' || password === '') throw error;
 
-    const user = await findByPk(email, true);
+    const user = await userService.find(email, 'admin');
     if (!user) throw error;
 
     const isValid = bcrypt.compareSync(password, user.password);
