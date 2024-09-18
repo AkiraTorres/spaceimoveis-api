@@ -3,8 +3,7 @@ import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
 
 import verify from '../middlewares/verifyGoogle.cjs';
-import { findByPk } from './adminService.js';
-import { find } from './globalService.js';
+import UserService from './userService.js';
 
 dotenv.config();
 const { JWT_SECRET } = process.env;
@@ -15,7 +14,7 @@ export async function login({ email, password }) {
 
   if (email === '' || password === '') throw error;
 
-  const user = await find(email, true);
+  const user = await UserService.find(email, true);
   if (!user) throw error;
 
   const isValid = bcrypt.compareSync(password, user.password);
@@ -36,7 +35,7 @@ export async function loginGoogle({ googleToken }) {
 
   if (!email) throw error;
 
-  const user = await find(email, false);
+  const user = await UserService.find(email, false);
   if (!user) throw error;
 
   return { user, token: googleToken };
@@ -48,7 +47,7 @@ export async function loginAdmin({ email, password }) {
 
   if (email === '' || password === '') throw error;
 
-  const user = await findByPk(email, true);
+  const user = await UserService.find(email, true);
   if (!user) throw error;
 
   const isValid = bcrypt.compareSync(password, user.password);
