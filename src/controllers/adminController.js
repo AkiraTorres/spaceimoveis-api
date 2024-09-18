@@ -1,14 +1,17 @@
 import asyncHandler from 'express-async-handler';
 
-import * as service from '../services/adminService.js';
-import * as propertyService from '../services/propertyService.js';
+import AdminService from '../services/adminService.js';
+import PropertyService from '../services/propertyService.js';
+
+const service = new AdminService();
+const propertyService = new PropertyService();
 
 export const findAll = asyncHandler(async (req, res, next) => {
   try {
-  const { page = 1 } = req.query;
+    const { page = 1 } = req.query;
 
-  const result = await service.findAll(page);
-  res.status(200).json(result);
+    const result = await service.findAll(page);
+    res.status(200).json(result);
   } catch (error) {
     next(error);
   }
@@ -16,7 +19,7 @@ export const findAll = asyncHandler(async (req, res, next) => {
 
 export const findByPk = asyncHandler(async (req, res, next) => {
   try {
-    const {email} = req.params;
+    const { email } = req.params;
 
     const result = await service.findByPk(email);
     res.status(200).json(result);
@@ -27,7 +30,7 @@ export const findByPk = asyncHandler(async (req, res, next) => {
 
 export const findByCpf = asyncHandler(async (req, res, next) => {
   try {
-    const {cpf} = req.params;
+    const { cpf } = req.params;
 
     const result = await service.findByCpf(cpf);
     res.status(200).json(result);
@@ -38,8 +41,8 @@ export const findByCpf = asyncHandler(async (req, res, next) => {
 
 export const create = asyncHandler(async (req, res, next) => {
   try {
-    const {data} = req.body;
-    const {file} = req;
+    const { data } = req.body;
+    const { file } = req;
 
     let adminData = {};
     if (data !== undefined) adminData = JSON.parse(data);
@@ -53,8 +56,8 @@ export const create = asyncHandler(async (req, res, next) => {
 
 export const update = asyncHandler(async (req, res, next) => {
   try {
-    const {data} = req.body;
-    const {file} = req;
+    const { data } = req.body;
+    const { file } = req;
 
     let adminData = {};
     if (data !== undefined) adminData = JSON.parse(data);
@@ -77,7 +80,7 @@ export const destroy = asyncHandler(async (req, res, next) => {
 
 export const getLastPublishedProperties = asyncHandler(async (req, res, next) => {
   try {
-    const {page = 1} = req.query;
+    const { page = 1 } = req.query;
 
     const result = await service.getLastPublishedProperties(page);
     res.status(200).json(result);
@@ -97,7 +100,7 @@ export const getLastRegisteredUsers = asyncHandler(async (req, res, next) => {
 
 export const approveProperty = asyncHandler(async (req, res, next) => {
   try {
-    const {id} = req.params;
+    const { id } = req.params;
     const result = await service.approveProperty(id);
     res.status(200).json(result);
   } catch (error) {
@@ -107,8 +110,8 @@ export const approveProperty = asyncHandler(async (req, res, next) => {
 
 export const denyProperty = asyncHandler(async (req, res, next) => {
   try {
-    const {id} = req.params;
-    const {reason} = req.body;
+    const { id } = req.params;
+    const { reason } = req.body;
 
     const result = await service.denyProperty(id, reason);
     res.status(200).json(result);
@@ -119,8 +122,8 @@ export const denyProperty = asyncHandler(async (req, res, next) => {
 
 export const denyUser = asyncHandler(async (req, res, next) => {
   try {
-    const {email} = req.params;
-    const {reason} = req.body;
+    const { email } = req.params;
+    const { reason } = req.body;
 
     const result = await service.denyUser(email, reason);
     res.status(200).json(result);
@@ -131,7 +134,7 @@ export const denyUser = asyncHandler(async (req, res, next) => {
 
 export const filterProperties = asyncHandler(async (req, res, next) => {
   try {
-    const {page = 1, isHighlighted = false, isPublished = true, limit = 6, verified = false} = req.query;
+    const { page = 1, isHighlighted = false, isPublished = true, limit = 6, verified = false } = req.query;
     const filter = req.body;
 
     const result = await propertyService.filter(filter, verified, page, isHighlighted, isPublished, limit, '/admin/properties/filter');
@@ -143,7 +146,7 @@ export const filterProperties = asyncHandler(async (req, res, next) => {
 
 export const filterUsers = asyncHandler(async (req, res, next) => {
   try {
-    const {page = 1, limit = 10} = req.query;
+    const { page = 1, limit = 10 } = req.query;
     const filter = req.body;
 
     const result = await service.filterUsers(filter, page, limit);
