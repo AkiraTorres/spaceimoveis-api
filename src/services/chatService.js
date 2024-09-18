@@ -1,102 +1,121 @@
-import {v4 as uuid} from 'uuid';
+import { v4 as uuid } from 'uuid';
 
-import Chat from "../db/models/Chat.js";
-import { validateEmail } from "../validators/inputValidators.js";
-import { find } from "./globalService.js";
-import { Op } from "sequelize";
+import prisma from '../config/prisma.js';
+import ConfigurableError from '../errors/ConfigurableError.js';
+import { validateEmail } from '../validators/inputValidators.js';
+import { find } from './globalService.js';
 
-export async function create(email1, email2) {
-  const validatedEmail1 = validateEmail(email1);
-  const validatedEmail2 = validateEmail(email2);
+export default class ChatService {
+  static async create(email1, email2) {
+    const validatedEmail1 = validateEmail(email1);
+    const validatedEmail2 = validateEmail(email2);
 
-  const user1 = await find(validatedEmail1, false, false, true);
-  const user2 = await find(validatedEmail2, false, false, true);
+    const user1 = await find(validatedEmail1, false, false, true);
+    const user2 = await find(validatedEmail2, false, false, true);
 
-  if (!user1 || !user2) {
-    throw new Error('Usuário não encontrado');
-  }
+    if (!user1 || !user2) throw new ConfigurableError('Usuário não encontrado', 404);
 
-  let chat = await Chat.findOne({ where: {
-      [Op.or]: [
-        { [Op.and]: [{user1: validatedEmail1}, {user2: validatedEmail2}] },
-        { [Op.and]: [{user1: validatedEmail2}, {user2: validatedEmail1}] },
-      ]
-  }});
+    let chat = await prisma.chat.findFirst({
+      where: {
+        OR: [
+          {
+            AND: [
+              { user1Email: validatedEmail1 },
+              { user2Email: validatedEmail2 },
+            ],
+          },
+          {
+            AND: [
+              { user1Email: validatedEmail2 },
+              { user2Email: validatedEmail1 },
+            ],
+          },
+        ],
+      },
+    });
 
-  if (!chat) {
-    chat = await Chat.create({ id: uuid(), user1: email1, user2: email2 });
-  }
-
-  chat.user1 = user1;
-  chat.user2 = user2;
-
-  return chat;
-}
-
-export async function findUserChats(email) {
-  const validatedEmail = validateEmail(email);
-
-  const user = await find(validatedEmail, false, false, true);
-
-  if (!user) {
-    throw new Error('Usuário não encontrado');
-  }
-
-  const chats = await Chat.findAll({
-    where: {
-      [Op.or]: [{user1: validatedEmail}, {user2: validatedEmail}]
+    if (!chat) {
+      chat = await prisma.chat.create({ id: uuid(), user1Email: email1, user2Email: email2 });
     }
-  });
 
-  return Promise.all(chats.map(async chat => {
-    const editedChat = chat;
-    const user1 = await find(chat.user1, false, false, true);
-    const user2 = await find(chat.user2, false, false, true);
+    chat.user1 = user1;
+    chat.user2 = user2;
 
-    editedChat.user1 = user1;
-    editedChat.user2 = user2;
-
-    return editedChat;
-  }));
-}
-
-export async function findChat(email1, email2) {
-  const validatedEmail1 = validateEmail(email1);
-  const validatedEmail2 = validateEmail(email2);
-
-  const user1 = await find(validatedEmail1, false, false, true);
-  const user2 = await find(validatedEmail2, false, false, true);
-
-  if (!user1 || !user2) {
-    throw new Error('Usuário não encontrado');
+    return chat;
   }
 
-  const chat = await Chat.findOne({ where: {
-      [Op.and]: [
-        { [Op.or]: [{user1: validatedEmail1}, {user2: validatedEmail2}] },
-        { [Op.or]: [{user1: validatedEmail2}, {user2: validatedEmail1}] },
-      ]
-  }});
+  static async findUserChats(email) {
+    const validatedEmail = validateEmail(email);
 
-  if (!chat) {
-    throw new Error('Chat não encontrado');
+    const user = await find(validatedEmail, false, false, true);
+
+    if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
+
+    const chats = await prisma.chat.findMany({
+      where: {
+        OR: [
+          { user1: validatedEmail },
+          { user2: validatedEmail },
+        ],
+      },
+    });
+
+    return Promise.all(chats.map(async (chat) => {
+      const editedChat = chat;
+      const user1 = await find(chat.user1, false, false, true);
+      const user2 = await find(chat.user2, false, false, true);
+
+      editedChat.user1 = user1;
+      editedChat.user2 = user2;
+
+      return editedChat;
+    }));
   }
 
-  chat.user1 = user1;
-  chat.user2 = user2;
+  static async findChat(email1, email2) {
+    const validatedEmail1 = validateEmail(email1);
+    const validatedEmail2 = validateEmail(email2);
 
-  return chat;
-}
+    const user1 = await find(validatedEmail1, false, false, true);
+    const user2 = await find(validatedEmail2, false, false, true);
 
-export async function findChatByChatId(chatId) {
-  const chat = await Chat.findByPk(chatId);
+    if (!user1 || !user2) throw new ConfigurableError('Usuário não encontrado', 404);
 
-  if (!chat) {
-    throw new Error('Chat não encontrado');
+    const chat = await prisma.chat.findFirst({
+      where: {
+        AND: [
+          {
+            OR: [
+              { user1: validatedEmail1 },
+              { user2: validatedEmail2 },
+            ],
+          },
+          {
+            OR: [
+              { user1: validatedEmail2 },
+              { user2: validatedEmail1 },
+            ],
+          },
+        ],
+      },
+    });
+
+    if (!chat) throw new ConfigurableError('Chat não encontrado', 404);
+
+    chat.user1 = user1;
+    chat.user2 = user2;
+
+    return chat;
   }
 
-  chat.user1 = await find(chat.user1, false, false, true);
-  chat.user2 = await find(chat.user2, false, false, true);
+  static async findChatByChatId(chatId) {
+    const chat = await prisma.chat.findFirst(chatId);
 
-  return chat;
+    if (!chat) throw new ConfigurableError('Chat não encontrado', 404);
+
+    chat.user1 = await find(chat.user1, false, false, true);
+    chat.user2 = await find(chat.user2, false, false, true);
+
+    return chat;
+  }
 }

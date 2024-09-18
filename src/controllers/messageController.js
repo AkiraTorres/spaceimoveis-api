@@ -1,5 +1,8 @@
-import * as service from "../services/messageService.js";
-import asyncHandler from "express-async-handler";
+import asyncHandler from 'express-async-handler';
+
+import MessageService from '../services/messageService.js';
+
+const service = new MessageService();
 
 export const createMessage = asyncHandler(async (req, res, next) => {
   try {
@@ -37,4 +40,3 @@ export const deleteMessage = asyncHandler(async (req, res, next) => {
     next(error);
   }
 });
-

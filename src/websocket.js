@@ -1,16 +1,17 @@
-import { io } from "./server.js";
-import * as messageService from "./services/messageService.js";
-import {createFileMessage, findMessages} from "./services/messageService.js";
+import { io } from './server.js';
+import MessageService from './services/messageService.js';
 
-io.on('connection', socket => {
-  socket.on("open_chat", async (data, callback) => {
+const messageService = new MessageService();
+
+io.on('connection', (socket) => {
+  socket.on('open_chat', async (data, callback) => {
     socket.join(data.chatId);
 
-    const messagesRoom = await findMessages(data.chatId, data.email);
+    const messagesRoom = await messageService.findMessages(data.chatId, data.email);
     callback(messagesRoom);
   });
 
-  socket.on("message", async data => {
+  socket.on('message', async (data) => {
     const msgData = {
       chatId: data.chatId,
       sender: data.email,
@@ -18,14 +19,13 @@ io.on('connection', socket => {
     };
 
     const msgRes = await messageService.createMessage(msgData);
-    io.to(data.chatId).emit("message", msgRes);
+    io.to(data.chatId).emit('message', msgRes);
   });
 
-  socket.on("upload", async (data, callback) => {
-    console.log(data);
+  socket.on('upload', async (data, callback) => {
     let msgRes;
     try {
-      msgRes = await createFileMessage({
+      msgRes = await messageService.createFileMessage({
         chatId: data.chatId,
         sender: data.email,
         file: data.file,
@@ -35,14 +35,13 @@ io.on('connection', socket => {
         fileName: data.fileName,
         platform: data.platform,
       });
-      io.to(data.chatId).emit("message", msgRes);
+      io.to(data.chatId).emit('message', msgRes);
     } catch (error) {
-      console.error(error);
       callback(error);
     }
   });
 
-  socket.on('delete_message', async data => {
+  socket.on('delete_message', async (data) => {
     await messageService.deleteMessage(data.id, data.email);
     io.to(data.chatId).emit('delete_message', data.id);
   });
