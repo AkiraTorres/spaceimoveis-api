@@ -9,6 +9,7 @@ export default class RealtorService extends UserService {
 
     const receiver = await prisma.user.findByPk(validatedReceiverEmail);
     if (!receiver) throw new ConfigurableError('Usuário não encontrado', 404);
+    if (!(receiver.type in ['realtor', 'realstate'])) throw new Error('Usuário a receber a avaliação deve ser um corretor ou imobiliária.', 400);
 
     const where = { receiverEmail: validatedReceiverEmail };
     const orderBy = { createdAt: 'desc' };

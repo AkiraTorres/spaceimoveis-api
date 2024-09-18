@@ -1,6 +1,8 @@
 import asyncHandler from 'express-async-handler';
 
-import * as service from '../services/ratingService.js';
+import RatingService from '../services/ratingService.js';
+
+const service = new RatingService();
 
 export const getAllRatesByReceiver = asyncHandler(async (req, res, next) => {
   try {
@@ -40,7 +42,6 @@ export const getAvgRateByReceiver = asyncHandler(async (req, res, next) => {
 export const setRate = asyncHandler(async (req, res, next) => {
   try {
     const { senderEmail, receiverEmail, rate, comment } = req.body;
-    // const senderEmail = req.email;
 
     const result = await service.setRate(senderEmail, receiverEmail, rate, comment);
     res.status(201).json(result);
