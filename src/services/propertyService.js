@@ -231,6 +231,7 @@ export default class PropertyService {
       negotiable: params.negotiable ? validateBoolean(params.negotiable) : false,
       suites: params.suites ? validateInteger(params.suites) : 0,
       furnished: params.furnished ? validateFurnished(params.furnished) : 'no',
+      verified: 'verified',
     };
     if (data.isHighlight) data.isPublished = true;
 
