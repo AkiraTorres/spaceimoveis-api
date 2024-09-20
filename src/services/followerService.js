@@ -1,144 +1,100 @@
-import Follower from "../db/models/Follower.js";
-import {validateEmail} from "../validators/inputValidators.js";
-import {find} from "./globalService.js";
+import prisma from '../config/prisma.js';
+import ConfigurableError from '../errors/ConfigurableError.js';
+import { validateEmail } from '../validators/inputValidators.js';
+import UserService from './userService.js';
 
-async function follow(followerEmail, followedEmail) {
-  const validatedFollowerEmail = validateEmail(followerEmail);
-  const validatedFollowedEmail = validateEmail(followedEmail);
+export default class FollowerService {
+  static async follow(followerEmail, followedEmail) {
+    const validatedFollowerEmail = validateEmail(followerEmail);
+    const validatedFollowedEmail = validateEmail(followedEmail);
 
-  const follower = await find(validatedFollowerEmail);
-  if (!follower) {
-    const error = new Error('Follower not found');
-    error.status = 404;
-    throw error;
+    const follower = await UserService.find(validatedFollowerEmail);
+    if (!follower) throw new ConfigurableError('Seguidor não encontrado', 404);
+
+    const followed = await UserService.find(validatedFollowedEmail);
+    if (!followed) throw new ConfigurableError('Seguido não encontrado', 404);
+
+    const follow = await prisma.follower.findFirst({ where: { followerEmail: validatedFollowerEmail, followedEmail: validatedFollowedEmail } });
+    if (follow) throw new ConfigurableError('Já seguindo', 409);
+
+    return prisma.follower.create({ followerEmail, followedEmail });
   }
 
-  const followed = await find(validatedFollowedEmail);
-  if (!followed) {
-    const error = new Error('Followed not found');
-    error.status = 404;
-    throw error;
+  static async unfollow(followerEmail, followedEmail) {
+    const validatedFollowerEmail = validateEmail(followerEmail);
+    const validatedFollowedEmail = validateEmail(followedEmail);
+
+    const follower = await UserService.find(validatedFollowerEmail);
+    if (!follower) throw new ConfigurableError('Seguidor não encontrado', 404);
+
+    const followed = await UserService.find(validatedFollowedEmail);
+    if (!followed) throw new ConfigurableError('Seguido não encontrado', 404);
+
+    const follow = await prisma.follower.findFirst({ where: { followerEmail: validatedFollowerEmail, followedEmail: validatedFollowedEmail } });
+    if (!follow) throw new ConfigurableError('Não está seguindo o usuário', 409);
+
+    return prisma.follower.delete({ where: { followerEmail, followedEmail } });
   }
 
-  const follow = await Follower.findOne({ where: { followerEmail: validatedFollowerEmail, followedEmail: validatedFollowedEmail } });
-  if (follow) {
-    const error = new Error('Already following');
-    error.status = 409;
-    throw error;
+  static async getFollowers(email) {
+    const validatedEmail = validateEmail(email);
+
+    const followed = await UserService.find(validatedEmail);
+    if (!followed) throw new ConfigurableError('Usuário não encontrado', 404);
+
+    const followers = await prisma.follower.findMany({ where: { followedEmail: validatedEmail } });
+    if (!followers) throw new ConfigurableError('Você não tem seguidores', 404);
+
+    return followers;
   }
 
-  return await Follower.create({followerEmail, followedEmail});
+  static async getFollowing(email) {
+    const validatedEmail = validateEmail(email);
+
+    const follower = await UserService.find(validatedEmail);
+    if (!follower) throw new ConfigurableError('Usuário não encontrado', 404);
+
+    const following = await prisma.follower.findMany({ where: { followerEmail: validatedEmail } });
+    if (!following) throw new ConfigurableError('Você não está seguindo ninguém', 404);
+
+    return following;
+  }
+
+  static async isFollowing(followerEmail, followedEmail) {
+    const validatedFollowerEmail = validateEmail(followerEmail);
+    const validatedFollowedEmail = validateEmail(followedEmail);
+
+    return !!(prisma.follower.findFirst({ where: { followerEmail: validatedFollowerEmail, followedEmail: validatedFollowedEmail } }));
+  }
+
+  static async isMutual(followerEmail, followedEmail) {
+    const validatedFollowerEmail = validateEmail(followerEmail);
+    const validatedFollowedEmail = validateEmail(followedEmail);
+
+    const follow1 = await prisma.follower.findFirst({ where: { followerEmail: validatedFollowerEmail, followedEmail: validatedFollowedEmail } });
+    const follow2 = await prisma.follower.findFirst({ where: { followerEmail: validatedFollowedEmail, followedEmail: validatedFollowerEmail } });
+    return !!follow1 && !!follow2;
+  }
+
+  static async getTotalFollowers(email) {
+    const validatedEmail = validateEmail(email);
+
+    const followed = await UserService.find(validatedEmail);
+    if (!followed) throw new ConfigurableError('Usuário não encontrado', 404);
+
+    return prisma.follower.count({ where: { followedEmail: validatedEmail } });
+  }
+
+  static async getTotalFollowing(email) {
+    const validatedEmail = validateEmail(email);
+
+    const follower = await UserService.find(validatedEmail);
+    if (!follower) {
+      const error = new Error('User not found');
+      error.status = 404;
+      throw error;
+    }
+
+    return prisma.follower.count({ where: { followerEmail: validatedEmail } });
+  }
 }
-
-async function unfollow(followerEmail, followedEmail) {
-  const validatedFollowerEmail = validateEmail(followerEmail);
-  const validatedFollowedEmail = validateEmail(followedEmail);
-
-  const follower = await find(validatedFollowerEmail);
-  if (!follower) {
-    const error = new Error('Follower not found');
-    error.status = 404;
-    throw error;
-  }
-
-  const followed = await find(validatedFollowedEmail);
-  if (!followed) {
-    const error = new Error('Followed not found');
-    error.status = 404;
-    throw error;
-  }
-
-  const follow = await Follower.findOne({ where: { followerEmail: validatedFollowerEmail, followedEmail: validatedFollowedEmail } });
-  if (!follow) {
-    const error = new Error('Not following');
-    error.status = 409;
-    throw error;
-  }
-
-  return await Follower.create({followerEmail, followedEmail});
-}
-
-async function getFollowers(email) {
-  const validatedEmail = validateEmail(email);
-
-  const followed = await find(validatedEmail);
-  if (!followed) {
-    const error = new Error('User not found');
-    error.status = 404;
-    throw error;
-  }
-
-  const followers = await Follower.findAll({ where: { followedEmail: validatedEmail } });
-  if (!followers) {
-    const error = new Error('No followers found');
-    error.status = 404;
-    throw error;
-  }
-
-  return followers;
-}
-
-async function getFollowing(email) {
-  const validatedEmail = validateEmail(email);
-
-  const follower = await find(validatedEmail);
-  if (!follower) {
-    const error = new Error('User not found');
-    error.status = 404;
-    throw error;
-  }
-
-  const following = await Follower.findAll({ where: { followerEmail: validatedEmail } });
-  if (!following) {
-    const error = new Error('Not following anyone');
-    error.status = 404;
-    throw error;
-  }
-
-  return following;
-}
-
-async function isFollowing(followerEmail, followedEmail) {
-  const validatedFollowerEmail = validateEmail(followerEmail);
-  const validatedFollowedEmail = validateEmail(followedEmail);
-
-  const follow = await Follower.findOne({ where: { followerEmail: validatedFollowerEmail, followedEmail: validatedFollowedEmail } });
-  return !!follow;
-}
-
-async function isMutual(followerEmail, followedEmail) {
-  const validatedFollowerEmail = validateEmail(followerEmail);
-  const validatedFollowedEmail = validateEmail(followedEmail);
-
-  const follow1 = await Follower.findOne({ where: { followerEmail: validatedFollowerEmail, followedEmail: validatedFollowedEmail } });
-  const follow2 = await Follower.findOne({ where: { followerEmail: validatedFollowedEmail, followedEmail: validatedFollowerEmail } });
-  return !!follow1 && !!follow2;
-}
-
-async function getTotalFollowers(email) {
-  const validatedEmail = validateEmail(email);
-
-  const followed = await find(validatedEmail);
-  if (!followed) {
-    const error = new Error('User not found');
-    error.status = 404;
-    throw error;
-  }
-
-  return await Follower.count({where: {followedEmail: validatedEmail}});
-}
-
-async function getTotalFollowing(email) {
-  const validatedEmail = validateEmail(email);
-
-  const follower = await find(validatedEmail);
-  if (!follower) {
-    const error = new Error('User not found');
-    error.status = 404;
-    throw error;
-  }
-
-  return await Follower.count({where: {followerEmail: validatedEmail}});
-}
-
-export {follow, unfollow, getFollowers, getFollowing, isFollowing, isMutual, getTotalFollowers, getTotalFollowing};

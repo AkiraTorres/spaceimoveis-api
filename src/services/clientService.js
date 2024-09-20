@@ -1,110 +1,80 @@
-import Client from '../db/models/Client.js';
+import { deleteObject, getDownloadURL, ref, uploadBytesResumable } from 'firebase/storage';
+import { v4 as uuid } from 'uuid';
 
-import ClientNotFound from '../errors/clientErrors/clientNotFound.js';
-import NoClientsFound from '../errors/clientErrors/noClientsFound.js';
-import { validateEmail, validateIfUniqueEmail, validatePassword, validatePhone, validateString } from '../validators/inputValidators.js';
+import prisma from '../config/prisma.js';
+import ConfigurableError from '../errors/ConfigurableError.js';
+import { validateEmail, validatePhone, validateString, validateUF, validateUserType } from '../validators/inputValidators.js';
+import UserService from './userService.js';
 
-async function findAll(page) {
-    if (page < 1) {
-      return await Client.findAll({
-        attributes: { exclude: ['otp', 'otp_ttl', 'password'] },
-        order: [['name', 'ASC']],
+export default class ClientService extends UserService {
+  static async elevate(userEmail, params, photo, type) {
+    const validatedEmail = validateEmail(userEmail);
+
+    const oldUser = await this.find({ email: validatedEmail }, 'client');
+    if (!oldUser) throw new ConfigurableError('Cliente não encontrado', 404);
+
+    if (!(type in ['owner', 'realtor', 'realstate'])) throw new ConfigurableError('Tipo de usuário inválido para elevação', 400);
+
+    if (type === 'owner' && !params.cpf) throw new ConfigurableError('CPF é obrigatório para elevar um cliente a proprietário', 400);
+    if (type === 'realtor' && !params.creci && !params.cpf) throw new ConfigurableError('CRECI e CPF são obrigatórios para elevar um cliente a corretor', 400);
+    if (type === 'realstate' && !params.cnpj) throw new ConfigurableError('CNPJ é obrigatório para elevar um cliente a imobiliária', 400);
+
+    const data = {
+      email: params.email ? validateEmail(params.email) : oldUser.email,
+      name: params.name ? validateString(params.name, 'O campo nome é obrigatório') : oldUser.name,
+      handler: params.email ? validateString((params.email).split('@')[0]) : oldUser.handler,
+      type: validateUserType(type),
+    };
+
+    const info = {
+      email: data.email,
+      cpf: params.cpf ? validateString(params.cpf, 'O campo CPF é obrigatório') : oldUser.cpf,
+      rg: params.rg ? validateString(params.rg, 'O campo RG é obrigatório') : oldUser.rg,
+      creci: params.creci ? validateString(params.creci, 'O campo CRECI é obrigatório') : oldUser.creci,
+      phone: params.info.phone ? validatePhone(params.info.phone) : oldUser.phone,
+      idPhone: params.info.idPhone ? validateString(params.info.idPhone) : oldUser.idPhone,
+      bio: params.info.bio ? validateString(params.info.bio) : oldUser.bio,
+    };
+
+    const updatedAddress = {
+      street: params.address.street ? validateString(params.address.street) : oldUser.street,
+      cep: params.address.cep ? validateString(params.address.cep) : oldUser.cep,
+      number: params.address.number ? validateString(params.address.number) : oldUser.number,
+      complement: params.address.complement ? validateString(params.address.complement) : oldUser.complement,
+      neighborhood: params.address.neighborhood ? validateString(params.address.neighborhood) : oldUser.neighborhood,
+      city: params.address.city ? validateString(params.address.city) : oldUser.city,
+      state: params.address.state ? validateUF(params.address.state) : oldUser.state,
+    };
+
+    let profile = await prisma.userPhoto.findUnique({ where: { email: oldUser.email } });
+    if (photo) {
+      if (profile) {
+        const storageRef = ref(this.storage, `images/${oldUser.type}s/${oldUser.email}/${profile.name}`);
+        await prisma.userPhoto.delete({ where: { email: oldUser.email } });
+        await deleteObject(storageRef);
+      }
+
+      const storageRef = ref(this.storage, `images/${oldUser.type}s/${data.email}/${photo.originalname}`);
+      const metadata = { contentType: photo.mimetype };
+      const snapshot = await uploadBytesResumable(storageRef, photo.buffer, metadata);
+      const downloadUrl = await getDownloadURL(snapshot.ref);
+
+      profile = await prisma.userPhoto.create({
+        data: {
+          id: uuid(),
+          email: data.email,
+          url: downloadUrl,
+          name: photo.originalname,
+          type: 'profile',
+        },
       });
     }
 
-    const limit = 6;
-    const countTotal = await Client.count();
+    const user = prisma.user.update({ where: { email: validateEmail }, data });
+    user.info = prisma.userInfo.update({ where: { email: validateEmail }, data: info });
+    user.address = prisma.userAddress.update({ where: { email: validateEmail }, data: updatedAddress });
+    user.profile = profile;
 
-    if (countTotal === 0) {
-      throw new NoClientsFound();
-    }
-
-    const lastPage = Math.ceil(countTotal / limit);
-    const offset = Number(limit * (page - 1));
-
-    const clients = await Client.findAll({
-      attributes: { exclude: ['otp', 'otp_ttl', 'password'] },
-      order: [['name', 'ASC']],
-      offset,
-      limit,
-    });
-
-    if (clients.length === 0) {
-      throw new NoClientsFound();
-    }
-
-    const pagination = {
-      path: '/clients',
-      page,
-      prev_page_url: page - 1 >= 1 ? page - 1 : null,
-      next_page_url: Number(page) + 1 <= lastPage ? Number(page) + 1 : null,
-      lastPage,
-      total: countTotal,
-    };
-
-    return { clients, pagination };
-}
-
-async function findByPk(email, password = false, otp = false) {
-  const validatedEmail = validateEmail(email);
-  const attributes = { exclude: [] };
-  if (!otp) attributes.exclude.push('otp', 'otp_ttl');
-  if (!password) attributes.exclude.push('password');
-
-  const client = await Client.findByPk(validatedEmail, {
-    attributes,
-  });
-
-  if (!client) {
-    throw new ClientNotFound();
+    return user;
   }
-
-  return client;
 }
-
-async function create(data) {
-    const client = {
-      email: validateEmail(data.email),
-      name: validateString(data.name, 'O campo nome é obrigatório'),
-      password: data.password ? validatePassword(data.password) : null,
-      phone: data.phone ? validatePhone(data.phone) : null,
-      idPhone: data.idPhone ? validateString(data.idPhone) : null,
-    };
-
-    await validateIfUniqueEmail(client.email);
-
-    return Client.create(client);
-}
-
-async function update(email, data) {
-    const validatedEmail = validateEmail(email);
-
-    const oldClient = await Client.findByPk(validatedEmail);
-    if (!oldClient) {
-      throw new ClientNotFound();
-    }
-
-    const client = {
-      email: data.email ? validateEmail(data.email) : oldClient.email,
-      name: data.name ? validateString(data.name, 'O campo nome é obrigatório') : oldClient.name,
-      phone: data.phone ? validatePhone(data.phone) : oldClient.phone,
-      idPhone: data.idPhone ? validateString(data.idPhone) : oldClient.idPhone,
-    };
-
-    if (client.email !== validatedEmail) await validateIfUniqueEmail(client.email);
-
-    return Client.update(client, { where: { email: validatedEmail } });
-}
-
-async function destroy(email) {
-    const validatedEmail = validateEmail(email);
-
-    if (!await Client.findByPk(validatedEmail)) {
-      throw new ClientNotFound();
-    }
-
-    await Client.destroy({ where: { email: validatedEmail } });
-    return { message: 'Usuário apagado com sucesso' };
-}
-
-export { create, destroy, findAll, findByPk, update };

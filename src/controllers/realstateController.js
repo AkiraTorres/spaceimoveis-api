@@ -1,12 +1,13 @@
 import asyncHandler from 'express-async-handler';
 
-import * as service from '../services/realstateService.js';
+import ClientService from '../services/clientService.js';
+import RealstateService from '../services/realstateService.js';
 
 export const findAll = asyncHandler(async (req, res, next) => {
   try {
     const { page = 1 } = req.query;
 
-    const result = await service.findAll(page);
+    const result = await RealstateService.findAll(page, 'realstate');
     res.status(200).json(result);
   } catch (error) {
     next(error);
@@ -15,7 +16,7 @@ export const findAll = asyncHandler(async (req, res, next) => {
 
 export const findByPk = asyncHandler(async (req, res, next) => {
   try {
-    const result = await service.findByPk(req.params.email);
+    const result = await RealstateService.find({ email: req.params.email }, 'realstate');
     res.status(200).json(result);
   } catch (error) {
     next(error);
@@ -30,7 +31,7 @@ export const create = asyncHandler(async (req, res, next) => {
     let realstateData = {};
     if (data !== undefined) realstateData = JSON.parse(data);
 
-    const result = await service.create(realstateData, file);
+    const result = await RealstateService.create(realstateData, file);
     res.status(201).json(result);
   } catch (error) {
     next(error);
@@ -45,7 +46,7 @@ export const update = asyncHandler(async (req, res, next) => {
     let realstateData = {};
     if (data !== undefined) realstateData = JSON.parse(data);
 
-    const result = await service.update(req.params.email, realstateData, file);
+    const result = await RealstateService.update(req.params.email, realstateData, file);
     res.status(200).json(result);
   } catch (error) {
     next(error);
@@ -60,7 +61,7 @@ export const elevate = asyncHandler(async (req, res, next) => {
     let realstateData = {};
     if (data !== undefined) realstateData = JSON.parse(data);
 
-    const result = await service.elevate(req.params.email, realstateData, file);
+    const result = await ClientService.elevate(req.params.email, realstateData, file, 'realstate');
     res.status(201).json(result);
   } catch (error) {
     next(error);
@@ -72,7 +73,7 @@ export const filter = asyncHandler(async (req, res, next) => {
     const { page = 1 } = req.query;
     const data = req.body;
 
-    const result = await service.filter(data, page);
+    const result = await RealstateService.filter(data, 'realstate', page);
     res.status(200).json(result);
   } catch (error) {
     next(error);
@@ -81,7 +82,7 @@ export const filter = asyncHandler(async (req, res, next) => {
 
 export const destroy = asyncHandler(async (req, res, next) => {
   try {
-    const result = await service.destroy(req.params.email);
+    const result = await RealstateService.destroy(req.params.email);
     res.status(200).json(result);
   } catch (error) {
     next(error);

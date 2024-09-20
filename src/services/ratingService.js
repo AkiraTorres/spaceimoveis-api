@@ -1,254 +1,148 @@
-import { Op } from 'sequelize';
-
-import RealstateRating from '../db/models/RealstateRating.js';
-import RealtorRating from '../db/models/RealtorRating.js';
+import prisma from '../config/prisma.js';
 import { validateEmail, validateInteger, validateString } from '../validators/inputValidators.js';
-import { find } from './globalService.js';
+import RealtorService from './realtorService.js';
 
-export async function getAllRatesByReceiver(receiverEmail, page = 1) {
-  const validatedReceiverEmail = validateEmail(receiverEmail);
+export default class RatingService {
+  static async getAllRatesByReceiver(receiverEmail, page = 1) {
+    const validatedReceiverEmail = validateEmail(receiverEmail);
 
-  const receiver = await find(validatedReceiverEmail);
-  if (!receiver) {
-    const error = new Error('Usuário não encontrado.');
-    error.status = 404;
-    throw error;
+    const receiver = await this.userService.find(validatedReceiverEmail);
+    if (!receiver) throw new Error('Usuário não encontrado.', 404);
+
+    if (!(receiver.type in ['realtor', 'realstate'])) throw new Error('Usuário a receber a avaliação deve ser um corretor ou imobiliária.', 400);
+
+    const take = 6;
+    const where = { receiverEmail: validatedReceiverEmail, type: { in: ['realtor', 'realstate'] } };
+
+    const total = await prisma.user.count({ where });
+    if (total === 0) throw new Error('Nenhuma avaliação encontrada.', 404);
+
+    const lastPage = Math.ceil(total / take);
+    const skip = Number(take * (page - 1));
+
+    const orderBy = { createdAt: 'desc' };
+
+    const pagination = {
+      path: `/ratings/${receiverEmail}`,
+      page,
+      prev_page_url: page - 1 >= 1 ? page - 1 : null,
+      next_page_url: Number(page) + 1 <= lastPage ? Number(page) + 1 : null,
+      lastPage,
+      total,
+    };
+
+    const result = await prisma.userRating.findMany({ where, take, skip, orderBy });
+
+    return { result, pagination };
   }
 
-  if (receiver.type !== 'realtor' && receiver.type !== 'realstate') {
-    const error = new Error('Usuário a receber a avaliação deve ser um corretor ou imobiliária.');
-    error.status = 400;
-    throw error;
+  static async getAllRatesBySender(senderEmail, page = 1) {
+    const validatedSenderEmail = validateEmail(senderEmail);
+
+    const user = await this.userService.find(validatedSenderEmail);
+    if (!user) throw new Error('Usuário não encontrado.', 404);
+
+    const take = 6;
+    const where = { senderEmail: validatedSenderEmail };
+
+    const total = await prisma.userRating.count({ where });
+
+    if (total === 0) throw new Error('Nenhuma avaliação encontrada.', 404);
+
+    const lastPage = Math.ceil(total / take);
+    const skip = Number(take * (page - 1));
+
+    const orderBy = { createdAt: 'desc' };
+
+    const pagination = {
+      path: `/ratings/sender/${senderEmail}`,
+      page,
+      prev_page_url: page - 1 >= 1 ? page - 1 : null,
+      next_page_url: Number(page) + 1 <= lastPage ? Number(page) + 1 : null,
+      lastPage,
+      total,
+    };
+
+    const result = await prisma.userRating.findMany({ where, take, skip, orderBy });
+
+    return { result, pagination };
   }
 
-  const limit = 6;
-  const where = { receiver_email: validatedReceiverEmail };
-
-  const total = receiver.type === 'realtor' ? await RealtorRating.count({ where }) : await RealstateRating.count({ where });
-  if (total === 0) {
-    const error = new Error('Nenhuma avaliação encontrada.');
-    error.status = 404;
-    throw error;
+  static async getAvgRateByReceiver(receiverEmail) {
+    return RealtorService().getAvgRateByReceiver(receiverEmail);
   }
 
-  const lastPage = Math.ceil(total / limit);
-  const offset = Number(limit * (page - 1));
+  static async setRate(senderEmail, receiverEmail, rating, comment) {
+    const validatedSenderEmail = validateEmail(senderEmail);
+    const validatedReceiverEmail = validateEmail(receiverEmail);
+    const validatedRating = validateInteger(rating);
+    const validatedComment = validateString(comment);
 
-  const order = [['createdAt', 'DESC']];
+    const sender = await this.userService.find(validatedSenderEmail);
+    if (!sender) throw new Error('Usuário não encontrado.', 404);
 
-  const pagination = {
-    path: `/ratings/${receiverEmail}`,
-    page,
-    prev_page_url: page - 1 >= 1 ? page - 1 : null,
-    next_page_url: Number(page) + 1 <= lastPage ? Number(page) + 1 : null,
-    lastPage,
-    total,
-  };
+    const receiver = await this.userService.find(validatedReceiverEmail);
+    if (!receiver) throw new Error('Usuário a receber a avaliação não encontrado.', 404);
 
-  let rates = null;
-  if (receiver.type === 'realtor') {
-    rates = await RealtorRating.findAll({ where, limit, offset, order, raw: true });
-  } else if (receiver.type === 'realstate') {
-    rates = await RealstateRating.findAll({ where, limit, offset, order, raw: true });
-  } else {
-    const error = new Error('Usuário a receber a avaliação deve ser um corretor ou imobiliária.');
-    error.status = 400;
-    throw error;
+    if (validatedRating < 0 || validatedRating > 10) throw new Error('Avaliação deve ser um número entre 0 e 10.', 400);
+
+    const ratingData = {
+      rating: validatedRating,
+      comment: validatedComment,
+      receiverEmail: validatedReceiverEmail,
+      senderEmail: sender.email,
+    };
+
+    const rate = await prisma.userRating.create({ data: ratingData });
+    return { ...rate, sender, receiver };
   }
 
-  const result = await Promise.all(rates.map(async (rate) => {
-    const editedRate = rate;
-    editedRate.sender = await find(rate.sender_email);
-    return editedRate;
-  }));
+  static async filter(data, page = 1) {
+    const take = 6;
+    const skip = Number(take * (page - 1));
+    let orderBy = { createdAt: 'desc' };
 
-  return { result, pagination };
-}
+    const where = {};
+    if (data) {
+      const { receiverEmail, senderEmail, minRating = 0, maxRating = 10, order } = data;
+      if (receiverEmail) where.receiverEmail = validateEmail(receiverEmail);
+      if (senderEmail) where.sender_email = validateEmail(senderEmail);
+      if (order) orderBy = order;
+      where.rating = { gte: minRating, lte: maxRating };
+    }
 
-export async function getAllRatesBySender(senderEmail, page = 1) {
-  const validatedSenderEmail = validateEmail(senderEmail);
+    const total = await prisma.userRating.count({ where });
 
-  const user = await find(validatedSenderEmail);
-  if (!user) {
-    const error = new Error('Usuário não encontrado.');
-    error.status = 404;
-    throw error;
+    if (total === 0) throw new Error('Nenhuma avaliação encontrada.', 404);
+
+    const lastPage = Math.ceil(total / take);
+
+    const pagination = {
+      path: '/ratings',
+      page,
+      prev_page_url: page - 1 >= 1 ? page - 1 : null,
+      next_page_url: Number(page) + 1 <= lastPage ? Number(page) + 1 : null,
+      lastPage,
+      total,
+    };
+
+    const result = await prisma.userRating.findMany({ where, take, skip, orderBy });
+    return { result, pagination };
   }
 
-  const limit = 6;
-  const where = { sender_email: validatedSenderEmail };
+  static async deleteRate(id, senderEmail) {
+    const validateId = validateString(id);
+    const validatedSenderEmail = validateEmail(senderEmail);
 
-  const total = await RealtorRating.count({ where }) + await RealstateRating.count({ where });
+    const user = await this.userService.find(validatedSenderEmail);
+    if (!user) throw new Error('Usuário não encontrado.', 404);
 
-  if (total === 0) {
-    const error = new Error('Nenhuma avaliação encontrada.');
-    error.status = 404;
-    throw error;
+    const rate = await prisma.userRating.findFirst(validateId);
+    if (!rate) throw new Error('Avaliação não encontrada.', 404);
+
+    if (rate.senderEmail !== senderEmail) throw new Error('Você não tem permissão para excluir esta avaliação.', 403);
+
+    await rate.destroy();
+    return { message: 'Avaliação excluída com sucesso.' };
   }
-
-  const lastPage = Math.ceil(total / limit);
-  const offset = Number(limit * (page - 1));
-
-  const order = [['createdAt', 'DESC']];
-
-  const pagination = {
-    path: `/ratings/sender/${senderEmail}`,
-    page,
-    prev_page_url: page - 1 >= 1 ? page - 1 : null,
-    next_page_url: Number(page) + 1 <= lastPage ? Number(page) + 1 : null,
-    lastPage,
-    total,
-  };
-
-  const result = await RealtorRating.findAll({ where, limit, offset, order });
-
-  return { result, pagination };
-}
-
-export async function getAvgRateByReceiver(receiverEmail) {
-  const validatedReceiverEmail = validateEmail(receiverEmail);
-
-  const receiver = await find(validatedReceiverEmail);
-  if (!receiver) {
-    const error = new Error('Usuário não encontrado.');
-    error.status = 404;
-    throw error;
-  }
-
-  if (receiver.type !== 'realtor' && receiver.type !== 'realstate') {
-    const error = new Error('Usuário a receber a avaliação deve ser um corretor ou imobiliária.');
-    error.status = 400;
-    throw error;
-  }
-
-  const where = { receiver_email: validatedReceiverEmail };
-  const order = [['createdAt', 'DESC']];
-
-  let ratings = 0;
-  if (receiver.type === 'realtor') {
-    ratings = await RealtorRating.findAll({ where, order });
-  } else if (receiver.type === 'realstate') {
-    ratings = await RealstateRating.findAll({ where, order });
-  }
-
-  if (ratings === 0) {
-    return 0;
-  }
-
-  const total = ratings.length;
-  const sum = ratings.reduce((acc, curr) => acc + curr.rating, 0);
-  const avg = ((sum / total) / 2).toFixed(2);
-  return { avg, total, receiver };
-}
-
-export async function setRate(senderEmail, receiverEmail, rating, comment) {
-  const validatedSenderEmail = validateEmail(senderEmail);
-  const validatedReceiverEmail = validateEmail(receiverEmail);
-  const validatedRating = validateInteger(rating);
-  const validatedComment = validateString(comment);
-
-  const sender = await find(validatedSenderEmail);
-  if (!sender) {
-    const error = new Error('Usuário não encontrado.');
-    error.status = 404;
-    throw error;
-  }
-
-  const receiver = await find(validatedReceiverEmail);
-  if (!receiver) {
-    const error = new Error('Usuário não encontrado.');
-    error.status = 404;
-    throw error;
-  }
-
-  if (validatedRating < 0 || validatedRating > 10) {
-    const error = new Error('A avaliação deve ser um número entre 0 e 10.');
-    error.status = 400;
-    throw error;
-  }
-
-  const ratingData = {
-    rating: validatedRating,
-    comment: validatedComment,
-    receiver_email: validatedReceiverEmail,
-    sender_email: sender.email,
-  };
-
-  let rate;
-  if (receiver.type === 'realtor') {
-    rate = await RealtorRating.create(ratingData);
-  } else if (receiver.type === 'realstate') {
-    rate = await RealstateRating.create(ratingData);
-  }
-
-  return { ...rate, sender, receiver };
-}
-
-export async function filter(data, page = 1) {
-  const limit = 6;
-  const offset = Number(limit * (page - 1));
-  const ordering = [['createdAt', 'DESC']];
-
-  const where = {};
-  if (data) {
-    const { receiverEmail, senderEmail, minRating = 0, maxRating = 10, order, orderType } = data;
-    if (receiverEmail) where.receiver_email = validateEmail(receiverEmail);
-    if (senderEmail) where.sender_email = validateEmail(senderEmail);
-    if (order) ordering[0][0] = validateString(order);
-    if (orderType) ordering[0][1] = validateString(orderType);
-    where.rating = { [Op.between]: [minRating, maxRating] };
-  }
-
-  const total = await RealtorRating.count({ where }) + await RealstateRating.count({ where });
-
-  if (total === 0) {
-    const error = new Error('Nenhuma avaliação encontrada.');
-    error.status = 404;
-    throw error;
-  }
-
-  const lastPage = Math.ceil(total / limit);
-
-  const pagination = {
-    path: '/ratings',
-    page,
-    prev_page_url: page - 1 >= 1 ? page - 1 : null,
-    next_page_url: Number(page) + 1 <= lastPage ? Number(page) + 1 : null,
-    lastPage,
-    total,
-  };
-
-  const result = await RealtorRating.findAll({ where, limit, offset, order: ordering });
-  return { result, pagination };
-}
-
-export async function deleteRate(id, senderEmail) {
-  const validateId = validateString(id);
-  const validatedSenderEmail = validateEmail(senderEmail);
-
-  const user = await find(validatedSenderEmail);
-  if (!user) {
-    const error = new Error('Usuário não encontrado.');
-    error.status = 404;
-    throw error;
-  }
-
-  let rate = await RealtorRating.findByPk(validateId);
-  if (!rate) {
-    rate = await RealstateRating.findByPk(validateId);
-  }
-  if (!rate) {
-    const error = new Error('Avaliação não encontrada.');
-    error.status = 404;
-    throw error;
-  }
-
-  if (rate.sender_email !== senderEmail) {
-    const error = new Error('Você não tem permissão para excluir essa avaliação.');
-    error.status = 403;
-    throw error;
-  }
-
-  await rate.destroy();
-  return { message: 'Avaliação excluída com sucesso.' };
 }

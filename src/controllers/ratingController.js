@@ -1,13 +1,13 @@
 import asyncHandler from 'express-async-handler';
 
-import * as service from '../services/ratingService.js';
+import RatingService from '../services/ratingService.js';
 
 export const getAllRatesByReceiver = asyncHandler(async (req, res, next) => {
   try {
     const { receiverEmail } = req.params;
     const { page } = req.query;
 
-    const result = await service.getAllRatesByReceiver(receiverEmail, page);
+    const result = await RatingService.getAllRatesByReceiver(receiverEmail, page);
     res.status(200).json(result);
   } catch (error) {
     next(error);
@@ -19,7 +19,7 @@ export const getAllRatesBySender = asyncHandler(async (req, res, next) => {
     const { senderEmail } = req.params;
     const { page } = req.query;
 
-    const result = await service.getAllRatesBySender(senderEmail, page);
+    const result = await RatingService.getAllRatesBySender(senderEmail, page);
     res.status(200).json(result);
   } catch (error) {
     next(error);
@@ -30,7 +30,7 @@ export const getAvgRateByReceiver = asyncHandler(async (req, res, next) => {
   try {
     const { receiverEmail } = req.params;
 
-    const result = await service.getAvgRateByReceiver(receiverEmail);
+    const result = await RatingService.getAvgRateByReceiver(receiverEmail);
     res.status(200).json(result);
   } catch (error) {
     next(error);
@@ -40,9 +40,8 @@ export const getAvgRateByReceiver = asyncHandler(async (req, res, next) => {
 export const setRate = asyncHandler(async (req, res, next) => {
   try {
     const { senderEmail, receiverEmail, rate, comment } = req.body;
-    // const senderEmail = req.email;
 
-    const result = await service.setRate(senderEmail, receiverEmail, rate, comment);
+    const result = await RatingService.setRate(senderEmail, receiverEmail, rate, comment);
     res.status(201).json(result);
   } catch (error) {
     next(error);
@@ -54,7 +53,7 @@ export const filter = asyncHandler(async (req, res, next) => {
     const { page = 1 } = req.query;
     const data = req.body;
 
-    const result = await service.filter(data, page);
+    const result = await RatingService.filter(data, page);
     res.status(200).json(result);
   } catch (error) {
     next(error);
@@ -66,7 +65,7 @@ export const deleteRate = asyncHandler(async (req, res, next) => {
     const { id } = req.params;
     const senderEmail = req.email;
 
-    await service.deleteRate(id, senderEmail);
+    await RatingService.deleteRate(id, senderEmail);
     res.status(204).end();
   } catch (error) {
     next(error);

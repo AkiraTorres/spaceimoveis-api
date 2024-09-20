@@ -1,264 +1,178 @@
 import { initializeApp } from 'firebase/app';
 import { deleteObject, getDownloadURL, getStorage, ref, uploadBytes } from 'firebase/storage';
+import fs from 'fs/promises';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { v4 as uuid } from 'uuid';
 
-import Message from "../db/models/Message.js";
-import MessageFile from "../db/models/MessageFile.js";
-
-import {findChatByChatId, findUserChats} from "./chatService.js";
-import {validateEmail, validateString} from "../validators/inputValidators.js";
-import {find} from "./globalService.js";
 import firebaseConfig from '../config/firebase.js';
-import fs from "fs/promises";
-import path from "path";
-import { fileURLToPath } from 'url';
+import prisma from '../config/prisma.js';
+import ConfigurableError from '../errors/ConfigurableError.js';
+import { validateEmail, validateMessageType, validateString } from '../validators/inputValidators.js';
+import ChatService from './chatService.js';
+import UserService from './userService.js';
 
-const app = initializeApp(firebaseConfig);
-const storage = getStorage(app);
-
-// TODO: precisa salvar as mensagens criptografadas no db
-export async function createMessage({ chatId, sender, text }) {
-  const validatedEmail = validateEmail(sender);
-  const validatedChatId = validateString(chatId);
-  const validatedText = validateString(text);
-
-  const user = await find(validatedEmail, false, false, true);
-  if (!user) {
-    const error = new Error('Usuário não encontrado');
-    error.status = 404;
-    throw error;
+export default class MessageService {
+  constructor() {
+    this.app = initializeApp(firebaseConfig);
+    this.storage = getStorage(this.app);
   }
 
-  if (!text || text === '') {
-    const error = new Error('Não se pode enviar uma mensagem vazia');
-    error.status = 400;
-    throw error;
-  }
+  // TODO: precisa salvar as mensagens criptografadas no db
+  static async createMessage({ chatId, sender, text }) {
+    const validatedEmail = validateEmail(sender);
+    const validatedChatId = validateString(chatId);
+    const validatedText = validateString(text);
 
-  const data = {
-    chatId: validatedChatId,
-    sender: validatedEmail,
-    text: validatedText,
-  }
+    const user = await UserService.find(validatedEmail, false, false, true);
+    if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
+    if (!text || text === '') throw new ConfigurableError('Texto da mensagem não pode ser vazio', 400);
 
-  const m = await Message.create(data);
-  const msg = m.get({ plain: true });
+    const data = { chatId: validatedChatId, sender: validatedEmail, text: validatedText };
 
-  let chat;
-  try {
-    chat = await findChatByChatId(validatedChatId, validatedEmail);
-  } catch (error) {
-    const e = new Error('Chat não encontrado');
-    e.status = 404;
-    throw e;
-  }
+    const msg = await prisma.message.create({ data });
 
-  const receiver = chat.user1.email === user.email ? chat.user2 : chat.user1;
-
-  msg.senderName = user.name;
-  msg.senderEmail = user.email;
-  msg.senderProfile = user.profile;
-  msg.receiverName = receiver.name;
-  msg.receiverEmail = receiver.email;
-  msg.receiverProfile = receiver.profile;
-
-  return msg;
-}
-
-export async function findMessages(chatId, email) {
-  const validatedEmail = validateEmail(email);
-
-  const user = await find(validatedEmail, false, false, true);
-  if (!user) {
-    const error = new Error('Usuário não encontrado');
-    error.status = 404;
-    throw error;
-  }
-
-  const chats = await findUserChats(validatedEmail, false, false, true);
-
-  if (!chats || !chats.find(chat => chat.id === chatId)) {
-    const error =  Error('Chat não encontrado');
-    error.status = 404;
-    throw error;
-  }
-
-  let chat;
-  try {
-    chat = await findChatByChatId(chatId, validateEmail);
-  } catch (error) {
-    const e = new Error('Chat não encontrado');
-    e.status = 404;
-    throw e;
-  }
-
-  const [m, mf] = await Promise.all([
-    Message.findAll({ where: { chatId }, raw: true }),
-    MessageFile.findAll({ where: { chatId }, raw: true }),
-  ]);
-
-  const messages = [...m, ...mf];
-
-  messages.sort((a, b) => a.createdAt - b.createdAt);
-
-  return Promise.all(messages.map(async msg => {
-    const editedMsg = msg;
-
-    const sender = chat.user1.email === editedMsg.sender ? chat.user1 : chat.user2;
-    const receiver = chat.user1.email === editedMsg.sender ? chat.user2 : chat.user1;
-
-    editedMsg.senderName = sender.name;
-    editedMsg.senderEmail = sender.email;
-    editedMsg.senderProfile = sender.profile;
-    editedMsg.receiverName = receiver.name;
-    editedMsg.receiverEmail = receiver.email;
-    editedMsg.receiverProfile = receiver.profile;
-
-    return editedMsg;
-  }));
-}
-
-export async function createFileMessage({ chatId, sender, file, text, type, fileName, contentType, platform }) {
-  const validatedEmail = validateEmail(sender);
-  const validatedChatId = validateString(chatId);
-  // const validatedText = text === "" ? "" : validateString(text);
-  const validatedText = text; // TODO: text can be empty, needs to change the validation string function later to add this option
-
-  const user = await find(validatedEmail, false, false, true);
-  if (!user) {
-    const error = new Error('Usuário não encontrado');
-    error.status = 404;
-    console.error(error);
-    throw error;
-  }
-
-  const chat = await findChatByChatId(validatedChatId);
-  if (!chat) {
-    const error = new Error('Chat não encontrado');
-    error.status = 404;
-    console.error(error);
-    throw error;
-  }
-
-  if (!file) {
-    const error = new Error('Arquivo não encontrado');
-    error.status = 400;
-    console.error(error);
-    throw error;
-  }
-
-  if (!contentType && type !== 'audio') {
-    const error = new Error('Tipo de conteúdo não encontrado');
-    error.status = 400;
-    console.error(error);
-    throw error
-  }
-
-  if (!fileName) {
-    const error = new Error('Nome do arquivo não encontrado');
-    error.status = 400;
-    console.error(error);
-    throw error
-  }
-
-  if (!['audio', 'video', 'file', 'image'].includes(type)) {
-    const error = new Error('Tipo de arquivo inválido');
-    error.status = 400;
-    console.error(error);
-    throw error;
-  }
-
-  const msgId = uuid();
-
-  let uploadFile = file.buffer;
-  let name = fileName;
-  let ct = contentType;
-  if (type === 'image' || platform === 'mobile') {
-    const buf = Buffer.from(file, 'base64');
-    const __filename = fileURLToPath(import.meta.url);
-    const __dirname = path.dirname(__filename);
-    const filePath = path.join(__dirname, 'public', 'tmp', 'files');
-    await fs.mkdir(filePath, { recursive: true });
-    const fileFullPath = path.join(filePath, name);
-    await fs.writeFile(fileFullPath, buf);
-    uploadFile = await fs.readFile(fileFullPath);
-
-    if (type === 'audio') {
-      name = name.replace(/\.aac$/, '.wav');
-      ct = 'audio/wav';
+    let chat;
+    try {
+      chat = await ChatService.findChatByChatId(validatedChatId, validatedEmail);
+    } catch (error) {
+      throw new ConfigurableError('Chat não encontrado', 404);
     }
+
+    const receiver = chat.user1.email === user.email ? chat.user2 : chat.user1;
+
+    msg.senderName = user.name;
+    msg.senderEmail = user.email;
+    msg.senderProfile = user.profile;
+    msg.receiverName = receiver.name;
+    msg.receiverEmail = receiver.email;
+    msg.receiverProfile = receiver.profile;
+
+    return msg;
   }
 
-  console.log(uploadFile);
+  static async findMessages(chatId, email) {
+    const validatedEmail = validateEmail(email);
 
-  let downloadUrl;
-  try {
-    const storageRef = ref(storage, `files/${validatedChatId}/${msgId}-${name}`);
-    const metadata = { contentType: ct };
-    const snapshot = await uploadBytes(storageRef, uploadFile, metadata);
-    downloadUrl = await getDownloadURL(snapshot.ref);
-  } catch (e) {
-    console.error(e);
-    const error = new Error('Erro ao enviar arquivo');
-    error.status = 500;
-    throw error;
-  }
-  console.log(downloadUrl);
+    const user = await UserService.find(validatedEmail);
+    if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
 
-  const m = await MessageFile.create({
-    id: msgId,
-    chatId: validatedChatId,
-    sender: validatedEmail,
-    text: validatedText,
-    url: downloadUrl,
-    fileName: fileName,
-    type: type, // TODO: alter type in the db to be a enum type with fields: image, audio, video, file
-  });
+    const chats = await ChatService.findUserChats(validatedEmail);
+    if (!chats || !chats.find((chat) => chat.id === chatId)) throw new ConfigurableError('Chat não encontrado', 404);
 
-  const message = m.get({ plain: true });
+    let chat;
+    try {
+      chat = await ChatService.findChatByChatId(chatId, validateEmail);
+    } catch (error) {
+      throw new ConfigurableError('Chat não encontrado', 404);
+    }
 
-  const receiver = chat.user1.email === user.email ? chat.user2 : chat.user1;
+    const messages = prisma.message.findMany({ where: { chatId } });
 
-  message.senderName = user.name;
-  message.senderEmail = user.email;
-  message.senderProfile = user.profile;
-  message.receiverName = receiver.name;
-  message.receiverEmail = receiver.email;
-  message.receiverProfile = receiver.profile;
+    messages.sort((a, b) => a.createdAt - b.createdAt);
 
-  return message;
-}
+    return Promise.all(messages.map(async (msg) => {
+      const editedMsg = msg;
 
-export async function deleteMessage(id, sender) {
-  const validatedEmail = validateEmail(sender);
-  const validatedId = validateString(id);
-  const message = await Message.findByPk(validatedId) === null ? await MessageFile.findByPk(validatedId) : await Message.findByPk(validatedId);
-  const user = await find(validatedEmail, false, false, true);
+      const sender = chat.user1.email === editedMsg.sender ? chat.user1 : chat.user2;
+      const receiver = chat.user1.email === editedMsg.sender ? chat.user2 : chat.user1;
 
-  if (!user) {
-    const error = new Error('Usuário não encontrado');
-    error.status = 404;
-    throw error;
+      editedMsg.senderName = sender.name;
+      editedMsg.senderEmail = sender.email;
+      editedMsg.senderProfile = sender.profile;
+      editedMsg.receiverName = receiver.name;
+      editedMsg.receiverEmail = receiver.email;
+      editedMsg.receiverProfile = receiver.profile;
+
+      return editedMsg;
+    }));
   }
 
-  if (!message) {
-    const error = new Error('Mensagem não encontrada');
-    error.status = 404;
-    throw error;
+  static async createFileMessage({ chatId, sender, file, text, t, fileName, contentType, platform }) {
+    const validatedEmail = validateEmail(sender);
+    const validatedChatId = validateString(chatId);
+    const type = validateMessageType(t);
+    const validatedText = text === '' || text === undefined ? '' : validateString(text);
+
+    const user = await UserService.find(validatedEmail);
+    if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
+
+    const chat = await ChatService.findChatByChatId(validatedChatId);
+    if (!chat) throw new ConfigurableError('Chat não encontrado', 404);
+    if (!file) throw new ConfigurableError('Arquivo não encontrado', 400);
+    if (!contentType && type !== 'audio') throw new ConfigurableError('Tipo de conteúdo não encontrado', 400);
+    if (!fileName) throw new ConfigurableError('Nome do arquivo não encontrado', 400);
+    if (!['audio', 'video', 'file', 'image'].includes(type)) throw new ConfigurableError('Tipo de arquivo inválido', 400);
+
+    const msgId = uuid();
+
+    let uploadFile = file.buffer;
+    let name = fileName;
+    let ct = contentType;
+    if (type === 'image' || platform === 'mobile') {
+      const buf = Buffer.from(file, 'base64');
+      const filename = fileURLToPath(import.meta.url);
+      const dirname = path.dirname(filename);
+      const filePath = path.join(dirname, 'public', 'tmp', 'files');
+      await fs.mkdir(filePath, { recursive: true });
+      const fileFullPath = path.join(filePath, name);
+      await fs.writeFile(fileFullPath, buf);
+      uploadFile = await fs.readFile(fileFullPath);
+
+      if (type === 'audio') {
+        name = name.replace(/\.aac$/, '.wav');
+        ct = 'audio/wav';
+      }
+    }
+
+    let downloadUrl;
+    try {
+      const storageRef = ref(this.storage, `files/${validatedChatId}/${msgId}-${name}`);
+      const metadata = { contentType: ct };
+      const snapshot = await uploadBytes(storageRef, uploadFile, metadata);
+      downloadUrl = await getDownloadURL(snapshot.ref);
+    } catch (e) {
+      throw new ConfigurableError('Erro ao salvar arquivo', 500);
+    }
+
+    const message = await prisma.message.create({
+      id: msgId,
+      chatId: validatedChatId,
+      senderEmail: validatedEmail,
+      text: validatedText,
+      url: downloadUrl,
+      fileName,
+      type,
+    });
+
+    const receiver = chat.user1.email === user.email ? chat.user2 : chat.user1;
+
+    message.senderName = user.name;
+    message.senderEmail = user.email;
+    message.senderProfile = user.profile;
+    message.receiverName = receiver.name;
+    message.receiverEmail = receiver.email;
+    message.receiverProfile = receiver.profile;
+
+    return message;
   }
 
-  if (message.sender !== validatedEmail) {
-    const error = new Error('Usuário não autorizado');
-    error.status = 401;
-    throw error;
-  }
+  static async deleteMessage(id, sender) {
+    const validatedEmail = validateEmail(sender);
+    const validatedId = validateString(id);
+    const message = await prisma.message.findFirst(validatedId) === null;
+    const user = await UserService.find(validatedEmail);
 
-  if (message.type === 'text') {
-    await Message.update({ isDeleted: true }, { where: { id: validatedId } });
-  } else {
-    await MessageFile.update({ isDeleted: true }, { where: { id: validatedId } });
-    const storageRef = ref(storage, `files/${message.chatId}/${validatedId}-${message.fileName}`);
-    await deleteObject(storageRef);
+    if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
+    if (!message) throw new ConfigurableError('Mensagem não encontrada', 404);
+    if (message.sender !== validatedEmail) throw new ConfigurableError('Usuário não autorizado', 401);
+
+    await prisma.message.delete({ where: { id: validatedId } });
+
+    if (message.type !== 'text') {
+      const storageRef = ref(this.storage, `files/${message.chatId}/${validatedId}-${message.fileName}`);
+      await deleteObject(storageRef);
+    }
+    return { message: 'Mensagem deletada com sucesso' };
   }
-  return { "message": "Mensagem deletada com sucesso" };
 }
