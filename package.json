@@ -5,9 +5,9 @@
   "main": "src/index .js",
   "type": "module",
   "scripts": {
-    "build": "npm i && npx prisma migrate prod",
+    "build": "npm i && sequelize db:migrate",
     "dev": "nodemon --no-deprecation src/index .js",
-    "start": "npm i && npx prisma migrate prod && node --no-deprecation src/index .js",
+    "start": "node --no-deprecation src/index .js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
@@ -29,7 +29,6 @@
     "pg": "^8.11.4",
     "pg-hstore": "^2.3.4",
     "socket.io": "^4.7.5",
-    "spaceimoveis-api": "file:",
     "uuid": "^9.0.1",
     "validator": "^13.11.0"
   },
