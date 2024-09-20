@@ -46,7 +46,7 @@ model User {
 model UserInfo {
   email        String  @id @unique
   cpf          String? @unique @db.VarChar(11)
-  cpnj         String? @unique @db.VarChar(15)
+  cnpj         String? @unique @db.VarChar(15)
   rg           String? @unique
   creci        String? @unique
   phone        String? @db.VarChar(25)
