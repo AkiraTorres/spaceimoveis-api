@@ -5,9 +5,9 @@
   "main": "src/index .js",
   "type": "module",
   "scripts": {
-    "build": "npm i && npx prisma migrate prod",
+    "build": "npm i && npx prisma migrate deploy",
     "dev": "nodemon --no-deprecation src/index .js",
-    "start": "npm i && npx prisma migrate prod && node --no-deprecation src/index .js",
+    "start": "npm i && npx prisma migrate deploy && node --no-deprecation src/index .js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
