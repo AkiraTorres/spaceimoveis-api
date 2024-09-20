@@ -272,7 +272,7 @@ export default class PropertyService {
 
     const { subscription } = await UserService.find(sellerEmail);
     if (subscription === 'free' || subscription === 'platinum') {
-      if (data.isHighlighted) this.checkHighlightLimit(sellerEmail);
+      if (data.isHighlight) this.checkHighlightLimit(sellerEmail);
     }
 
     const property = await prisma.property.create(data);
