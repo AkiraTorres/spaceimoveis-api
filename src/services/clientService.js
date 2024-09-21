@@ -1,9 +1,11 @@
-import { deleteObject, getDownloadURL, ref, uploadBytesResumable } from 'firebase/storage';
+import { deleteObject, getDownloadURL, getStorage, ref, uploadBytesResumable } from 'firebase/storage';
 import { v4 as uuid } from 'uuid';
 
+import { initializeApp } from 'firebase/app';
+import firebaseConfig from '../config/firebase.js';
 import prisma from '../config/prisma.js';
 import ConfigurableError from '../errors/ConfigurableError.js';
-import { validateEmail, validatePhone, validateString, validateUF, validateUserType } from '../validators/inputValidators.js';
+import { validateEmail, validatePassword, validatePhone, validateString, validateUF, validateUserType } from '../validators/inputValidators.js';
 import UserService from './userService.js';
 
 export default class ClientService extends UserService {
@@ -13,7 +15,7 @@ export default class ClientService extends UserService {
     const oldUser = await this.find({ email: validatedEmail }, 'client');
     if (!oldUser) throw new ConfigurableError('Cliente não encontrado', 404);
 
-    if (!(type in ['owner', 'realtor', 'realstate'])) throw new ConfigurableError('Tipo de usuário inválido para elevação', 400);
+    if (!['owner', 'realtor', 'realstate'].includes(type)) throw new ConfigurableError('Tipo de usuário inválido para elevação', 400);
 
     if (type === 'owner' && !params.cpf) throw new ConfigurableError('CPF é obrigatório para elevar um cliente a proprietário', 400);
     if (type === 'realtor' && !params.creci && !params.cpf) throw new ConfigurableError('CRECI e CPF são obrigatórios para elevar um cliente a corretor', 400);
@@ -22,59 +24,75 @@ export default class ClientService extends UserService {
     const data = {
       email: params.email ? validateEmail(params.email) : oldUser.email,
       name: params.name ? validateString(params.name, 'O campo nome é obrigatório') : oldUser.name,
+      password: params.password ? validatePassword(params.password) : oldUser.password,
       handler: params.email ? validateString((params.email).split('@')[0]) : oldUser.handler,
       type: validateUserType(type),
     };
 
-    const info = {
+    const infoData = {
       email: data.email,
       cpf: params.cpf ? validateString(params.cpf, 'O campo CPF é obrigatório') : oldUser.cpf,
+      cnpj: params.cnpj ? validateString(params.cnpj) : oldUser.cnpj,
       rg: params.rg ? validateString(params.rg, 'O campo RG é obrigatório') : oldUser.rg,
       creci: params.creci ? validateString(params.creci, 'O campo CRECI é obrigatório') : oldUser.creci,
-      phone: params.info.phone ? validatePhone(params.info.phone) : oldUser.phone,
-      idPhone: params.info.idPhone ? validateString(params.info.idPhone) : oldUser.idPhone,
-      bio: params.info.bio ? validateString(params.info.bio) : oldUser.bio,
+      phone: params.phone ? validatePhone(params.phone) : oldUser.phone,
+      idPhone: params.idPhone ? validateString(params.idPhone) : oldUser.idPhone,
+      bio: params.bio ? validateString(params.bio) : oldUser.bio,
     };
 
     const updatedAddress = {
-      street: params.address.street ? validateString(params.address.street) : oldUser.street,
-      cep: params.address.cep ? validateString(params.address.cep) : oldUser.cep,
-      number: params.address.number ? validateString(params.address.number) : oldUser.number,
-      complement: params.address.complement ? validateString(params.address.complement) : oldUser.complement,
-      neighborhood: params.address.neighborhood ? validateString(params.address.neighborhood) : oldUser.neighborhood,
-      city: params.address.city ? validateString(params.address.city) : oldUser.city,
-      state: params.address.state ? validateUF(params.address.state) : oldUser.state,
+      street: params.street ? validateString(params.street) : oldUser.street,
+      cep: params.cep ? validateString(params.cep) : oldUser.cep,
+      number: params.number ? validateString(params.number) : oldUser.number,
+      complement: params.complement ? validateString(params.complement) : oldUser.complement,
+      neighborhood: params.neighborhood ? validateString(params.neighborhood) : oldUser.neighborhood,
+      city: params.city ? validateString(params.city) : oldUser.city,
+      state: params.state ? validateUF(params.state) : oldUser.state,
     };
 
-    let profile = await prisma.userPhoto.findUnique({ where: { email: oldUser.email } });
+    if (data.email !== oldUser.email && await prisma.userInfo.findUnique({ where: { email: data.email } })) throw new ConfigurableError('Email já cadastrado', 409);
+    if (infoData.cpf !== oldUser.cpf && await prisma.userInfo.findUnique({ where: { cpf: infoData.cpf } })) throw new ConfigurableError('CPF já cadastrado', 409);
+    if (infoData.cnpj !== oldUser.cnpj && await prisma.userInfo.findUnique({ where: { cnpj: infoData.cnpj } })) throw new ConfigurableError('CNPJ já cadastrado', 409);
+    if (infoData.creci !== oldUser.creci && await prisma.userInfo.findUnique({ where: { creci: infoData.creci } })) throw new ConfigurableError('CRECI já cadastrado', 409);
+
+    const prof = await prisma.userPhoto.findUnique({ where: { email: oldUser.email } });
     if (photo) {
-      if (profile) {
-        const storageRef = ref(this.storage, `images/${oldUser.type}s/${oldUser.email}/${profile.name}`);
+      const app = initializeApp(firebaseConfig);
+      const storage = getStorage(app);
+
+      if (prof) {
+        const storageRef = ref(storage, `images/${oldUser.type}s/${oldUser.email}/${prof.name}`);
         await prisma.userPhoto.delete({ where: { email: oldUser.email } });
         await deleteObject(storageRef);
       }
 
-      const storageRef = ref(this.storage, `images/${oldUser.type}s/${data.email}/${photo.originalname}`);
+      const storageRef = ref(storage, `images/${oldUser.type}s/${data.email}/${photo.originalname}`);
       const metadata = { contentType: photo.mimetype };
       const snapshot = await uploadBytesResumable(storageRef, photo.buffer, metadata);
       const downloadUrl = await getDownloadURL(snapshot.ref);
 
-      profile = await prisma.userPhoto.create({
-        data: {
-          id: uuid(),
-          email: data.email,
-          url: downloadUrl,
-          name: photo.originalname,
-          type: 'profile',
-        },
-      });
+      const profileData = {
+        id: uuid(),
+        email: data.email,
+        url: downloadUrl,
+        name: photo.originalname,
+        type: 'profile',
+      };
+
+      await prisma.$transaction([
+        prisma.user.update({ where: { email: validatedEmail }, data }),
+        prisma.userInfo.update({ where: { email: validatedEmail }, data: infoData }),
+        prisma.userAddress.update({ where: { email: validatedEmail }, data: updatedAddress }),
+        prisma.userPhoto.create({ data: profileData }),
+      ]);
+    } else {
+      await prisma.$transaction([
+        prisma.user.update({ where: { email: validatedEmail }, data }),
+        prisma.userInfo.update({ where: { email: validatedEmail }, data: infoData }),
+        prisma.userAddress.update({ where: { email: validatedEmail }, data: updatedAddress }),
+      ]);
     }
 
-    const user = prisma.user.update({ where: { email: validateEmail }, data });
-    user.info = prisma.userInfo.update({ where: { email: validateEmail }, data: info });
-    user.address = prisma.userAddress.update({ where: { email: validateEmail }, data: updatedAddress });
-    user.profile = profile;
-
-    return user;
+    return this.userDetails(await prisma.user.findUnique({ where: { email: data.email } }));
   }
 }

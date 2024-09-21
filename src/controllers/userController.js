@@ -4,7 +4,7 @@ import UserService from '../services/userService.js';
 
 export const find = asyncHandler(async (req, res, next) => {
   try {
-    res.status(200).json(await UserService.find(req.params.email));
+    res.status(200).json(await UserService.find({ email: req.params.email }));
   } catch (error) {
     next(error);
   }
@@ -28,7 +28,8 @@ export const changePassword = asyncHandler(async (req, res, next) => {
 
 export const rescuePassword = asyncHandler(async (req, res, next) => {
   try {
-    res.status(200).json(await UserService.rescuePassword(req.body));
+    const data = req.body;
+    res.status(200).json(await UserService.rescuePassword(data));
   } catch (error) {
     next(error);
   }

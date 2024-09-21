@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
 
+import prisma from '../config/prisma.js';
 import verify from '../middlewares/verifyGoogle.cjs';
 import UserService from './userService.js';
 
@@ -14,7 +15,7 @@ export async function login({ email, password }) {
 
   if (email === '' || password === '') throw error;
 
-  const user = await UserService.find(email, true);
+  const user = await prisma.user.findUnique({ where: { email } });
   if (!user) throw error;
 
   const isValid = bcrypt.compareSync(password, user.password);
@@ -23,7 +24,9 @@ export async function login({ email, password }) {
   const accessToken = jwt.sign({ email }, JWT_SECRET, { expiresIn: '1h' });
   const refreshToken = jwt.sign({ email }, JWT_SECRET, { expiresIn: '21d' });
 
-  const loggedUser = { user, accessToken, refreshToken };
+  const u = await UserService.userDetails(user);
+
+  const loggedUser = { user: u, accessToken, refreshToken };
   return loggedUser;
 }
 
@@ -35,10 +38,10 @@ export async function loginGoogle({ googleToken }) {
 
   if (!email) throw error;
 
-  const user = await UserService.find(email, false);
+  const user = await prisma.user.findUnique({ where: { email } });
   if (!user) throw error;
 
-  return { user, token: googleToken };
+  return { user, accessToken: googleToken };
 }
 
 export async function loginAdmin({ email, password }) {
@@ -47,7 +50,7 @@ export async function loginAdmin({ email, password }) {
 
   if (email === '' || password === '') throw error;
 
-  const user = await UserService.find(email, true);
+  const user = await prisma.user.findUnique({ where: { email } });
   if (!user) throw error;
 
   const isValid = bcrypt.compareSync(password, user.password);
