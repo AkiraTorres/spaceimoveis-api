@@ -10,7 +10,7 @@ export default class FavoriteService {
     const validatedEmail = validateString(clientEmail);
     const validatedPropertyId = validateString(propertyId);
 
-    const user = await UserService.find(validatedEmail);
+    const user = await UserService.find({ email: validatedEmail });
     if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
 
     const favorite = await prisma.favorite.findFirst({ where: { userEmail: validatedEmail, propertyId: validatedPropertyId } });
@@ -22,7 +22,7 @@ export default class FavoriteService {
   static async getFavorites(clientEmail) {
     const validatedEmail = validateString(clientEmail);
 
-    const user = await UserService.find(validatedEmail);
+    const user = await UserService.find({ email: validatedEmail });
     if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
 
     const favorites = await prisma.favorite.findMany({ where: { userEmail: validatedEmail } });
@@ -39,7 +39,7 @@ export default class FavoriteService {
     const validatedEmail = validateString(clientEmail);
     const validatedPropertyId = validateString(propertyId);
 
-    const user = await UserService.find(validatedEmail);
+    const user = await UserService.find({ email: validatedEmail });
     if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
 
     const destroyed = await prisma.favorite.delete({ where: { userEmail: validatedEmail, propertyId: validatedPropertyId } });

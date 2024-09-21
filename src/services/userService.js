@@ -96,7 +96,7 @@ export default class UserService {
       email: validateEmail(params.email, "O campo 'email' é obrigatório"),
       name: validateString(params.name, "O campo 'nome' é obrigatório"),
       handler: validateString((params.email).split('@')[0], "O campo 'apelido' é obrigatório"),
-      password: validatePassword(params.password, "O campo 'senha' é obrigatório"),
+      password: params.password ? validatePassword(params.password, "O campo 'senha' é obrigatório") : null,
       type: validateUserType(params.type, "O campo 'tipo' é obrigatório"),
     };
 
@@ -123,26 +123,39 @@ export default class UserService {
       state: params.state ? validateUF(params.state) : null,
     };
 
+    if (await prisma.user.findFirst({ where: { email: newUser.email } })) throw new ConfigurableError('Email já cadastrado', 409);
+
     const user = await prisma.user.create({ data: newUser });
     const info = await prisma.userInfo.create({ data: newInfo });
     const address = await prisma.userAddress.create({ data: newAddress });
 
-    let profile = null;
+    const profile = null;
     if (photo) {
       const storageRef = ref(this.storage, `images/${user.type}s/${user.email}/${photo.originalname}`);
       const metadata = { contentType: photo.mimetype };
       const snapshot = await uploadBytesResumable(storageRef, photo.buffer, metadata);
       const downloadUrl = await getDownloadURL(snapshot.ref);
 
-      profile = await prisma.userPhoto.create({
-        data: {
-          id: uuid(),
-          email: user.email,
-          url: downloadUrl,
-          name: photo.originalname,
-          type: 'profile',
-        },
-      });
+      const profileData = {
+        id: uuid(),
+        email: user.email,
+        url: downloadUrl,
+        name: photo.originalname,
+        type: 'profile',
+      };
+
+      await prisma.$transaction([
+        prisma.user.create({ data: newUser }),
+        prisma.userInfo.create({ data: newInfo }),
+        prisma.userAddress.create({ data: newAddress }),
+        prisma.userPhoto.create({ data: profileData }),
+      ]);
+    } else {
+      await prisma.$transaction([
+        prisma.user.create({ data: newUser }),
+        prisma.userInfo.create({ data: newInfo }),
+        prisma.userAddress.create({ data: newAddress }),
+      ]);
     }
 
     return { ...user, info, address, profile };
@@ -235,30 +248,29 @@ export default class UserService {
   static async changePassword(email, newPassword) {
     const validatedEmail = validateEmail(email);
 
-    const user = await this.find(validatedEmail);
+    const user = await this.find({ email: validatedEmail });
     if (!user) throw new Error('Email não encontrado');
 
     const validatedPassword = validatePassword(newPassword);
     if (user.password === validatedPassword) throw new ConfigurableError('A nova senha não pode ser igual à antiga', 422);
 
-    user.password = validatedPassword;
     const result = await prisma.user.update({ where: { email: validatedEmail }, data: { password: validatedPassword } });
     if (result === undefined) throw new ConfigurableError('Erro ao atualizar a senha', 500);
 
     return this.userDetails(user);
   }
 
-  static async rescuePassword(email) {
+  static async rescuePassword({ email }) {
     const receiverEmail = validateEmail(email);
 
-    const user = await this.find(receiverEmail);
+    const user = await this.find({ email: receiverEmail });
     if (!user) return { message: 'Usuário não encontrado.' };
 
     const otp = Math.floor(1000 + Math.random() * 9000);
-    const otpTTL = new Date();
-    otpTTL.setMinutes(otpTTL.getMinutes() + 6);
+    const otpTtl = new Date();
+    otpTtl.setMinutes(otpTtl.getMinutes() + 6);
 
-    await prisma.user.update({ where: { email: receiverEmail }, data: { otp: otp.toString(), otpTTL } });
+    await prisma.user.update({ where: { email: receiverEmail }, data: { otp: otp.toString(), otpTtl } });
 
     const mailOptions = {
       from: process.env.EMAIL_ADDRESS,
@@ -276,13 +288,13 @@ export default class UserService {
     return { message: response };
   }
 
-  static async resetPassword(email, password, otp) {
+  static async resetPassword({ email, password, otp }) {
     const validatedEmail = validateEmail(email);
-    const user = await this.find(validatedEmail, true, true);
+    const user = await prisma.user.findFirst({ where: { email: validatedEmail } });
 
     if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
 
-    if (user.otp === otp && user.otp_ttl > new Date()) {
+    if (user.otp === otp && user.otpTtl > new Date()) {
       return this.changePassword(email, password);
     }
 

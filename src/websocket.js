@@ -1,13 +1,11 @@
 import { io } from './server.js';
 import MessageService from './services/messageService.js';
 
-const messageService = new MessageService();
-
 io.on('connection', (socket) => {
   socket.on('open_chat', async (data, callback) => {
     socket.join(data.chatId);
 
-    const messagesRoom = await messageService.findMessages(data.chatId, data.email);
+    const messagesRoom = await MessageService.findMessages(data.chatId, data.email);
     callback(messagesRoom);
   });
 
@@ -18,14 +16,14 @@ io.on('connection', (socket) => {
       text: data.message,
     };
 
-    const msgRes = await messageService.createMessage(msgData);
+    const msgRes = await MessageService.createMessage(msgData);
     io.to(data.chatId).emit('message', msgRes);
   });
 
   socket.on('upload', async (data, callback) => {
     let msgRes;
     try {
-      msgRes = await messageService.createFileMessage({
+      msgRes = await MessageService.createFileMessage({
         chatId: data.chatId,
         sender: data.email,
         file: data.file,
@@ -42,7 +40,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('delete_message', async (data) => {
-    await messageService.deleteMessage(data.id, data.email);
+    await MessageService.deleteMessage(data.id, data.email);
     io.to(data.chatId).emit('delete_message', data.id);
   });
 });

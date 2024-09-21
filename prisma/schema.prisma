@@ -17,7 +17,7 @@ model User {
   email     String    @id @unique
   name      String
   handler   String    @unique @db.VarChar(16)
-  password  String
+  password  String?
   type      Type      @default(client)
   otp       String?   @db.VarChar(6)
   otpTtl    DateTime? @map("otp_ttl")
@@ -39,6 +39,7 @@ model User {
   Property           Property[]
   Follower           Follower[]         @relation("follower")
   Followed           Follower[]         @relation("followed")
+  UserSocial         UserSocial?
 
   @@map("users")
 }
@@ -101,6 +102,16 @@ model UserRating {
   sender   User @relation("UserRatingSender", fields: [senderEmail], references: [email])
 
   @@map("user_ratings")
+}
+
+model UserSocial {
+  email String  @id @unique
+  type  String?
+  url   String?
+
+  user User @relation(fields: [email], references: [email])
+
+  @@map("users_social")
 }
 
 model SharedProperties {
@@ -223,7 +234,7 @@ model PropertiesPrices {
 model PropertiesAddresses {
   propertyId   String  @id @unique @map("property_id")
   cep          String  @db.VarChar(9)
-  address      String
+  street       String
   number       String? @map("number")
   city         String
   state        String  @db.VarChar(2)
