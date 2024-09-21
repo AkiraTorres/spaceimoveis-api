@@ -84,6 +84,7 @@ export function validatePassword(password) {
 }
 
 export function validatePhone(phone) {
+  if (phone === null || phone === undefined) throw new ConfigurableError('O campo telefone é obrigatório', 422);
   const sanitizedPhone = validator.escape(phone);
 
   if (sanitizedPhone.length === 0 || sanitizedPhone === '' || sanitizedPhone === undefined) {
@@ -234,9 +235,9 @@ export function validateAnnouncementType(type) {
     throw new ConfigurableError("O campo 'tipo' é obrigatório", 422);
   }
 
-  if (type === 'rent' || type === 'sale') return type;
+  if (type === 'rent' || type === 'sell') return type;
 
-  throw new ConfigurableError('Tipo de anúncio inválido deve possuir um valor válido (rent/sale)', 400);
+  throw new ConfigurableError('Tipo de anúncio inválido deve possuir um valor válido (rent/sell)', 400);
 }
 
 export function validatePropertyType(type) {

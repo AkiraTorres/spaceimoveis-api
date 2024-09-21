@@ -125,11 +125,7 @@ export default class UserService {
 
     if (await prisma.user.findFirst({ where: { email: newUser.email } })) throw new ConfigurableError('Email já cadastrado', 409);
 
-    const user = await prisma.user.create({ data: newUser });
-    const info = await prisma.userInfo.create({ data: newInfo });
-    const address = await prisma.userAddress.create({ data: newAddress });
-
-    const profile = null;
+    let user;
     if (photo) {
       const storageRef = ref(this.storage, `images/${user.type}s/${user.email}/${photo.originalname}`);
       const metadata = { contentType: photo.mimetype };
@@ -145,20 +141,21 @@ export default class UserService {
       };
 
       await prisma.$transaction([
-        prisma.user.create({ data: newUser }),
-        prisma.userInfo.create({ data: newInfo }),
-        prisma.userAddress.create({ data: newAddress }),
-        prisma.userPhoto.create({ data: profileData }),
+        user = prisma.user.create({ data: newUser }),
+        user.info = prisma.userInfo.create({ data: newInfo }),
+        user.address = prisma.userAddress.create({ data: newAddress }),
+        user.profile = prisma.userPhoto.create({ data: profileData }),
       ]);
     } else {
       await prisma.$transaction([
-        prisma.user.create({ data: newUser }),
-        prisma.userInfo.create({ data: newInfo }),
-        prisma.userAddress.create({ data: newAddress }),
+        user = prisma.user.create({ data: newUser }),
+        user.info = prisma.userInfo.create({ data: newInfo }),
+        user.address = prisma.userAddress.create({ data: newAddress }),
+        user.profile = null,
       ]);
     }
 
-    return { ...user, info, address, profile };
+    return user;
   }
 
   async update(email, params, photo) {

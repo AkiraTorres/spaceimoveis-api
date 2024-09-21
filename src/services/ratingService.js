@@ -1,12 +1,13 @@
 import prisma from '../config/prisma.js';
 import { validateEmail, validateInteger, validateString } from '../validators/inputValidators.js';
 import RealtorService from './realtorService.js';
+import UserService from './userService.js';
 
 export default class RatingService {
   static async getAllRatesByReceiver(receiverEmail, page = 1) {
     const validatedReceiverEmail = validateEmail(receiverEmail);
 
-    const receiver = await this.userService.find(validatedReceiverEmail);
+    const receiver = await UserService.find({ email: validatedReceiverEmail });
     if (!receiver) throw new Error('Usuário não encontrado.', 404);
 
     if (!(receiver.type in ['realtor', 'realstate'])) throw new Error('Usuário a receber a avaliação deve ser um corretor ou imobiliária.', 400);
@@ -39,7 +40,7 @@ export default class RatingService {
   static async getAllRatesBySender(senderEmail, page = 1) {
     const validatedSenderEmail = validateEmail(senderEmail);
 
-    const user = await this.userService.find(validatedSenderEmail);
+    const user = await UserService.find({ email: validatedSenderEmail });
     if (!user) throw new Error('Usuário não encontrado.', 404);
 
     const take = 6;
@@ -78,10 +79,10 @@ export default class RatingService {
     const validatedRating = validateInteger(rating);
     const validatedComment = validateString(comment);
 
-    const sender = await this.userService.find(validatedSenderEmail);
+    const sender = await UserService.find({ email: validatedSenderEmail });
     if (!sender) throw new Error('Usuário não encontrado.', 404);
 
-    const receiver = await this.userService.find(validatedReceiverEmail);
+    const receiver = await UserService.find({ email: validatedReceiverEmail });
     if (!receiver) throw new Error('Usuário a receber a avaliação não encontrado.', 404);
 
     if (validatedRating < 0 || validatedRating > 10) throw new Error('Avaliação deve ser um número entre 0 e 10.', 400);
@@ -134,7 +135,7 @@ export default class RatingService {
     const validateId = validateString(id);
     const validatedSenderEmail = validateEmail(senderEmail);
 
-    const user = await this.userService.find(validatedSenderEmail);
+    const user = await UserService.find({ email: validatedSenderEmail });
     if (!user) throw new Error('Usuário não encontrado.', 404);
 
     const rate = await prisma.userRating.findFirst(validateId);
