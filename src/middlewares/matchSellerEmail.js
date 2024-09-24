@@ -6,7 +6,7 @@ export default async function matchEmail(req, res, next) {
   try {
     const { id } = req.params;
 
-    const property = await prisma.property.findFirst(validateString(id, 'O id da propriedade não foi informado'));
+    const property = await prisma.property.findFirst({ where: { id: validateString(id, 'O id da propriedade não foi informado') } });
 
     if (!property) throw new ConfigurableError('Unauthorized', 401);
 
