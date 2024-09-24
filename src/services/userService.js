@@ -12,23 +12,21 @@ import { validateBoolean, validateCnpj, validateCpf, validateCreci, validateEmai
 dotenv.config();
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
+const app = initializeApp(firebaseConfig);
+const storage = getStorage(app);
+
 export default class UserService {
-  constructor() {
-    this.app = initializeApp(firebaseConfig);
-    this.storage = getStorage(this.app);
-  }
+  static async userDetails(userEmail) {
+    const user = await prisma.user.findFirst({ where: { email: userEmail } });
 
-  static async userDetails(user) {
-    const editedUser = user;
+    user.info = await prisma.userInfo.findFirst({ where: { email: userEmail } });
+    user.address = await prisma.userAddress.findFirst({ where: { email: userEmail } });
+    user.profile = await prisma.userPhoto.findFirst({ where: { email: userEmail } });
+    user.favorites = await prisma.favorite.findMany({ where: { userEmail } });
+    user.followers = await prisma.follower.findMany({ where: { followedEmail: userEmail } });
+    user.follow = await prisma.follower.findMany({ where: { followerEmail: userEmail } });
 
-    editedUser.info = await prisma.userInfo.findUnique({ where: { email: user.email } });
-    editedUser.address = await prisma.userAddress.findUnique({ where: { email: user.email } });
-    editedUser.profile = await prisma.userPhoto.findUnique({ where: { email: user.email } });
-    editedUser.favorites = await prisma.favorite.findMany({ where: { userEmail: user.email } });
-    editedUser.followers = await prisma.follower.findMany({ where: { followedEmail: user.email } });
-    editedUser.follow = await prisma.follower.findMany({ where: { followerEmail: user.email } });
-
-    return excludeFromObject(editedUser, ['otp', 'otp_ttl', 'password']);
+    return excludeFromObject(user, ['otp', 'otp_ttl', 'password']);
   }
 
   static async find(params, type = null) {
@@ -46,7 +44,7 @@ export default class UserService {
 
     if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
 
-    return this.userDetails(user);
+    return this.userDetails(user.email);
   }
 
   static async findAll(page = 1, type = null, active = true) {
@@ -60,8 +58,8 @@ export default class UserService {
     }
 
     const limit = 6;
-    const total = await prisma.user.count({ where });
     where.type = validateUserType(type, "O campo 'tipo' é obrigatório");
+    const total = await prisma.user.count({ where });
 
     if (total === 0) throw new ConfigurableError(`Não existe nenhum ${type} cadastrado.`, 404);
 
@@ -70,14 +68,14 @@ export default class UserService {
 
     const users = await prisma.user.findMany({
       where,
-      orderBy: { name: 'asc' },
+      // orderBy: { name: 'asc' },
       take: limit,
       skip: offset,
     });
 
     if (users.length === 0) throw new ConfigurableError(`Não existe nenhum ${type} cadastrado.`, 404);
 
-    const result = await Promise.all(users.map(async (user) => this.userDetails(user)));
+    const result = await Promise.all(users.map(async (user) => this.userDetails(user.email)));
 
     const pagination = {
       path: `/${type}`,
@@ -127,7 +125,7 @@ export default class UserService {
 
     let user;
     if (photo) {
-      const storageRef = ref(this.storage, `images/${user.type}s/${user.email}/${photo.originalname}`);
+      const storageRef = ref(storage, `images/${user.type}s/${user.email}/${photo.originalname}`);
       const metadata = { contentType: photo.mimetype };
       const snapshot = await uploadBytesResumable(storageRef, photo.buffer, metadata);
       const downloadUrl = await getDownloadURL(snapshot.ref);
@@ -141,29 +139,29 @@ export default class UserService {
       };
 
       await prisma.$transaction([
-        user = prisma.user.create({ data: newUser }),
-        user.info = prisma.userInfo.create({ data: newInfo }),
-        user.address = prisma.userAddress.create({ data: newAddress }),
-        user.profile = prisma.userPhoto.create({ data: profileData }),
+        prisma.user.create({ data: newUser }),
+        prisma.userInfo.create({ data: newInfo }),
+        prisma.userAddress.create({ data: newAddress }),
+        prisma.userPhoto.create({ data: profileData }),
       ]);
     } else {
       await prisma.$transaction([
-        user = prisma.user.create({ data: newUser }),
-        user.info = prisma.userInfo.create({ data: newInfo }),
-        user.address = prisma.userAddress.create({ data: newAddress }),
-        user.profile = null,
+        prisma.user.create({ data: newUser }),
+        prisma.userInfo.create({ data: newInfo }),
+        prisma.userAddress.create({ data: newAddress }),
       ]);
+      // user.profile = null;
     }
 
-    return user;
+    return this.userDetails(newUser.email);
   }
 
-  async update(email, params, photo) {
+  static async update(email, params, photo) {
     const validatedEmail = validateEmail(email);
 
     if ((!params && !photo) || (Object.keys(params).length === 0 && !photo)) throw new ConfigurableError('Nenhum dado foi fornecido', 422);
 
-    const oldUser = await this.find({ email: validateEmail });
+    const oldUser = await this.find({ email: validatedEmail });
     if (!oldUser) throw new ConfigurableError('Usuário não encontrado', 404);
 
     let user = oldUser;
@@ -178,42 +176,38 @@ export default class UserService {
       };
       user = await prisma.user.update({ where: { email: validatedEmail }, data: updatedData });
 
-      if (params.info) {
-        const updatedInfo = {
-          cpf: params.info.cpf ? validateCpf(params.info.cpf) : oldUser.cpf,
-          cnpj: params.info.cnpj ? validateCnpj(params.info.cnpj) : oldUser.cnpj,
-          rg: params.info.rg ? validateString(params.info.rg) : oldUser.rg,
-          creci: params.info.creci ? validateCreci(params.info.creci) : oldUser.creci,
-          phone: params.info.phone ? validatePhone(params.info.phone) : oldUser.phone,
-          idPhone: params.info.idPhone ? validateString(params.info.idPhone) : oldUser.idPhone,
-          bio: params.info.bio ? validateString(params.info.bio) : oldUser.bio,
-        };
-        info = await prisma.userInfo.update({ where: { email: validatedEmail }, data: updatedInfo });
-      }
+      const updatedInfo = {
+        cpf: params.cpf ? validateCpf(params.cpf) : oldUser.cpf,
+        cnpj: params.cnpj ? validateCnpj(params.cnpj) : oldUser.cnpj,
+        rg: params.rg ? validateString(params.rg) : oldUser.rg,
+        creci: params.creci ? validateCreci(params.creci) : oldUser.creci,
+        phone: params.phone ? validatePhone(params.phone) : oldUser.phone,
+        idPhone: params.idPhone ? validateString(params.idPhone) : oldUser.idPhone,
+        bio: params.bio ? validateString(params.bio) : oldUser.bio,
+      };
+      info = await prisma.userInfo.update({ where: { email: validatedEmail }, data: updatedInfo });
 
-      if (params.address) {
-        const updatedAddress = {
-          street: params.address.street ? validateString(params.address.street) : oldUser.street,
-          cep: params.address.cep ? validateString(params.address.cep) : oldUser.cep,
-          number: params.address.number ? validateString(params.address.number) : oldUser.number,
-          complement: params.address.complement ? validateString(params.address.complement) : oldUser.complement,
-          neighborhood: params.address.neighborhood ? validateString(params.address.neighborhood) : oldUser.neighborhood,
-          city: params.address.city ? validateString(params.address.city) : oldUser.city,
-          state: params.address.state ? validateUF(params.address.state) : oldUser.state,
-        };
-        address = await prisma.userAddress.update({ where: { email: validatedEmail }, data: updatedAddress });
-      }
+      const updatedAddress = {
+        street: params.street ? validateString(params.street) : oldUser.street,
+        cep: params.cep ? validateString(params.cep) : oldUser.cep,
+        number: params.number ? validateString(params.number) : oldUser.number,
+        complement: params.complement ? validateString(params.complement) : oldUser.complement,
+        neighborhood: params.neighborhood ? validateString(params.neighborhood) : oldUser.neighborhood,
+        city: params.city ? validateString(params.city) : oldUser.city,
+        state: params.state ? validateUF(params.state) : oldUser.state,
+      };
+      address = await prisma.userAddress.update({ where: { email: validatedEmail }, data: updatedAddress });
     }
 
     let profile = await prisma.userPhoto.findUnique({ where: { email: user.email } });
     if (photo) {
       if (profile) {
-        const storageRef = ref(this.storage, `images/admins/${user.email}/${profile.name}`);
+        const storageRef = ref(storage, `images/admins/${user.email}/${profile.name}`);
         await prisma.userPhoto.delete({ where: { email: user.email } });
         await deleteObject(storageRef);
       }
 
-      const storageRef = ref(this.storage, `images/admins/${user.email}/${photo.originalname}`);
+      const storageRef = ref(storage, `images/admins/${user.email}/${photo.originalname}`);
       const metadata = { contentType: photo.mimetype };
       const snapshot = await uploadBytesResumable(storageRef, photo.buffer, metadata);
       const downloadUrl = await getDownloadURL(snapshot.ref);

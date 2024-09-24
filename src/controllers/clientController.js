@@ -28,6 +28,7 @@ export const create = asyncHandler(async (req, res, next) => {
 
     let clientData = {};
     if (data !== undefined) clientData = JSON.parse(data);
+    clientData.type = 'client';
 
     const result = await ClientService.create(clientData, file);
     res.status(201).json(result);

@@ -30,6 +30,7 @@ export const create = asyncHandler(async (req, res, next) => {
 
     let realstateData = {};
     if (data !== undefined) realstateData = JSON.parse(data);
+    realstateData.type = 'realstate';
 
     const result = await RealstateService.create(realstateData, file);
     res.status(201).json(result);
