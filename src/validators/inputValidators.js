@@ -8,6 +8,7 @@ dotenv.config();
 const salt = process.env.CRYPT_SALT;
 
 export function validateEmail(email) {
+  if (email === null || email === undefined) throw new ConfigurableError('O campo email é obrigatório', 422);
   const sanitizedEmail = validator.escape(email);
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -30,6 +31,7 @@ export function validateString(string, msg = 'O campo é obrigatório') {
 }
 
 export function validateInteger(integer, msg = 'O campo é obrigatório e deve ser um número inteiro') {
+  if (integer === null || integer === undefined) throw new ConfigurableError(msg, 422);
   const int = typeof integer === 'string' ? integer.replace(/\./g, '') : integer;
 
   const sanitizedInteger = parseInt(int, 10);
@@ -42,6 +44,7 @@ export function validateInteger(integer, msg = 'O campo é obrigatório e deve s
 }
 
 export function validatePrice(p, msg = "O campo 'preço' é obrigatório e deve ser um número") {
+  if (p === null || p === undefined) throw new ConfigurableError(msg, 422);
   const price = typeof p === 'string' ? p.replace(/\./g, '') : p;
   const sanitizedPrice = parseInt(price, 10);
 
@@ -53,10 +56,8 @@ export function validatePrice(p, msg = "O campo 'preço' é obrigatório e deve 
 }
 
 export function validateBoolean(bool, msg = 'O campo é obrigatório') {
+  if (bool === null) throw new ConfigurableError(msg, 422);
   if (bool === false || bool === true) return bool;
-  if (bool === null) {
-    throw new ConfigurableError(msg, 422);
-  }
 
   const sanitizedBool = validator.escape(bool);
 
@@ -67,6 +68,7 @@ export function validateBoolean(bool, msg = 'O campo é obrigatório') {
 }
 
 export function validatePassword(password) {
+  if (password === null || password === undefined) throw new ConfigurableError('O campo senha é obrigatório', 422);
   const sanitizedPassword = validator.escape(password);
 
   if (sanitizedPassword.length === 0 || sanitizedPassword === '' || sanitizedPassword === undefined) {
@@ -101,6 +103,7 @@ export function validatePhone(phone) {
 }
 
 export function validateCpf(cpf) {
+  if (cpf === null || cpf === undefined) throw new ConfigurableError('O campo CPF é obrigatório', 422);
   const validatedCpf = cpf.replace(/[^\d]+/g, '');
 
   if (validatedCpf.length !== 11 || /^(\d)\1{10}$/.test(validatedCpf)) throw new ConfigurableError('CPF inválido', 400);
@@ -128,6 +131,7 @@ export function validateCpf(cpf) {
 }
 
 export function validateCnpj(cnpj) {
+  if (cnpj === null || cnpj === undefined) throw new ConfigurableError('O campo CNPJ é obrigatório', 422);
   const validatedCnpj = validator.escape(cnpj).replace(/\D/g, '');
 
   if (validatedCnpj.length !== 14) throw new ConfigurableError('CNPJ Inválido', 400);
@@ -162,6 +166,7 @@ export function validateCnpj(cnpj) {
 }
 
 export function validateCep(cep) {
+  if (cep === null || cep === undefined) throw new ConfigurableError('O campo CEP é obrigatório', 422);
   const sanitizedCep = validator.escape(cep);
 
   if (sanitizedCep.length === 0 || sanitizedCep === '' || sanitizedCep === undefined) {
@@ -198,6 +203,7 @@ export function validateUF(uf) {
 }
 
 export function validateCreci(creci) {
+  if (creci === null || creci === undefined) throw new ConfigurableError('O campo CRECI é obrigatório', 422);
   const sanitizedCreci = validator.escape(creci);
 
   const creciRegex = /^(CRECI-)?[A-Z]{2}\s?\d{1,15}$/;
@@ -210,10 +216,7 @@ export function validateCreci(creci) {
 }
 
 export function validateFurnished(furnished, msg = "O campo 'mobiliado' é obrigatório'") {
-  // const sanitizedFurnished = validator.escape(furnished);
-  if (furnished === null) {
-    throw new ConfigurableError(msg, 422);
-  }
+  if (furnished === null || furnished === undefined) throw new ConfigurableError(msg, 422);
 
   if (furnished === 'yes' || furnished === 'no' || furnished === 'partial') return furnished;
 
@@ -221,9 +224,7 @@ export function validateFurnished(furnished, msg = "O campo 'mobiliado' é obrig
 }
 
 export function validateUserType(type) {
-  if (type === null) {
-    throw new ConfigurableError("O campo 'tipo' é obrigatório", 422);
-  }
+  if (type === null || type === undefined) throw new ConfigurableError("O campo 'tipo' é obrigatório", 422);
 
   if (type === 'client' || type === 'owner' || type === 'realtor' || type === 'realstate' || type === 'admin') return type;
 
@@ -231,19 +232,15 @@ export function validateUserType(type) {
 }
 
 export function validateAnnouncementType(type) {
-  if (type === null) {
-    throw new ConfigurableError("O campo 'tipo' é obrigatório", 422);
-  }
+  if (type === null || type === undefined) throw new ConfigurableError("O campo 'tipo' é obrigatório", 422);
 
-  if (type === 'rent' || type === 'sell') return type;
+  if (type === 'rent' || type === 'sell' || type === 'both') return type;
 
-  throw new ConfigurableError('Tipo de anúncio inválido deve possuir um valor válido (rent/sell)', 400);
+  throw new ConfigurableError('Tipo de anúncio inválido deve possuir um valor válido (rent/sell/both)', 400);
 }
 
 export function validatePropertyType(type) {
-  if (type === null) {
-    throw new ConfigurableError("O campo 'tipo' é obrigatório", 422);
-  }
+  if (type === null || type === undefined) throw new ConfigurableError("O campo 'tipo' é obrigatório", 422);
 
   if (type === 'house' || type === 'apartment' || type === 'land' || type === 'farm') return type;
 
@@ -251,9 +248,7 @@ export function validatePropertyType(type) {
 }
 
 export function validateMessageType(type) {
-  if (type === null) {
-    throw new ConfigurableError("O campo 'tipo' é obrigatório", 422);
-  }
+  if (type === null || type === undefined) throw new ConfigurableError("O campo 'tipo' é obrigatório", 422);
 
   if (type === 'text' || type === 'image' || type === 'audio' || type === 'video' || type === 'file') return type;
 
