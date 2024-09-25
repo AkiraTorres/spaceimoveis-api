@@ -108,6 +108,6 @@ export default class SellerDashboardService {
 
     const sorted = properties.sort((a, b) => b.timesSeen - a.timesSeen);
 
-    return Promise.all(sorted.slice(0, 5).map(async (property) => PropertyService.getPropertyDetails(property)));
+    return Promise.all(sorted.slice(0, 5).map(async (property) => PropertyService.getPropertyDetails(property.id)));
   }
 }

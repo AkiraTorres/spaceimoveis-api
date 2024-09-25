@@ -93,6 +93,6 @@ export default class ClientService extends UserService {
       ]);
     }
 
-    return this.userDetails(await prisma.user.findUnique({ where: { email: data.email } }));
+    return this.userDetails(data.email);
   }
 }

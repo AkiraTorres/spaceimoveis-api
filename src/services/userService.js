@@ -54,7 +54,7 @@ export default class UserService {
       const users = prisma.user.findMany({ where, orderBy: { name: 'asc' } });
       if (users.length === 0) throw new ConfigurableError(`Não existe nenhum ${type} cadastrado.`, 404);
 
-      return Promise.all(users.map(async (user) => this.userDetails(user)));
+      return Promise.all(users.map(async (user) => this.userDetails(user.email)));
     }
 
     const limit = 6;
@@ -248,7 +248,7 @@ export default class UserService {
     const result = await prisma.user.update({ where: { email: validatedEmail }, data: { password: validatedPassword } });
     if (result === undefined) throw new ConfigurableError('Erro ao atualizar a senha', 500);
 
-    return this.userDetails(user);
+    return this.userDetails(user.email);
   }
 
   static async rescuePassword({ email }) {

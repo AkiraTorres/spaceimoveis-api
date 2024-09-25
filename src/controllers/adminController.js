@@ -7,7 +7,7 @@ export const findAll = asyncHandler(async (req, res, next) => {
   try {
     const { page = 1 } = req.query;
 
-    const result = await AdminService.findAll(page);
+    const result = await AdminService.findAll(page, 'admin');
     res.status(200).json(result);
   } catch (error) {
     next(error);
@@ -18,7 +18,7 @@ export const findByPk = asyncHandler(async (req, res, next) => {
   try {
     const { email } = req.params;
 
-    const result = await AdminService.findByPk(email);
+    const result = await AdminService.find({ email });
     res.status(200).json(result);
   } catch (error) {
     next(error);
@@ -43,6 +43,7 @@ export const create = asyncHandler(async (req, res, next) => {
 
     let adminData = {};
     if (data !== undefined) adminData = JSON.parse(data);
+    adminData.type = 'admin';
 
     const result = await AdminService.create(adminData, file);
     res.status(201).json(result);
