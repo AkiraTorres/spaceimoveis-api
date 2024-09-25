@@ -30,6 +30,7 @@ export const create = asyncHandler(async (req, res, next) => {
 
     let ownerData = {};
     if (data !== undefined) ownerData = JSON.parse(data);
+    ownerData.type = 'owner';
 
     const result = await OwnerService.create(ownerData, file);
     res.status(201).json(result);

@@ -24,9 +24,8 @@ export default function verifyJwt(req, res, next) {
     next();
     return jwt.decode(accessToken);
   } catch (error) {
-    const status = error.status || error.code || 500;
-    const message = error.message || 'Erro ao se conectar com o banco de dados';
-    return res.status(status).json(message).end();
+    next(error);
+    return res.status(error.status).json(error.message).end();
   }
 }
 

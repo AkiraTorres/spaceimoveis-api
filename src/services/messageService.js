@@ -24,7 +24,7 @@ export default class MessageService {
     const validatedChatId = validateString(chatId);
     const validatedText = validateString(text);
 
-    const user = await UserService.find(validatedEmail, false, false, true);
+    const user = await UserService.find({ email: validatedEmail });
     if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
     if (!text || text === '') throw new ConfigurableError('Texto da mensagem não pode ser vazio', 400);
 
@@ -54,7 +54,7 @@ export default class MessageService {
   static async findMessages(chatId, email) {
     const validatedEmail = validateEmail(email);
 
-    const user = await UserService.find(validatedEmail);
+    const user = await UserService.find({ email: validatedEmail });
     if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
 
     const chats = await ChatService.findUserChats(validatedEmail);
@@ -94,7 +94,7 @@ export default class MessageService {
     const type = validateMessageType(t);
     const validatedText = text === '' || text === undefined ? '' : validateString(text);
 
-    const user = await UserService.find(validatedEmail);
+    const user = await UserService.find({ email: validatedEmail });
     if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
 
     const chat = await ChatService.findChatByChatId(validatedChatId);
@@ -161,7 +161,7 @@ export default class MessageService {
     const validatedEmail = validateEmail(sender);
     const validatedId = validateString(id);
     const message = await prisma.message.findFirst(validatedId) === null;
-    const user = await UserService.find(validatedEmail);
+    const user = await UserService.find({ email: validatedEmail });
 
     if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
     if (!message) throw new ConfigurableError('Mensagem não encontrada', 404);

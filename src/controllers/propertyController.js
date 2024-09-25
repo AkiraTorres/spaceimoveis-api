@@ -38,7 +38,9 @@ export const findBySellerEmail = asyncHandler(async (req, res, next) => {
     const { email } = req.params;
     const { page = 1, limit = 6 } = req.query;
 
-    const result = await PropertyService.findBySellerEmail(email, page, limit);
+    const take = typeof limit === 'string' ? parseInt(limit, 10) : limit;
+
+    const result = await PropertyService.findBySellerEmail(email, page, take);
     res.status(200).json(result);
   } catch (error) {
     next(error);

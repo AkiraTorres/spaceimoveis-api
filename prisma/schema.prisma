@@ -55,7 +55,7 @@ model UserInfo {
   bio          String? @db.VarChar(1024)
   subscription String? @default("free")
 
-  user User @relation(fields: [email], references: [email])
+  user User @relation(fields: [email], references: [email], onDelete: Cascade)
 
   @@map("users_infos")
 }
@@ -70,7 +70,7 @@ model UserAddress {
   city         String?
   state        String? @db.VarChar(2)
 
-  user User @relation(fields: [email], references: [email])
+  user User @relation(fields: [email], references: [email], onDelete: Cascade)
 
   @@map("users_addresses")
 }
@@ -84,7 +84,7 @@ model UserPhoto {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
 
-  user User @relation(fields: [email], references: [email])
+  user User @relation(fields: [email], references: [email], onDelete: Cascade)
 
   @@map("user_photos")
 }
@@ -98,8 +98,8 @@ model UserRating {
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @default(now()) @updatedAt @map("updated_at")
 
-  receiver User @relation("UserRatingReceiver", fields: [receiverEmail], references: [email])
-  sender   User @relation("UserRatingSender", fields: [senderEmail], references: [email])
+  receiver User @relation("UserRatingReceiver", fields: [receiverEmail], references: [email], onDelete: Cascade)
+  sender   User @relation("UserRatingSender", fields: [senderEmail], references: [email], onDelete: Cascade)
 
   @@map("user_ratings")
 }
@@ -109,7 +109,7 @@ model UserSocial {
   type  String?
   url   String?
 
-  user User @relation(fields: [email], references: [email])
+  user User @relation(fields: [email], references: [email], onDelete: Cascade)
 
   @@map("users_social")
 }
@@ -122,21 +122,21 @@ model SharedProperties {
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @default(now()) @updatedAt @map("updated_at")
 
-  user     User     @relation(fields: [email], references: [email])
-  property Property @relation(fields: [propertyId], references: [id])
+  user     User     @relation(fields: [email], references: [email], onDelete: Cascade)
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
   @@map("shared_properties")
 }
 
 model Chat {
   id         String   @id @unique @default(uuid())
-  user1Email String
-  user2Email String
+  user1Email String?
+  user2Email String?
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @default(now()) @updatedAt @map("updated_at")
 
-  user1 User @relation("firstUser", fields: [user1Email], references: [email])
-  user2 User @relation("secondUser", fields: [user2Email], references: [email])
+  user1 User? @relation("firstUser", fields: [user1Email], references: [email], onDelete: SetNull)
+  user2 User? @relation("secondUser", fields: [user2Email], references: [email], onDelete: SetNull)
 
   message Message[]
 
@@ -144,12 +144,14 @@ model Chat {
 }
 
 model Favorite {
-  id         String @id @unique @default(uuid())
-  propertyId String @map("property_id")
-  userEmail  String @map("user_email")
+  id         String   @id @unique @default(uuid())
+  propertyId String   @map("property_id")
+  userEmail  String   @map("user_email")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at")
 
-  property Property @relation(fields: [propertyId], references: [id])
-  user     User     @relation(fields: [userEmail], references: [email])
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userEmail], references: [email], onDelete: Cascade)
 
   @@map("favorites")
 }
@@ -161,8 +163,8 @@ model Follower {
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @default(now()) @updatedAt @map("updated_at")
 
-  follower User @relation("follower", fields: [followerEmail], references: [email])
-  followed User @relation("followed", fields: [followedEmail], references: [email])
+  follower User @relation("follower", fields: [followerEmail], references: [email], onDelete: Cascade)
+  followed User @relation("followed", fields: [followedEmail], references: [email], onDelete: Cascade)
 
   @@map("followers")
 }
@@ -170,7 +172,7 @@ model Follower {
 model Message {
   id          String      @id @unique @default(uuid())
   chatId      String
-  senderEmail String
+  senderEmail String?
   text        String      @db.VarChar(16384)
   url         String?     @db.VarChar(2048)
   isDeleted   Boolean     @default(false) @map("is_deleted")
@@ -178,8 +180,8 @@ model Message {
   createdAt   DateTime    @default(now()) @map("created_at")
   updatedAt   DateTime    @default(now()) @updatedAt @map("updated_at")
 
-  chat   Chat @relation(fields: [chatId], references: [id])
-  sender User @relation(fields: [senderEmail], references: [email])
+  chat   Chat  @relation(fields: [chatId], references: [id])
+  sender User? @relation(fields: [senderEmail], references: [email], onDelete: SetNull)
 
   @@map("messages")
 }
@@ -205,8 +207,10 @@ model Property {
   furnished        Furnished?
   verified         Verified         @default(pending)
   timesSeen        Int              @default(0) @map("times_seen")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @default(now()) @updatedAt @map("updated_at")
 
-  advertiser User @relation(fields: [advertiserEmail], references: [email])
+  advertiser User @relation(fields: [advertiserEmail], references: [email], onDelete: Cascade)
 
   SharedProperties      SharedProperties[]
   Favorite              Favorite[]
@@ -226,7 +230,7 @@ model PropertiesPrices {
   iptu          Int?
   aditionalFees Int?   @map("aditional_fees")
 
-  property Property @relation(fields: [propertyId], references: [id])
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
   @@map("properties_prices")
 }
@@ -241,31 +245,31 @@ model PropertiesAddresses {
   neighborhood String
   complement   String?
 
-  property Property @relation(fields: [propertyId], references: [id])
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
   @@map("properties_addresses")
 }
 
 model PropertiesCommodities {
-  propertyId     String  @id @unique @map("property_id")
-  pool           Boolean @default(false)
-  grill          Boolean @default(false)
-  airConditioner Boolean @default(false) @map("air_conditioner")
-  playground     Boolean @default(false)
-  eventArea      Boolean @default(false) @map("event_area")
-  gourmetArea    Boolean @default(false) @map("gourmet_area")
-  garden         Boolean @default(false)
-  porch          Boolean @default(false)
-  slab           Boolean @default(false)
-  gatedCommunity Boolean @default(false) @map("gated_community")
-  gym            Boolean @default(false)
-  balcony        Boolean @default(false)
-  solarEnergy    Boolean @default(false) @map("solar_energy")
-  concierge      Boolean @default(false)
-  yard           Boolean @default(false)
-  elevator       Boolean @default(false)
+  propertyId      String  @id @unique @map("property_id")
+  pool            Boolean @default(false)
+  grill           Boolean @default(false)
+  airConditioning Boolean @default(false) @map("air_conditioning")
+  playground      Boolean @default(false)
+  eventArea       Boolean @default(false) @map("event_area")
+  gourmetArea     Boolean @default(false) @map("gourmet_area")
+  garden          Boolean @default(false)
+  porch           Boolean @default(false)
+  slab            Boolean @default(false)
+  gatedCommunity  Boolean @default(false) @map("gated_community")
+  gym             Boolean @default(false)
+  balcony         Boolean @default(false)
+  solarEnergy     Boolean @default(false) @map("solar_energy")
+  concierge       Boolean @default(false)
+  yard            Boolean @default(false)
+  elevator        Boolean @default(false)
 
-  property Property @relation(fields: [propertyId], references: [id])
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
   @@map("properties_comodities")
 }
@@ -279,7 +283,7 @@ model PropertyPictures {
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @default(now()) @updatedAt @map("updated_at")
 
-  property Property @relation(fields: [propertyId], references: [id])
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
   @@map("property_pictures")
 }
@@ -289,7 +293,7 @@ model ReasonRejectedProperty {
   propertyId String @map("property_id")
   reason     String
 
-  property Property @relation(fields: [propertyId], references: [id])
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
   @@map("reason_rejected_properties")
 }

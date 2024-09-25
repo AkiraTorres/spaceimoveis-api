@@ -30,6 +30,7 @@ export const create = asyncHandler(async (req, res, next) => {
 
     let realtorData = {};
     if (data !== undefined) realtorData = JSON.parse(data);
+    realtorData.type = 'realtor';
 
     const result = await RealtorService.create(realtorData, file);
     res.status(201).json(result);

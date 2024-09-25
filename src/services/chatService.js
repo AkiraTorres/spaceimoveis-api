@@ -10,8 +10,8 @@ export default class ChatService {
     const validatedEmail1 = validateEmail(email1);
     const validatedEmail2 = validateEmail(email2);
 
-    const user1 = await UserService.find(validatedEmail1, false, false, true);
-    const user2 = await UserService.find(validatedEmail2, false, false, true);
+    const user1 = await UserService.find({ email: validatedEmail1 });
+    const user2 = await UserService.find({ email: validatedEmail2 });
 
     if (!user1 || !user2) throw new ConfigurableError('Usuário não encontrado', 404);
 
@@ -47,7 +47,7 @@ export default class ChatService {
   static async findUserChats(email) {
     const validatedEmail = validateEmail(email);
 
-    const user = await UserService.find(validatedEmail, false, false, true);
+    const user = await UserService.find({ email: validatedEmail });
 
     if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
 
@@ -62,8 +62,8 @@ export default class ChatService {
 
     return Promise.all(chats.map(async (chat) => {
       const editedChat = chat;
-      const user1 = await UserService.find(chat.user1, false, false, true);
-      const user2 = await UserService.find(chat.user2, false, false, true);
+      const user1 = await UserService.find({ email: chat.user1 });
+      const user2 = await UserService.find({ email: chat.user2 });
 
       editedChat.user1 = user1;
       editedChat.user2 = user2;
@@ -76,8 +76,8 @@ export default class ChatService {
     const validatedEmail1 = validateEmail(email1);
     const validatedEmail2 = validateEmail(email2);
 
-    const user1 = await UserService.find(validatedEmail1, false, false, true);
-    const user2 = await UserService.find(validatedEmail2, false, false, true);
+    const user1 = await UserService.find({ email: validatedEmail1 });
+    const user2 = await UserService.find({ email: validatedEmail2 });
 
     if (!user1 || !user2) throw new ConfigurableError('Usuário não encontrado', 404);
 
@@ -113,8 +113,8 @@ export default class ChatService {
 
     if (!chat) throw new ConfigurableError('Chat não encontrado', 404);
 
-    chat.user1 = await UserService.find(chat.user1, false, false, true);
-    chat.user2 = await UserService.find(chat.user2, false, false, true);
+    chat.user1 = await UserService.find({ email: chat.user1 });
+    chat.user2 = await UserService.find({ email: chat.user2 });
 
     return chat;
   }

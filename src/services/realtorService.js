@@ -7,9 +7,11 @@ export default class RealtorService extends UserService {
   static async getAvgRateByReceiver(receiverEmail) {
     const validatedReceiverEmail = validateEmail(receiverEmail);
 
-    const receiver = await prisma.user.findFirst(validatedReceiverEmail);
+    const receiver = await prisma.user.findFirst({ where: { email: validatedReceiverEmail } });
     if (!receiver) throw new ConfigurableError('Usuário não encontrado', 404);
-    if (!(receiver.type in ['realtor', 'realstate'])) throw new Error('Usuário a receber a avaliação deve ser um corretor ou imobiliária.', 400);
+    if (!['realtor', 'realstate'].includes(receiver.type)) {
+      throw new Error('Usuário a receber a avaliação deve ser um corretor ou imobiliária.', 400);
+    }
 
     const where = { receiverEmail: validatedReceiverEmail };
     const orderBy = { createdAt: 'desc' };
@@ -23,19 +25,19 @@ export default class RealtorService extends UserService {
     return ((sum / total) / 2).toFixed(2);
   }
 
-  static async userDetails(user) {
-    const editedUser = user;
+  static async userDetails(userEmail) {
+    const user = await prisma.user.findFirst({ where: { email: userEmail } });
 
-    editedUser.info = await prisma.userInfo.findUnique({ where: { email: user.email } });
-    editedUser.address = await prisma.userAddress.findUnique({ where: { email: user.email } });
-    editedUser.profile = await prisma.userPhoto.findUnique({ where: { email: user.email } });
-    editedUser.avgRating = await this.getAvgRateByReceiver(user.email);
-    editedUser.totalRatings = await prisma.userRating.count({ where: { email: user.email } });
-    editedUser.favorites = await prisma.favorite.findMany({ where: { userEmail: user.email } });
-    editedUser.followers = await prisma.follower.findMany({ where: { followedEmail: user.email } });
-    editedUser.follow = await prisma.follower.findMany({ where: { followerEmail: user.email } });
+    user.info = await prisma.userInfo.findFirst({ where: { email: userEmail } });
+    user.address = await prisma.userAddress.findFirst({ where: { email: userEmail } });
+    user.profile = await prisma.userPhoto.findFirst({ where: { email: userEmail } });
+    user.avgRating = await this.getAvgRateByReceiver(userEmail);
+    user.totalRatings = await prisma.userRating.count({ where: { receiverEmail: userEmail } });
+    user.favorites = await prisma.favorite.findMany({ where: { userEmail } });
+    user.followers = await prisma.follower.findMany({ where: { followedEmail: userEmail } });
+    user.follow = await prisma.follower.findMany({ where: { followerEmail: userEmail } });
 
-    return excludeFromObject(editedUser, ['otp', 'otp_ttl', 'password']);
+    return excludeFromObject(user, ['otp', 'otp_ttl', 'password']);
   }
 
   static async filter(data, t, page = 1) {
@@ -69,7 +71,7 @@ export default class RealtorService extends UserService {
     const realtors = await prisma.user.findMany({ where, orderBy, skip, take });
     if (realtors.length === 0) throw new ConfigurableError('Nenhum corretor encontrado', 404);
 
-    const result = await Promise.all(realtors.map(async (realtor) => this.userDetails(realtor)));
+    const result = await Promise.all(realtors.map(async (realtor) => this.userDetails(realtor.email)));
 
     result.sort(async (a, b) => (await a.avgRating < await b.avgRating ? 1 : -1));
 

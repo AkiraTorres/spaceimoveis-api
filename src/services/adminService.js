@@ -22,7 +22,7 @@ export default class AdminService extends UserService {
     const date = new Date();
     date.setDate(date.getDate() - 3);
 
-    const where = { updatedAt: { gte: date }, verified: 'pending' };
+    const where = { updatedAt: { gte: date } };
 
     const total = await prisma.property.count({ where });
     const lastPage = Math.ceil(total / take);
@@ -39,7 +39,7 @@ export default class AdminService extends UserService {
       total,
     };
 
-    const properties = await Promise.all(props.map(async (property) => PropertyService.getPropertyDetails(property)));
+    const properties = await Promise.all(props.map(async (property) => PropertyService.getPropertyDetails(property.id)));
 
     return { properties, pagination };
   }
@@ -54,7 +54,7 @@ export default class AdminService extends UserService {
     const lastPage = Math.ceil(total / take);
     const offset = Number(take * (page - 1));
 
-    const u = await prisma.user.findMany({ where: { createdAt: { gte: date } }, take, offset });
+    const u = await prisma.user.findMany({ where: { createdAt: { gte: date } }, take, skip: offset });
     if (u.length === 0) throw new ConfigurableError('Nenhum usuário foi encontrado', 404);
 
     const pagination = {
@@ -66,7 +66,7 @@ export default class AdminService extends UserService {
       total,
     };
 
-    const users = await Promise.all(u.map(async (user) => this.getUserDetails(user)));
+    const users = await Promise.all(u.map(async (user) => this.userDetails(user.email)));
     return { users, pagination };
   }
 
@@ -189,7 +189,7 @@ export default class AdminService extends UserService {
     const skip = Number((take / 4) * (page - 1));
 
     const u = await prisma.user.findMany({ where, orderBy, take, skip });
-    const users = await Promise.all(u.map(async (user) => this.getUserDetails(user)));
+    const users = await Promise.all(u.map(async (user) => this.userDetails(user.email)));
 
     const pagination = {
       path: '/admin/users/filter',
@@ -235,7 +235,7 @@ export default class AdminService extends UserService {
     ];
 
     const where = { createdAt: { gte: beginYear, lte: now } };
-    const properties = await prisma.property.findAll(where);
+    const properties = await prisma.property.findMany({ where });
 
     let dataset = [];
     for (let i = 0; i <= now.getMonth(); i++) {

@@ -26,7 +26,7 @@ router.post('/google', async (req, res) => {
 
 router.post('/login/admin', async (req, res) => {
   try {
-    res.json(loginService.loginAdmin(req.body));
+    res.json(await loginService.loginAdmin(req.body));
   } catch (error) {
     const status = error.status || 500;
     res.status(status).json(error.message).end();
