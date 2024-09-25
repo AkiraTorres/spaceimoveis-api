@@ -34,9 +34,9 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ limit: '250mb', extended: true }));
 
 app.use('/', loginRoutes);
-app.use('/clients', clientRoutes);
-app.use('/owners', ownerRoutes);
-app.use('/realtors', realtorRoutes);
+app.use('/client', clientRoutes);
+app.use('/owner', ownerRoutes);
+app.use('/realtor', realtorRoutes);
 app.use('/realstate', realstateRoutes);
 app.use('/properties', propertyRoutes);
 app.use('/favorites', favoriteRoutes);
