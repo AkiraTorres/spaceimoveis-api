@@ -15,7 +15,7 @@ export async function login({ email, password }) {
 
   if (email === '' || password === '') throw error;
 
-  const user = await prisma.user.findUnique({ where: { email } });
+  const user = await prisma.user.findUnique({ where: { email, type: { not: 'admin' } } });
   if (!user) throw error;
 
   const isValid = bcrypt.compareSync(password, user.password);
@@ -24,10 +24,7 @@ export async function login({ email, password }) {
   const accessToken = jwt.sign({ email }, JWT_SECRET, { expiresIn: '1h' });
   const refreshToken = jwt.sign({ email }, JWT_SECRET, { expiresIn: '21d' });
 
-  const u = await UserService.userDetails(user);
-
-  const loggedUser = { user: u, accessToken, refreshToken };
-  return loggedUser;
+  return { user: await UserService.userDetails(user.email), accessToken, refreshToken };
 }
 
 export async function loginGoogle({ googleToken }) {
@@ -50,7 +47,7 @@ export async function loginAdmin({ email, password }) {
 
   if (email === '' || password === '') throw error;
 
-  const user = await prisma.user.findUnique({ where: { email } });
+  const user = await prisma.user.findUnique({ where: { email, type: 'admin' } });
   if (!user) throw error;
 
   const isValid = bcrypt.compareSync(password, user.password);
@@ -59,7 +56,7 @@ export async function loginAdmin({ email, password }) {
   const accessToken = jwt.sign({ email }, JWT_SECRET, { expiresIn: '1h' });
   const refreshToken = jwt.sign({ email }, JWT_SECRET, { expiresIn: '21d' });
 
-  return { user, accessToken, refreshToken };
+  return { user: await UserService.userDetails(user.email), accessToken, refreshToken };
 }
 
 export function refresh({ refreshToken }) {
