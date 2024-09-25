@@ -26,12 +26,10 @@ import UserService from './userService.js';
 dotenv.config();
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-export default class PropertyService {
-  constructor() {
-    this.app = initializeApp(firebaseConfig);
-    this.storage = getStorage(this.app);
-  }
+const app = initializeApp(firebaseConfig);
+const storage = getStorage(app);
 
+export default class PropertyService {
   static async checkHighlightLimit(email) {
     let highlightLimit;
     const { subscription } = await prisma.user.find(email);
@@ -45,22 +43,24 @@ export default class PropertyService {
     if (totalHighlightedProperties >= highlightLimit) throw new ConfigurableError('Limite de destaques atingido', 400);
   }
 
-  static async getPropertyDetails(property) {
-    const editedProperty = property;
+  static async getPropertyDetails(propertyId) {
+    const property = await prisma.property.findFirst({ where: { id: propertyId } });
 
-    editedProperty.shared = await prisma.sharedProperties.findFirst({ where: { propertyId: property.id, email: property.email } });
+    property.address = await prisma.propertiesAddresses.findFirst({ where: { propertyId: property.id } });
+    property.commodities = await prisma.propertiesCommodities.findFirst({ where: { propertyId: property.id } });
+    property.prices = await prisma.propertiesPrices.findFirst({ where: { propertyId: property.id } });
+    property.shared = await prisma.sharedProperties.findFirst({ where: { propertyId: property.id, email: property.advertiserEmail } }) || false;
+    property.totalFavorites = await FavoriteService.getPropertyTotalFavorites(property.id);
+    property.pictures = await prisma.propertyPictures.findMany({ where: { propertyId: property.id }, orderBy: { type: 'asc' } });
+    property.seller = await UserService.find({ email: property.advertiserEmail });
 
-    const seller = await UserService.find({ email: editedProperty.email });
-    const totalFavorites = await FavoriteService.getPropertyTotalFavorites(property.id);
-    const pictures = await prisma.propertyPictures.findMany({ where: { propertyId: property.id }, orderBy: { type: 'asc' } });
-
-    return { ...editedProperty, totalFavorites, pictures, seller };
+    return property;
   }
 
-  static async findAll(page = 1, isHighlighted = false, isPublished = true, take = 6) {
+  static async findAll(page = 1, isHighlight = false, isPublished = true, take = 6) {
     if (page < 1) throw new ConfigurableError('Página inválida', 400);
 
-    const where = { isHighlighted, isPublished, verified: 'verified' };
+    const where = { isHighlight, isPublished, verified: 'verified' };
     const countTotal = await prisma.property.count({ where });
     const lastPage = Math.ceil(countTotal / take);
     const skip = Number(take * (page - 1));
@@ -83,7 +83,7 @@ export default class PropertyService {
 
     if (props.length === 0) return { properties: props, pagination };
 
-    const properties = await Promise.all(props.map(async (property) => this.getPropertyDetails(property)));
+    const properties = await Promise.all(props.map(async (property) => this.getPropertyDetails(property.id)));
 
     properties.sort((a, b) => {
       if (a.totalFavorites !== b.totalFavorites) return b.totalFavorites - a.totalFavorites;
@@ -122,17 +122,17 @@ export default class PropertyService {
     const property = await prisma.property.findFirst({ where: { id: validatedId } });
     if (!property) throw new ConfigurableError('Imóvel não encontrado', 404);
 
-    return this.propertyDetails(property);
+    return this.getPropertyDetails(property.id);
   }
 
   static async findBySellerEmail(email, page = 1, take = 6) {
     const validatedEmail = validateEmail(email);
 
-    const user = await UserService.find(validatedEmail);
+    const user = await UserService.find({ email: validatedEmail });
 
     if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
 
-    const total = await prisma.property.count({ where: { email: validatedEmail } });
+    const total = await prisma.property.count({ where: { advertiserEmail: validatedEmail } });
     const lastPage = Math.ceil(total / take);
     const skip = Number(take * (page - 1));
 
@@ -146,13 +146,13 @@ export default class PropertyService {
     };
 
     const props = await prisma.property.findMany({
-      where: { email: validatedEmail },
-      orderBy: { updatedAt: 'desc' },
+      where: { advertiserEmail: validatedEmail },
+      orderBy: [{ updatedAt: 'desc' }],
       take,
       skip,
     });
 
-    const properties = await Promise.all(props.map(async (property) => this.getPropertyDetails(property)));
+    const properties = await Promise.all(props.map(async (property) => this.getPropertyDetails(property.id)));
 
     properties.sort((a, b) => {
       if (a.totalFavorites !== b.totalFavorites) return b.totalFavorites - a.totalFavorites;
@@ -172,7 +172,7 @@ export default class PropertyService {
   }
 
   static async getAllPropertiesCities(email) {
-    const user = await UserService.find(validateEmail(email));
+    const user = await UserService.find({ email: validateEmail(email) });
     if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
 
     const properties = await prisma.property.findMany({ where: { email: user.email }, attributes: { city: true } });
@@ -197,7 +197,7 @@ export default class PropertyService {
   }
 
   static async getMostSeenPropertiesBySeller(email, take = 6) {
-    const user = await this.find(validateEmail(email));
+    const user = await UserService.find({ email: validateEmail(email) });
     if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
 
     const props = await prisma.property.findMany({
@@ -206,7 +206,7 @@ export default class PropertyService {
       take,
     });
 
-    return Promise.all(props.map(async (property) => this.getPropertyDetails(property)));
+    return Promise.all(props.map(async (property) => this.getPropertyDetails(property.id)));
   }
 
   static async create(params, files) {
@@ -214,8 +214,8 @@ export default class PropertyService {
     const data = {
       id: uuid(),
       advertiserEmail: validateEmail(sellerEmail),
-      announcementType: validateString(params.announcementType, 'O campo "tipo do anúncio" é obrigatório'),
-      propertyType: validateString(params.propertyType, 'O campo "tipo do imóvel" é obrigatório'),
+      announcementType: validateAnnouncementType(params.announcementType, 'O campo "tipo do anúncio" é obrigatório'),
+      propertyType: validatePropertyType(params.propertyType, 'O campo "tipo do imóvel" é obrigatório'),
       isHighlight: params.isHighlight ? validateBoolean(params.isHighlight) : false,
       isPublished: params.isPublished ? validateBoolean(params.isPublished) : false,
       floor: params.floor ? validateInteger(params.floor) : 1,
@@ -229,13 +229,13 @@ export default class PropertyService {
       negotiable: params.negotiable ? validateBoolean(params.negotiable) : false,
       suites: params.suites ? validateInteger(params.suites) : 0,
       furnished: params.furnished ? validateFurnished(params.furnished) : 'no',
-      verified: 'verified',
+      verified: 'verified', // TODO: change to 'pending' when moving to production
     };
     if (data.isHighlight) data.isPublished = true;
 
     const pricesData = {
       propertyId: data.id,
-      rentPrince: params.rentPrice || data.announcementType !== 'sell' ? validatePrice(params.rentPrice, 'O campo "preço de aluguel" é obrigatório') : null,
+      rentPrice: params.rentPrice || data.announcementType !== 'sell' ? validatePrice(params.rentPrice, 'O campo "preço de aluguel" é obrigatório') : null,
       sellPrice: params.sellPrice || data.announcementType !== 'rent' ? validatePrice(params.sellPrice, 'O campo "preço de venda" é obrigatório') : null,
       iptu: params.iptu ? validatePrice(params.iptu) : null,
       aditionalFees: params.aditionalFees ? validatePrice(params.aditionalFees) : null,
@@ -244,7 +244,7 @@ export default class PropertyService {
     const addressData = {
       propertyId: data.id,
       cep: validateString(params.cep, 'O campo "cep" é obrigatório'),
-      address: validateString(params.address, 'O campo "rua" é obrigatório'),
+      street: validateString(params.street, 'O campo "rua" é obrigatório'),
       number: params.number ? validateString(params.number) : null,
       city: validateString(params.city, 'O campo "cidade" é obrigatório'),
       state: validateUF(params.state),
@@ -270,39 +270,48 @@ export default class PropertyService {
     if (params.yard !== undefined) commoditiesData.yard = validateBoolean(params.yard);
     if (params.elevator !== undefined) commoditiesData.elevator = validateBoolean(params.elevator);
 
-    const { subscription } = await UserService.find(sellerEmail);
+    const { subscription } = await UserService.find({ email: sellerEmail });
     if (subscription === 'free' || subscription === 'platinum') {
       if (data.isHighlight) this.checkHighlightLimit(sellerEmail);
     }
 
-    const property = await prisma.property.create(data);
-    property.prices = await prisma.propertiesPrices.create(pricesData);
-    property.address = await prisma.propertiesAddresses.create(addressData);
+    await prisma.$transaction(async (p) => {
+      const createdProperty = await p.property.create({ data });
 
-    const photos = await Promise.all(files.map(async (picture) => {
-      const storageRef = ref(this.storage, `images/properties/${property.id}/${picture.originalname}`);
-      const metadata = { contentType: picture.mimetype };
-      const snapshot = await uploadBytesResumable(storageRef, picture.buffer, metadata);
-      const downloadURL = await getDownloadURL(snapshot.ref);
+      await p.propertiesPrices.create({ data: pricesData });
 
-      await prisma.propertyPictures.create({
-        id: uuid(),
-        propertyId: property.id,
-        url: downloadURL,
-        name: `${picture.originalname}`,
-        type: picture.fieldname,
-      });
+      await p.propertiesAddresses.create({ data: addressData });
 
-      return { name: `${picture.originalname}`, type: picture.mimetype, downloadURL };
-    }));
+      await p.propertiesCommodities.create({ data: commoditiesData });
 
-    return { ...property, photos };
+      await Promise.all(files.map(async (picture) => {
+        const storageRef = ref(storage, `images/properties/${data.id}/${picture.originalname}`);
+        const metadata = { contentType: picture.mimetype };
+        const snapshot = await uploadBytesResumable(storageRef, picture.buffer, metadata);
+        const downloadURL = await getDownloadURL(snapshot.ref);
+
+        const pictureData = {
+          id: uuid(),
+          propertyId: data.id,
+          url: downloadURL,
+          name: `${picture.originalname}`,
+          type: picture.fieldname,
+        };
+
+        await p.propertyPictures.create({ data: pictureData });
+
+        return { name: `${picture.originalname}`, type: picture.mimetype, downloadURL };
+      }));
+
+      return createdProperty;
+    });
+
+    return this.getPropertyDetails(data.id);
   }
 
   static async update(id, params, files, sellerEmail) {
     const validatedId = validateString(id);
     const validatedSellerEmail = validateEmail(sellerEmail);
-    let newCoverUrl;
     let oldPhotosUrls = [];
 
     const oldProperty = await prisma.property.findFirst({ where: { id: validatedId } });
@@ -377,39 +386,35 @@ export default class PropertyService {
     property.address = await prisma.propertiesAddresses.update({ where: { propertyId: validatedId }, data: updatedAddress });
     property.commodities = await prisma.propertiesCommodities.update({ where: { propertyId: validatedId }, data: updatedCommodities });
 
-    if (params.oldPhotosUrls) oldPhotosUrls = params.oldPhotosUrls;
+    if (params.oldPhotos) oldPhotosUrls = params.oldPhotos;
     const oldPhotos = await prisma.propertyPictures.findMany({ where: { propertyId: validatedId, url: { not: { in: oldPhotosUrls } } } });
 
     // delete photos that the user didn't want to keep
     await Promise.all(oldPhotos.map(async (photo) => {
       try {
-        const storageRef = ref(this.storage, `images/properties/${validatedId}/${photo.name}`);
+        const storageRef = ref(storage, `images/properties/${validatedId}/${photo.name}`);
         await deleteObject(storageRef);
       } catch (error) { /* do nothing */ }
-      await prisma.propertyPictures.destroy({ where: { id: photo.id } });
+      await prisma.propertyPictures.delete({ where: { id: photo.id } });
     }));
 
-    if (newCoverUrl) {
+    if (params.newCover) {
       const oldCover = await prisma.propertyPictures.findFirst({ where: { propertyId: validatedId, type: 'cover' } });
-      const newCover = await prisma.propertyPictures.findFirst({ where: { propertyId: validatedId, url: newCoverUrl } });
+      const newCover = await prisma.propertyPictures.findFirst({ where: { propertyId: validatedId, url: validateString(params.newCover) } });
 
-      if (oldCover && !(oldCover.url === newCover.url)) {
-        oldCover.type = 'photo';
-        await prisma.propertyPictures.update({ where: { id: oldCover.id }, data: oldCover });
-
-        newCover.type = 'cover';
-        await prisma.propertyPictures.update({ where: { id: newCover.id }, data: newCover });
-      } else if (!oldCover) {
-        newCover.type = 'cover';
-        await prisma.propertyPictures.update({ where: { id: newCover.id }, data: newCover });
-      }
+      if (oldCover && newCover && !(oldCover.url === newCover.url)) {
+        await prisma.propertyPictures.update({ where: { id: oldCover.id }, data: { type: 'photo' } });
+        await prisma.propertyPictures.update({ where: { id: newCover.id }, data: { type: 'cover' } });
+      } else if (!oldCover && newCover) {
+        await prisma.propertyPictures.update({ where: { id: newCover.id }, data: { type: 'cover' } });
+      } else if (!newCover) throw new ConfigurableError('Nova foto de capa não encontrada', 404);
     }
 
     // add new photos send by user
     if (files.length > 0) {
       await Promise.all(files.map(async (picture) => {
         // change cover photo if send by user
-        const storageRef = ref(this.storage, `images/properties/${validatedId}/${picture.originalname}`);
+        const storageRef = ref(storage, `images/properties/${validatedId}/${picture.originalname}`);
         const metadata = { contentType: picture.mimetype };
         const snapshot = await uploadBytesResumable(storageRef, picture.buffer, metadata);
         const downloadURL = await getDownloadURL(snapshot.ref);
@@ -419,19 +424,18 @@ export default class PropertyService {
         if (!exists) {
           if (picture.fieldname === 'cover') {
             const oldCover = await prisma.propertyPictures.findFirst({ where: { propertyId: validatedId, type: 'cover' } });
-            if (oldCover) {
-              oldCover.type = 'photo';
-              await prisma.propertyPictures.update(oldCover, { where: { id: oldCover.id } });
-            }
+            if (oldCover) await prisma.propertyPictures.update({ where: { id: oldCover.id }, data: { type: 'photo' } });
           }
 
-          await prisma.propertyPictures.create({
+          const pictureData = {
             id: uuid(),
             name: `${picture.originalname}`,
             propertyId: validatedId,
             url: downloadURL,
             type: picture.fieldname,
-          });
+          };
+
+          await prisma.propertyPictures.create({ data: pictureData });
           return { name: `${picture.originalname}`, type: picture.mimetype, downloadURL };
         }
 
@@ -439,9 +443,9 @@ export default class PropertyService {
       }));
     }
 
-    const photos = await prisma.propertyPictures.findMany({ where: { propertyId: validatedId }, orderBy: { type: 'asc' } });
+    await prisma.propertyPictures.findMany({ where: { propertyId: validatedId }, orderBy: { type: 'asc' } });
 
-    return { property, photos };
+    return this.getPropertyDetails(validatedId);
   }
 
   static async shelve(id, email) {
@@ -482,13 +486,13 @@ export default class PropertyService {
 
     if (photos.length > 0) {
       await Promise.all(photos.map(async (photo) => {
-        const storageRef = ref(this.storage, `images/properties/${validatedId}/${photo.name}`);
+        const storageRef = ref(storage, `images/properties/${validatedId}/${photo.name}`);
         await deleteObject(storageRef);
       }));
     }
 
-    await prisma.propertyPictures.destroy({ where: { propertyId: validatedId } });
-    await prisma.property.destroy({ where: { id: validatedId } });
+    await prisma.propertyPictures.delete({ where: { propertyId: validatedId } });
+    await prisma.property.delete({ where: { id: validatedId } });
     return { message: 'Propriedade apagada com sucesso' };
   }
 
@@ -515,47 +519,41 @@ export default class PropertyService {
 
         // Filter by location, using related table PropertiesAddresses
         PropertiesAddresses: {
-          some: {
-            city: filters.city ? validateString(filters.city) : undefined,
-            state: filters.state ? validateUF(filters.state) : undefined,
-            neighborhood: filters.neighborhood ? validateString(filters.neighborhood) : undefined,
-          },
+          city: filters.city ? validateString(filters.city) : undefined,
+          state: filters.state ? validateUF(filters.state) : undefined,
+          neighborhood: filters.neighborhood ? validateString(filters.neighborhood) : undefined,
         },
 
         // Filter by prices, using related table PropertiesPrices
         PropertiesPrices: {
-          some: {
-            rentPrice: {
-              gte: filters.minPrice ? validatePrice(filters.minPrice) : 0,
-              lte: filters.maxPrice ? validatePrice(filters.maxPrice) : 999999999,
-            },
-            sellPrice: {
-              gte: filters.minPrice ? validatePrice(filters.minPrice) : 0,
-              lte: filters.maxPrice ? validatePrice(filters.maxPrice) : 999999999,
-            },
+          rentPrice: {
+            gte: filters.minPrice ? validatePrice(filters.minPrice) : 0,
+            lte: filters.maxPrice ? validatePrice(filters.maxPrice) : 999999999,
+          },
+          sellPrice: {
+            gte: filters.minPrice ? validatePrice(filters.minPrice) : 0,
+            lte: filters.maxPrice ? validatePrice(filters.maxPrice) : 999999999,
           },
         },
 
         // Filter by property amenities, using related table PropertiesCommodities
         PropertiesCommodities: {
-          some: {
-            pool: filters.pool !== undefined ? validateBoolean(filters.pool) : undefined,
-            grill: filters.grill !== undefined ? validateBoolean(filters.grill) : undefined,
-            airConditioner: filters.airConditioner !== undefined ? validateBoolean(filters.airConditioner) : undefined,
-            playground: filters.playground !== undefined ? validateBoolean(filters.playground) : undefined,
-            eventArea: filters.eventArea !== undefined ? validateBoolean(filters.eventArea) : undefined,
-            gourmetArea: filters.gourmetArea !== undefined ? validateBoolean(filters.gourmetArea) : undefined,
-            garden: filters.garden !== undefined ? validateBoolean(filters.garden) : undefined,
-            porch: filters.porch !== undefined ? validateBoolean(filters.porch) : undefined,
-            slab: filters.slab !== undefined ? validateBoolean(filters.slab) : undefined,
-            gatedCommunity: filters.gatedCommunity !== undefined ? validateBoolean(filters.gatedCommunity) : undefined,
-            gym: filters.gym !== undefined ? validateBoolean(filters.gym) : undefined,
-            balcony: filters.balcony !== undefined ? validateBoolean(filters.balcony) : undefined,
-            solarEnergy: filters.solarEnergy !== undefined ? validateBoolean(filters.solarEnergy) : undefined,
-            concierge: filters.concierge !== undefined ? validateBoolean(filters.concierge) : undefined,
-            yard: filters.yard !== undefined ? validateBoolean(filters.yard) : undefined,
-            elevator: filters.elevator !== undefined ? validateBoolean(filters.elevator) : undefined,
-          },
+          pool: filters.pool !== undefined ? validateBoolean(filters.pool) : undefined,
+          grill: filters.grill !== undefined ? validateBoolean(filters.grill) : undefined,
+          airConditioner: filters.airConditioner !== undefined ? validateBoolean(filters.airConditioner) : undefined,
+          playground: filters.playground !== undefined ? validateBoolean(filters.playground) : undefined,
+          eventArea: filters.eventArea !== undefined ? validateBoolean(filters.eventArea) : undefined,
+          gourmetArea: filters.gourmetArea !== undefined ? validateBoolean(filters.gourmetArea) : undefined,
+          garden: filters.garden !== undefined ? validateBoolean(filters.garden) : undefined,
+          porch: filters.porch !== undefined ? validateBoolean(filters.porch) : undefined,
+          slab: filters.slab !== undefined ? validateBoolean(filters.slab) : undefined,
+          gatedCommunity: filters.gatedCommunity !== undefined ? validateBoolean(filters.gatedCommunity) : undefined,
+          gym: filters.gym !== undefined ? validateBoolean(filters.gym) : undefined,
+          balcony: filters.balcony !== undefined ? validateBoolean(filters.balcony) : undefined,
+          solarEnergy: filters.solarEnergy !== undefined ? validateBoolean(filters.solarEnergy) : undefined,
+          concierge: filters.concierge !== undefined ? validateBoolean(filters.concierge) : undefined,
+          yard: filters.yard !== undefined ? validateBoolean(filters.yard) : undefined,
+          elevator: filters.elevator !== undefined ? validateBoolean(filters.elevator) : undefined,
         },
       },
 
@@ -599,10 +597,10 @@ export default class PropertyService {
     const validatedOwnerEmail = validateEmail(ownerEmail);
     const validatedGuestEmail = validateEmail(guestEmail);
 
-    const owner = await UserService.find(validatedOwnerEmail, 'owner');
+    const owner = await UserService.find({ email: validatedOwnerEmail }, 'owner');
     if (!owner) throw new ConfigurableError('Dono do imóvel não encontrado', 404);
 
-    const guest = await UserService.find(validatedGuestEmail);
+    const guest = await UserService.find({ email: validatedGuestEmail });
     if (!guest) throw new ConfigurableError('O usuário que você tentou compartilhar o imóvel não encontrado', 404);
 
     const property = await prisma.property.findFirst(validatedPropertyId);
@@ -653,7 +651,7 @@ export default class PropertyService {
 
     const properties = await Promise.all(shared.map(async (sharedProperty) => {
       const property = await prisma.property.findOne({ where: { id: sharedProperty.propertyId } });
-      return this.getPropertyDetails(property);
+      return this.getPropertyDetails(property.id);
     }));
 
     return { properties, pagination };
@@ -663,14 +661,14 @@ export default class PropertyService {
     const validatedEmail = validateEmail(email);
     const validatedPropertyId = validateString(propertyId);
 
-    const user = await UserService.find(validatedEmail);
+    const user = await UserService.find({ email: validatedEmail });
     if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
 
     const p = await prisma.sharedProperties.findFirst({ where: { propertyId: validatedPropertyId, accepted: false } });
     if (!p) throw new ConfigurableError('Imóvel compartilhado não encontrado', 404);
 
     const property = await prisma.property.findOne({ where: { id: p.propertyId } });
-    return this.getPropertyDetails(property);
+    return this.getPropertyDetails(property.id);
   }
 
   static async confirmSharedProperty(propertyId, email) {
@@ -678,7 +676,7 @@ export default class PropertyService {
     const validatedPropertyId = validateString(propertyId);
     let emailBody;
 
-    const user = await UserService.find(validatedEmail);
+    const user = await UserService.find({ email: validatedEmail });
     if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
 
     const sharedProperty = await prisma.sharedProperties.findFirst({ where: { propertyId: validatedPropertyId, email: validatedEmail } });
@@ -716,7 +714,7 @@ export default class PropertyService {
     const validatedReason = reason ? ` \nMotivo: ${validateString(reason)}.` : '';
     let emailBody;
 
-    const user = await UserService.find(validatedEmail);
+    const user = await UserService.find({ email: validatedEmail });
     if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
 
     const sharedProperty = await prisma.sharedProperties.findFirst({ where: { propertyId: validatedPropertyId, email: validatedEmail } });
