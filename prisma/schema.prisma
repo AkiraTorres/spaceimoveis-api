@@ -144,9 +144,11 @@ model Chat {
 }
 
 model Favorite {
-  id         String @id @unique @default(uuid())
-  propertyId String @map("property_id")
-  userEmail  String @map("user_email")
+  id         String   @id @unique @default(uuid())
+  propertyId String   @map("property_id")
+  userEmail  String   @map("user_email")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at")
 
   property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   user     User     @relation(fields: [userEmail], references: [email], onDelete: Cascade)
