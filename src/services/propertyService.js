@@ -400,7 +400,8 @@ export default class PropertyService {
 
     if (params.newCover) {
       const oldCover = await prisma.propertyPictures.findFirst({ where: { propertyId: validatedId, type: 'cover' } });
-      const newCover = await prisma.propertyPictures.findFirst({ where: { propertyId: validatedId, url: validateString(params.newCover) } });
+      const newCover = await prisma.propertyPictures.findFirst({ where: { propertyId: validatedId, url: params.newCover } });
+      // TODO: needs to validate params.newCover without breaking the string
 
       if (oldCover && newCover && !(oldCover.url === newCover.url)) {
         await prisma.propertyPictures.update({ where: { id: oldCover.id }, data: { type: 'photo' } });
@@ -480,9 +481,10 @@ export default class PropertyService {
 
     const property = await prisma.property.findFirst({ where: { id: validatedId } });
     if (!property) throw new ConfigurableError('Imóvel não encontrado', 404);
-    if (property.advertiserEmail !== email) throw new ConfigurableError('Você não tem permissão para arquivar este imóvel', 401);
+    if (property.advertiserEmail !== email) throw new ConfigurableError('Você não tem permissão para deletar este imóvel', 401);
 
     const photos = await prisma.propertyPictures.findMany({ where: { propertyId: validatedId } });
+    await prisma.property.delete({ where: { id: validatedId } });
 
     if (photos.length > 0) {
       await Promise.all(photos.map(async (photo) => {
@@ -491,8 +493,6 @@ export default class PropertyService {
       }));
     }
 
-    await prisma.propertyPictures.delete({ where: { propertyId: validatedId } });
-    await prisma.property.delete({ where: { id: validatedId } });
     return { message: 'Propriedade apagada com sucesso' };
   }
 
