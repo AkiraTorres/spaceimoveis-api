@@ -379,7 +379,8 @@ export default class PropertyService {
       await this.checkHighlightLimit(validatedSellerEmail);
     }
 
-    if (updatedData.description !== oldProperty.description || files.length > 0) updatedData.verified = 'pending';
+    // TODO: enable this line again when in production
+    // if (updatedData.description !== oldProperty.description || files.length > 0) updatedData.verified = 'pending';
 
     const property = await prisma.property.update({ where: { id: validatedId }, data: updatedData });
     property.prices = await prisma.propertiesPrices.update({ where: { propertyId: validatedId }, data: updatedPrices });
