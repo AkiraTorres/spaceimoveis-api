@@ -497,91 +497,95 @@ export default class PropertyService {
     return { message: 'Propriedade apagada com sucesso' };
   }
 
-  static async filter(filters, page = 1, take = 6, path = '/properties/filter') {
-    const properties = await prisma.property.findMany({
-      where: {
-        // Filter based on default properties fields
-        advertiserEmail: filters.advertiserEmail ? validateEmail(filters.advertiserEmail) : undefined,
-        announcementType: filters.announcementType ? validateAnnouncementType(filters.announcementType) : undefined,
-        propertyType: filters.propertyType ? validatePropertyType(filters.propertyType) : undefined,
-        isHighlight: filters.isHighlight ? validateBoolean(filters.isHighlight) : undefined,
-        isPublished: filters.isPublished ? validateBoolean(filters.isPublished) : undefined,
-        size: {
-          gte: filters.minSize ? validatePrice(filters.minSize) : 0,
-          lte: filters.maxSize ? validatePrice(filters.maxSize) : 999999999,
-        },
-        bathrooms: filters.bathrooms ? filters.bathrooms : undefined,
-        bedrooms: filters.bedrooms ? filters.bedrooms : undefined,
-        parkingSpaces: filters.parkingSpaces ? filters.parkingSpaces : undefined,
-        financiable: filters.financiable ? validateBoolean(filters.financiable) : undefined,
-        negotiable: filters.negotiable ? validateBoolean(filters.negotiable) : undefined,
-        suites: filters.suites ? validateInteger(filters.suites) : undefined,
-        furnished: filters.furnished ? validateFurnished(filters.furnished) : undefined,
+  static async filter(filters, verified, page = 1, take = 6, path = '/properties/filter') {
+    const where = {
+      // Filter based on default properties fields
+      advertiserEmail: filters.advertiserEmail ? validateEmail(filters.advertiserEmail) : undefined,
+      announcementType: filters.announcementType ? validateAnnouncementType(filters.announcementType) : undefined,
+      propertyType: filters.propertyType ? validatePropertyType(filters.propertyType) : undefined,
+      isHighlight: filters.isHighlight ? validateBoolean(filters.isHighlight) : undefined,
+      isPublished: filters.isPublished ? validateBoolean(filters.isPublished) : undefined,
+      size: {
+        gte: filters.minSize ? validatePrice(filters.minSize) : 0,
+        lte: filters.maxSize ? validatePrice(filters.maxSize) : 999999999,
+      },
+      bathrooms: filters.bathrooms ? filters.bathrooms : undefined,
+      bedrooms: filters.bedrooms ? filters.bedrooms : undefined,
+      parkingSpaces: filters.parkingSpaces ? filters.parkingSpaces : undefined,
+      financiable: filters.financiable ? validateBoolean(filters.financiable) : undefined,
+      negotiable: filters.negotiable ? validateBoolean(filters.negotiable) : undefined,
+      suites: filters.suites ? validateInteger(filters.suites) : undefined,
+      furnished: filters.furnished ? validateFurnished(filters.furnished) : undefined,
 
-        // Filter by location, using related table PropertiesAddresses
-        PropertiesAddresses: {
-          city: filters.city ? validateString(filters.city) : undefined,
-          state: filters.state ? validateUF(filters.state) : undefined,
-          neighborhood: filters.neighborhood ? validateString(filters.neighborhood) : undefined,
-        },
-
-        // Filter by prices, using related table PropertiesPrices
-        PropertiesPrices: {
-          rentPrice: {
-            gte: filters.minPrice ? validatePrice(filters.minPrice) : 0,
-            lte: filters.maxPrice ? validatePrice(filters.maxPrice) : 999999999,
-          },
-          sellPrice: {
-            gte: filters.minPrice ? validatePrice(filters.minPrice) : 0,
-            lte: filters.maxPrice ? validatePrice(filters.maxPrice) : 999999999,
-          },
-        },
-
-        // Filter by property amenities, using related table PropertiesCommodities
-        PropertiesCommodities: {
-          pool: filters.pool !== undefined ? validateBoolean(filters.pool) : undefined,
-          grill: filters.grill !== undefined ? validateBoolean(filters.grill) : undefined,
-          airConditioner: filters.airConditioner !== undefined ? validateBoolean(filters.airConditioner) : undefined,
-          playground: filters.playground !== undefined ? validateBoolean(filters.playground) : undefined,
-          eventArea: filters.eventArea !== undefined ? validateBoolean(filters.eventArea) : undefined,
-          gourmetArea: filters.gourmetArea !== undefined ? validateBoolean(filters.gourmetArea) : undefined,
-          garden: filters.garden !== undefined ? validateBoolean(filters.garden) : undefined,
-          porch: filters.porch !== undefined ? validateBoolean(filters.porch) : undefined,
-          slab: filters.slab !== undefined ? validateBoolean(filters.slab) : undefined,
-          gatedCommunity: filters.gatedCommunity !== undefined ? validateBoolean(filters.gatedCommunity) : undefined,
-          gym: filters.gym !== undefined ? validateBoolean(filters.gym) : undefined,
-          balcony: filters.balcony !== undefined ? validateBoolean(filters.balcony) : undefined,
-          solarEnergy: filters.solarEnergy !== undefined ? validateBoolean(filters.solarEnergy) : undefined,
-          concierge: filters.concierge !== undefined ? validateBoolean(filters.concierge) : undefined,
-          yard: filters.yard !== undefined ? validateBoolean(filters.yard) : undefined,
-          elevator: filters.elevator !== undefined ? validateBoolean(filters.elevator) : undefined,
-        },
+      // Filter by location, using related table PropertiesAddresses
+      PropertiesAddresses: {
+        city: filters.city ? validateString(filters.city) : undefined,
+        state: filters.state ? validateUF(filters.state) : undefined,
+        neighborhood: filters.neighborhood ? validateString(filters.neighborhood) : undefined,
       },
 
-      orderBy: filters.orderBy ? filters.orderBy : { updatedAt: 'desc' },
+      // Filter by prices, using related table PropertiesPrices
+      PropertiesPrices: {
+        rentPrice: filters.announcementType !== undefined && filters.announcementType !== 'sell' ? {
+          gte: filters.minPrice ? validatePrice(filters.minPrice) : 0,
+          lte: filters.maxPrice ? validatePrice(filters.maxPrice) : 999999999,
+        } : undefined,
+        sellPrice: filters.announcementType !== undefined && filters.announcementType !== 'rent' ? {
+          gte: filters.minPrice ? validatePrice(filters.minPrice) : 0,
+          lte: filters.maxPrice ? validatePrice(filters.maxPrice) : 999999999,
+        } : undefined,
+      },
+
+      // Filter by property amenities, using related table PropertiesCommodities
+      PropertiesCommodities: {
+        pool: filters.pool !== undefined ? validateBoolean(filters.pool) : undefined,
+        grill: filters.grill !== undefined ? validateBoolean(filters.grill) : undefined,
+        airConditioner: filters.airConditioner !== undefined ? validateBoolean(filters.airConditioner) : undefined,
+        playground: filters.playground !== undefined ? validateBoolean(filters.playground) : undefined,
+        eventArea: filters.eventArea !== undefined ? validateBoolean(filters.eventArea) : undefined,
+        gourmetArea: filters.gourmetArea !== undefined ? validateBoolean(filters.gourmetArea) : undefined,
+        garden: filters.garden !== undefined ? validateBoolean(filters.garden) : undefined,
+        porch: filters.porch !== undefined ? validateBoolean(filters.porch) : undefined,
+        slab: filters.slab !== undefined ? validateBoolean(filters.slab) : undefined,
+        gatedCommunity: filters.gatedCommunity !== undefined ? validateBoolean(filters.gatedCommunity) : undefined,
+        gym: filters.gym !== undefined ? validateBoolean(filters.gym) : undefined,
+        balcony: filters.balcony !== undefined ? validateBoolean(filters.balcony) : undefined,
+        solarEnergy: filters.solarEnergy !== undefined ? validateBoolean(filters.solarEnergy) : undefined,
+        concierge: filters.concierge !== undefined ? validateBoolean(filters.concierge) : undefined,
+        yard: filters.yard !== undefined ? validateBoolean(filters.yard) : undefined,
+        // elevator: filters.elevator !== undefined ? validateBoolean(filters.elevator) : undefined,
+      },
+    };
+    if (verified) where.verified = 'verified';
+
+    const properties = await prisma.property.findMany({
+      where,
+      // orderBy: filters.orderBy ? filters.orderBy : { updatedAt: 'desc' },
       skip: take * (page - 1),
       take,
       include: {
-        PropertiesAddresses: true,
         PropertiesPrices: true,
+        PropertiesAddresses: true,
         PropertiesCommodities: true,
         PropertyPictures: true,
       },
     });
 
+    const total = await prisma.property.count({ where });
+
     const pagination = {
       path,
       page,
       prev_page_url: page - 1 >= 1 ? page - 1 : null,
-      next_page_url: page + 1 <= Math.ceil(properties.length / take) ? page + 1 : null,
-      lastPage: Math.ceil(properties.length / take),
-      total: properties.length,
+      next_page_url: page + 1 <= Math.ceil(total / take) ? page + 1 : null,
+      lastPage: Math.ceil(total / take),
+      total,
     };
 
     const result = properties.map((property) => ({
       ...property,
-      address: property.PropertiesAddresses,
       prices: property.PropertiesPrices,
+      address: property.PropertiesAddresses,
       commodities: property.PropertiesCommodities,
       pictures: property.PropertyPictures,
       PropertiesAddresses: undefined,
