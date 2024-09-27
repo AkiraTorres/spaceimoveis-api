@@ -116,9 +116,9 @@ export const create = asyncHandler(async (req, res, next) => {
 export const filter = asyncHandler(async (req, res, next) => {
   try {
     const data = req.body;
-    const { page = 1, isHighlighted = false, isPublished = true, limit = 6, verified = true } = req.query;
+    const { page = 1, limit = 6, verified = true } = req.query;
 
-    const result = await PropertyService.filter(data, verified, page, isHighlighted, isPublished, limit);
+    const result = await PropertyService.filter(data, verified, page, limit);
     res.status(200).json(result);
   } catch (error) {
     next(error);

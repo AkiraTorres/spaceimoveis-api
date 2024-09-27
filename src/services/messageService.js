@@ -12,12 +12,10 @@ import { validateEmail, validateMessageType, validateString } from '../validator
 import ChatService from './chatService.js';
 import UserService from './userService.js';
 
-export default class MessageService {
-  constructor() {
-    this.app = initializeApp(firebaseConfig);
-    this.storage = getStorage(this.app);
-  }
+const app = initializeApp(firebaseConfig);
+const storage = getStorage(app);
 
+export default class MessageService {
   // TODO: precisa salvar as mensagens criptografadas no db
   static async createMessage({ chatId, sender, text }) {
     const validatedEmail = validateEmail(sender);
@@ -127,7 +125,7 @@ export default class MessageService {
 
     let downloadUrl;
     try {
-      const storageRef = ref(this.storage, `files/${validatedChatId}/${msgId}-${name}`);
+      const storageRef = ref(storage, `files/${validatedChatId}/${msgId}-${name}`);
       const metadata = { contentType: ct };
       const snapshot = await uploadBytes(storageRef, uploadFile, metadata);
       downloadUrl = await getDownloadURL(snapshot.ref);
@@ -170,7 +168,7 @@ export default class MessageService {
     await prisma.message.delete({ where: { id: validatedId } });
 
     if (message.type !== 'text') {
-      const storageRef = ref(this.storage, `files/${message.chatId}/${validatedId}-${message.fileName}`);
+      const storageRef = ref(storage, `files/${message.chatId}/${validatedId}-${message.fileName}`);
       await deleteObject(storageRef);
     }
     return { message: 'Mensagem deletada com sucesso' };
