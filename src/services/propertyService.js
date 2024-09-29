@@ -250,6 +250,8 @@ export default class PropertyService {
       state: validateUF(params.state),
       neighborhood: validateString(params.neighborhood, 'O campo "bairro" é obrigatório'),
       complement: params.complement ? validateString(params.complement) : null,
+      latitude: params.latitude ? validateString(params.latitude) : null,
+      longitude: params.longitude ? validateString(params.longitude) : null,
     };
 
     const commoditiesData = { propertyId: data.id };
@@ -354,6 +356,8 @@ export default class PropertyService {
       state: params.state ? validateUF(params.state) : oldProperty.state,
       neighborhood: params.neighborhood ? validateString(params.neighborhood) : oldProperty.neighborhood,
       complement: params.complement ? validateString(params.complement) : oldProperty.complement,
+      latitude: params.latitude ? validateString(params.latitude) : oldProperty.latitude,
+      longitude: params.longitude ? validateString(params.longitude) : oldProperty.longitude,
     };
 
     const updatedCommodities = {
@@ -522,6 +526,8 @@ export default class PropertyService {
         city: filters.city ? validateString(filters.city) : undefined,
         state: filters.state ? validateUF(filters.state) : undefined,
         neighborhood: filters.neighborhood ? validateString(filters.neighborhood) : undefined,
+        latitude: filters.latitude ? validateString(filters.latitude) : undefined,
+        longitude: filters.longitude ? validateString(filters.longitude) : undefined,
       },
 
       // Filter by prices, using related table PropertiesPrices

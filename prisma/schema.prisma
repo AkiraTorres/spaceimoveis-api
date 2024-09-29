@@ -244,6 +244,8 @@ model PropertiesAddresses {
   state        String  @db.VarChar(2)
   neighborhood String
   complement   String?
+  latitude     String?
+  longitude    String?
 
   property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
