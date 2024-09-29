@@ -58,7 +58,6 @@ app.all('*', (req, res) => {
 app.use((error, req, res, next) => {
   const status = error.status || 500;
   const message = error.status !== 500 ? error.message || 'Internal Server Error' : 'Internal Server Error';
-  console.error(error);
   res.status(status).json({ message });
 });
 

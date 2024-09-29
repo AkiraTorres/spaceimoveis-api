@@ -4,6 +4,7 @@ import { initializeApp } from 'firebase/app';
 import { deleteObject, getDownloadURL, getStorage, ref, uploadBytesResumable } from 'firebase/storage';
 import { v4 as uuid } from 'uuid';
 
+import axios from 'axios';
 import firebaseConfig from '../config/firebase.js';
 import prisma from '../config/prisma.js';
 import ConfigurableError from '../errors/ConfigurableError.js';
@@ -254,6 +255,16 @@ export default class PropertyService {
       longitude: params.longitude ? validateString(params.longitude) : null,
     };
 
+    const encodedAddress = encodeURIComponent(`${addressData.street}, ${addressData.city}, ${addressData.state}, ${addressData.country}`);
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodedAddress}&format=json&addressdetails=1&limit=1`;
+
+    const response = await axios.get(url);
+    if (response.data.length > 0) {
+      const location = response.data[0];
+      addressData.latitude = location.lat;
+      addressData.longitude = location.lon;
+    }
+
     const commoditiesData = { propertyId: data.id };
     if (params.pool !== undefined) commoditiesData.pool = validateBoolean(params.pool);
     if (params.grill !== undefined) commoditiesData.grill = validateBoolean(params.grill);
@@ -359,6 +370,16 @@ export default class PropertyService {
       latitude: params.latitude ? validateString(params.latitude) : oldProperty.latitude,
       longitude: params.longitude ? validateString(params.longitude) : oldProperty.longitude,
     };
+
+    const encodedAddress = encodeURIComponent(`${updatedAddress.street}, ${updatedAddress.city}, ${updatedAddress.state}, ${updatedAddress.country}`);
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodedAddress}&format=json&addressdetails=1&limit=1`;
+
+    const response = await axios.get(url);
+    if (response.data.length > 0) {
+      const location = response.data[0];
+      updatedAddress.latitude = location.lat;
+      updatedAddress.longitude = location.lon;
+    }
 
     const updatedCommodities = {
       pool: params.pool ? validateBoolean(params.pool) : oldProperty.pool,
