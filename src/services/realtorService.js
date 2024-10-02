@@ -36,6 +36,7 @@ export default class RealtorService extends UserService {
     user.favorites = await prisma.favorite.findMany({ where: { userEmail } });
     user.followers = await prisma.follower.findMany({ where: { followedEmail: userEmail } });
     user.follow = await prisma.follower.findMany({ where: { followerEmail: userEmail } });
+    user.socials = await prisma.userSocial.findMany({ where: { email: userEmail } });
 
     return excludeFromObject(user, ['otp', 'otp_ttl', 'password']);
   }
