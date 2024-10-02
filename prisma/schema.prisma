@@ -39,7 +39,7 @@ model User {
   Property           Property[]
   Follower           Follower[]         @relation("follower")
   Followed           Follower[]         @relation("followed")
-  UserSocial         UserSocial?
+  UserSocial         UserSocial[]
 
   @@map("users")
 }
@@ -105,7 +105,8 @@ model UserRating {
 }
 
 model UserSocial {
-  email String  @id @unique
+  id    String  @id @unique @default(uuid())
+  email String
   type  String?
   url   String?
 
