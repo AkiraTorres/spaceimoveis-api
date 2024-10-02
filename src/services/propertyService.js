@@ -557,7 +557,7 @@ export default class PropertyService {
           gte: filters.minPrice ? validatePrice(filters.minPrice) : 0,
           lte: filters.maxPrice ? validatePrice(filters.maxPrice) : 999999999,
         } : undefined,
-        sellPrice: filters.announcementType !== undefined && filters.announcementType !== 'rent' ? {
+        sellPrice: filters.announcementType !== 'rent' ? {
           gte: filters.minPrice ? validatePrice(filters.minPrice) : 0,
           lte: filters.maxPrice ? validatePrice(filters.maxPrice) : 999999999,
         } : undefined,
