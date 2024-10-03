@@ -169,9 +169,8 @@ export default class UserService {
     const oldUser = await this.find({ email: validatedEmail });
     if (!oldUser) throw new ConfigurableError('Usuário não encontrado', 404);
 
-    let user = oldUser;
-    let { info } = oldUser;
-    let { address } = oldUser;
+    const user = oldUser;
+    let transaction = [];
 
     if (params) {
       const updatedData = {
@@ -179,7 +178,6 @@ export default class UserService {
         name: params.name ? validateString(params.name, 'O campo nome é obrigatório') : oldUser.name,
         handler: params.email ? validateString((params.email).split('@')[0]) : oldUser.handler,
       };
-      user = await prisma.user.update({ where: { email: validatedEmail }, data: updatedData });
 
       const updatedInfo = {
         cpf: params.cpf ? validateCpf(params.cpf) : oldUser.cpf,
@@ -190,7 +188,6 @@ export default class UserService {
         idPhone: params.idPhone ? validateString(params.idPhone) : oldUser.idPhone,
         bio: params.bio ? validateString(params.bio) : oldUser.bio,
       };
-      info = await prisma.userInfo.update({ where: { email: validatedEmail }, data: updatedInfo });
 
       const updatedAddress = {
         street: params.street ? validateString(params.street) : oldUser.street,
@@ -201,20 +198,26 @@ export default class UserService {
         city: params.city ? validateString(params.city) : oldUser.city,
         state: params.state ? validateUF(params.state) : oldUser.state,
       };
-      address = await prisma.userAddress.update({ where: { email: validatedEmail }, data: updatedAddress });
 
       const oldSocialsUrlsValidated = params.oldSocialsUrls ? params.oldSocialsUrls.map((socialUrl) => validateString(socialUrl)) : [];
-      await prisma.userSocial.deleteMany({ where: { email: validatedEmail, NOT: { url: { in: oldSocialsUrlsValidated } } } });
 
       const socials = params.socials ? params.socials.map((social) => ({
         email: updatedData.email,
         type: validateString(social.type),
         url: validateString(social.url),
       })) : null;
-      if (socials) prisma.userSocial.createMany({ data: socials, skipDuplicates: true });
+
+      transaction = [
+        prisma.user.update({ where: { email: validatedEmail }, data: updatedData }),
+        prisma.userInfo.update({ where: { email: validatedEmail }, data: updatedInfo }),
+        prisma.userAddress.update({ where: { email: validatedEmail }, data: updatedAddress }),
+        prisma.userSocial.deleteMany({ where: { email: validatedEmail, NOT: { url: { in: oldSocialsUrlsValidated } } } }),
+      ];
+
+      if (socials) transaction.push(prisma.userSocial.createMany({ data: socials, skipDuplicates: true }));
     }
 
-    let profile = await prisma.userPhoto.findUnique({ where: { email: user.email } });
+    const profile = await prisma.userPhoto.findUnique({ where: { email: user.email } });
     if (photo) {
       if (profile) {
         const storageRef = ref(storage, `images/admins/${user.email}/${profile.name}`);
@@ -227,18 +230,20 @@ export default class UserService {
       const snapshot = await uploadBytesResumable(storageRef, photo.buffer, metadata);
       const downloadUrl = await getDownloadURL(snapshot.ref);
 
-      profile = await prisma.userPhoto.create({
-        data: {
-          id: uuid(),
-          email: user.email,
-          url: downloadUrl,
-          name: photo.originalname,
-          type: 'profile',
-        },
-      });
+      const profileData = {
+        id: uuid(),
+        email: user.email,
+        url: downloadUrl,
+        name: photo.originalname,
+        type: 'profile',
+      };
+
+      transaction.push(prisma.userPhoto.create({ data: profileData }));
     }
 
-    return { ...user, info, address, profile };
+    await prisma.$transaction(transaction);
+
+    return this.userDetails(user.email);
   }
 
   static async destroy(email) {
