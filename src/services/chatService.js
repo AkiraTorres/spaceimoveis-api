@@ -1,5 +1,3 @@
-import { v4 as uuid } from 'uuid';
-
 import prisma from '../config/prisma.js';
 import ConfigurableError from '../errors/ConfigurableError.js';
 import { validateEmail } from '../validators/inputValidators.js';
@@ -35,7 +33,7 @@ export default class ChatService {
     });
 
     if (!chat) {
-      chat = await prisma.chat.create({ id: uuid(), user1Email: email1, user2Email: email2 });
+      chat = await prisma.chat.create({ data: { user1Email: email1, user2Email: email2 } });
     }
 
     chat.user1 = user1;
@@ -54,16 +52,16 @@ export default class ChatService {
     const chats = await prisma.chat.findMany({
       where: {
         OR: [
-          { user1: validatedEmail },
-          { user2: validatedEmail },
+          { user1: { email: validatedEmail } },
+          { user2: { email: validatedEmail } },
         ],
       },
     });
 
     return Promise.all(chats.map(async (chat) => {
       const editedChat = chat;
-      const user1 = await UserService.find({ email: chat.user1 });
-      const user2 = await UserService.find({ email: chat.user2 });
+      const user1 = await UserService.find({ email: chat.user1Email });
+      const user2 = await UserService.find({ email: chat.user2Email });
 
       editedChat.user1 = user1;
       editedChat.user2 = user2;
@@ -83,18 +81,12 @@ export default class ChatService {
 
     const chat = await prisma.chat.findFirst({
       where: {
-        AND: [
+        OR: [
           {
-            OR: [
-              { user1: validatedEmail1 },
-              { user2: validatedEmail2 },
-            ],
+            AND: [{ user1: { email: validatedEmail1 } }, { user2: { email: validatedEmail2 } }],
           },
           {
-            OR: [
-              { user1: validatedEmail2 },
-              { user2: validatedEmail1 },
-            ],
+            AND: [{ user1: { email: validatedEmail2 } }, { user2: { email: validatedEmail1 } }],
           },
         ],
       },
