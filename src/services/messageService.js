@@ -56,16 +56,12 @@ export default class MessageService {
     if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
 
     const chats = await ChatService.findUserChats(validatedEmail);
-    if (!chats || !chats.find((chat) => chat.id === chatId)) throw new ConfigurableError('Chat não encontrado', 404);
+    if (!chats || !chats.some((chat) => chat.id === chatId)) throw new ConfigurableError('Chat não encontrado', 404);
 
-    let chat;
-    try {
-      chat = await ChatService.findChatByChatId(chatId, validateEmail);
-    } catch (error) {
-      throw new ConfigurableError('Chat não encontrado', 404);
-    }
+    const chat = await ChatService.findChatByChatId(chatId);
+    const messages = await prisma.message.findMany({ where: { chatId } });
 
-    const messages = prisma.message.findMany({ where: { chatId } });
+    if (!messages || messages.length === 0) return [];
 
     messages.sort((a, b) => a.createdAt - b.createdAt);
 

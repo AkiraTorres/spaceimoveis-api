@@ -20,6 +20,8 @@ export const findMessages = asyncHandler(async (req, res, next) => {
     const { email } = req;
     const { chatId } = req.params;
 
+    console.log(chatId);
+
     const messages = await MessageService.findMessages(chatId, email);
     res.status(200).json(messages);
   } catch (error) {
