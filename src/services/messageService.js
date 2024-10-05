@@ -18,35 +18,29 @@ const storage = getStorage(app);
 export default class MessageService {
   // TODO: precisa salvar as mensagens criptografadas no db
   static async createMessage({ chatId, sender, text }) {
+    if (!text || text === '') throw new ConfigurableError('Texto da mensagem não pode ser vazio', 400);
+
     const validatedEmail = validateEmail(sender);
     const validatedChatId = validateString(chatId);
     const validatedText = validateString(text);
 
     const user = await UserService.find({ email: validatedEmail });
     if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
-    if (!text || text === '') throw new ConfigurableError('Texto da mensagem não pode ser vazio', 400);
 
-    const data = { chatId: validatedChatId, sender: validatedEmail, text: validatedText };
-
+    const data = { chatId: validatedChatId, senderEmail: validatedEmail, text: validatedText };
     const msg = await prisma.message.create({ data });
-
-    let chat;
-    try {
-      chat = await ChatService.findChatByChatId(validatedChatId, validatedEmail);
-    } catch (error) {
-      throw new ConfigurableError('Chat não encontrado', 404);
-    }
-
+    const chat = await ChatService.findChatByChatId(validatedChatId, validatedEmail);
     const receiver = chat.user1.email === user.email ? chat.user2 : chat.user1;
 
-    msg.senderName = user.name;
-    msg.senderEmail = user.email;
-    msg.senderProfile = user.profile;
-    msg.receiverName = receiver.name;
-    msg.receiverEmail = receiver.email;
-    msg.receiverProfile = receiver.profile;
-
-    return msg;
+    return {
+      ...msg,
+      senderName: user.name,
+      senderEmail: user.email,
+      senderProfile: user.profile,
+      receiverName: receiver.name,
+      receiverEmail: receiver.email,
+      receiverProfile: receiver.profile,
+    };
   }
 
   static async findMessages(chatId, email) {
@@ -159,7 +153,7 @@ export default class MessageService {
 
     if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
     if (!message) throw new ConfigurableError('Mensagem não encontrada', 404);
-    if (message.sender !== validatedEmail) throw new ConfigurableError('Usuário não autorizado', 401);
+    if (message.senderEmail !== validatedEmail) throw new ConfigurableError('Usuário não autorizado', 401);
 
     await prisma.message.delete({ where: { id: validatedId } });
 
