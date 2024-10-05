@@ -101,12 +101,15 @@ export default class ChatService {
   }
 
   static async findChatByChatId(chatId) {
-    const chat = await prisma.chat.findFirst(chatId);
+    const chat = await prisma.chat.findFirst({
+      where: { id: chatId },
+      include: {
+        user1: true,
+        user2: true,
+      },
+    });
 
     if (!chat) throw new ConfigurableError('Chat não encontrado', 404);
-
-    chat.user1 = await UserService.find({ email: chat.user1 });
-    chat.user2 = await UserService.find({ email: chat.user2 });
 
     return chat;
   }
