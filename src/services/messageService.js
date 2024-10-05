@@ -53,27 +53,29 @@ export default class MessageService {
     if (!chats || !chats.some((chat) => chat.id === chatId)) throw new ConfigurableError('Chat não encontrado', 404);
 
     const chat = await ChatService.findChatByChatId(chatId);
-    const messages = await prisma.message.findMany({ where: { chatId } });
+    if (!chat) throw new ConfigurableError('Chat não encontrado', 404);
 
+    const messages = await prisma.message.findMany({ where: { chatId } });
     if (!messages || messages.length === 0) return [];
 
     messages.sort((a, b) => a.createdAt - b.createdAt);
+    return messages;
 
-    return Promise.all(messages.map(async (msg) => {
-      const editedMsg = msg;
+    // return Promise.all(messages.map(async (msg) => {
+    //   const editedMsg = msg;
 
-      const sender = chat.user1.email === editedMsg.sender ? chat.user1 : chat.user2;
-      const receiver = chat.user1.email === editedMsg.sender ? chat.user2 : chat.user1;
+    //   const sender = chat.user1.email === editedMsg.sender ? chat.user1 : chat.user2;
+    //   const receiver = chat.user1.email === editedMsg.sender ? chat.user2 : chat.user1;
 
-      editedMsg.senderName = sender.name;
-      editedMsg.senderEmail = sender.email;
-      editedMsg.senderProfile = sender.profile;
-      editedMsg.receiverName = receiver.name;
-      editedMsg.receiverEmail = receiver.email;
-      editedMsg.receiverProfile = receiver.profile;
+    //   editedMsg.senderName = sender.name;
+    //   editedMsg.senderEmail = sender.email;
+    //   editedMsg.senderProfile = sender.profile;
+    //   editedMsg.receiverName = receiver.name;
+    //   editedMsg.receiverEmail = receiver.email;
+    //   editedMsg.receiverProfile = receiver.profile;
 
-      return editedMsg;
-    }));
+    //   return editedMsg;
+    // }));
   }
 
   static async createFileMessage({ chatId, sender, file, text, t, fileName, contentType, platform }) {
