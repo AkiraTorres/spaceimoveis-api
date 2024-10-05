@@ -125,7 +125,7 @@ export default class MessageService {
       throw new ConfigurableError('Erro ao salvar arquivo', 500);
     }
 
-    const message = await prisma.message.create({
+    const message = await prisma.message.create({ data: {
       id: msgId,
       chatId: validatedChatId,
       senderEmail: validatedEmail,
@@ -133,16 +133,7 @@ export default class MessageService {
       url: downloadUrl,
       fileName,
       type,
-    });
-
-    const receiver = chat.user1.email === user.email ? chat.user2 : chat.user1;
-
-    message.senderName = user.name;
-    message.senderEmail = user.email;
-    message.senderProfile = user.profile;
-    message.receiverName = receiver.name;
-    message.receiverEmail = receiver.email;
-    message.receiverProfile = receiver.profile;
+    } });
 
     return message;
   }
