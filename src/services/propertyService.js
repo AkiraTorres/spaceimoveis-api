@@ -255,14 +255,19 @@ export default class PropertyService {
       longitude: params.longitude ? validateString(params.longitude) : null,
     };
 
-    const encodedAddress = encodeURIComponent(`${addressData.street}, ${addressData.city}, ${addressData.state}, ${addressData.country}`);
+    const encodedAddress = encodeURIComponent(`${addressData.street}, ${addressData.city}, ${addressData.state}`);
     const url = `https://nominatim.openstreetmap.org/search?q=${encodedAddress}&format=json&addressdetails=1&limit=1`;
 
-    const response = await axios.get(url);
-    if (response.data.length > 0) {
+    try {
+      const response = await axios.get(url);
+      if (response.data.length <= 0) {
+        throw new ConfigurableError('Endereço não encontrado', 400);
+      }
       const location = response.data[0];
       addressData.latitude = location.lat;
       addressData.longitude = location.lon;
+    } catch (error) {
+      // throw error;
     }
 
     const commoditiesData = { propertyId: data.id };
@@ -371,7 +376,7 @@ export default class PropertyService {
       longitude: params.longitude ? validateString(params.longitude) : oldProperty.longitude,
     };
 
-    const encodedAddress = encodeURIComponent(`${updatedAddress.street}, ${updatedAddress.city}, ${updatedAddress.state}, ${updatedAddress.country}`);
+    const encodedAddress = encodeURIComponent(`${updatedAddress.street}, ${updatedAddress.city}, ${updatedAddress.state}`);
     const url = `https://nominatim.openstreetmap.org/search?q=${encodedAddress}&format=json&addressdetails=1&limit=1`;
 
     const response = await axios.get(url);

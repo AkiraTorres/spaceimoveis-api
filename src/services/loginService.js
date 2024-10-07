@@ -21,7 +21,7 @@ export async function login({ email, password }) {
   const isValid = bcrypt.compareSync(password, user.password);
   if (!isValid) throw error;
 
-  const accessToken = jwt.sign({ email }, JWT_SECRET, { expiresIn: '1h' });
+  const accessToken = jwt.sign({ email }, JWT_SECRET, { expiresIn: '1y' });
   const refreshToken = jwt.sign({ email }, JWT_SECRET, { expiresIn: '21d' });
 
   return { user: await UserService.userDetails(user.email), accessToken, refreshToken };
@@ -53,7 +53,7 @@ export async function loginAdmin({ email, password }) {
   const isValid = bcrypt.compareSync(password, user.password);
   if (!isValid) throw error;
 
-  const accessToken = jwt.sign({ email }, JWT_SECRET, { expiresIn: '1h' });
+  const accessToken = jwt.sign({ email }, JWT_SECRET, { expiresIn: '1y' });
   const refreshToken = jwt.sign({ email }, JWT_SECRET, { expiresIn: '21d' });
 
   return { user: await UserService.userDetails(user.email), accessToken, refreshToken };
@@ -64,7 +64,7 @@ export function refresh({ refreshToken }) {
 
   try {
     const decoded = jwt.verify(refreshToken, JWT_SECRET);
-    const accessToken = jwt.sign({ email: decoded.email }, JWT_SECRET, { expiresIn: '1h' });
+    const accessToken = jwt.sign({ email: decoded.email }, JWT_SECRET, { expiresIn: '1y' });
     const newRefreshToken = jwt.sign({ email: decoded.email }, JWT_SECRET, { expiresIn: '21d' });
 
     return { accessToken, newRefreshToken };
