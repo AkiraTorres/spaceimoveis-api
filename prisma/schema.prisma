@@ -40,6 +40,7 @@ model User {
   Follower           Follower[]         @relation("follower")
   Followed           Follower[]         @relation("followed")
   UserSocial         UserSocial[]
+  UserPosts          UserPosts[]
 
   @@map("users")
 }
@@ -113,6 +114,32 @@ model UserSocial {
   user User @relation(fields: [email], references: [email], onDelete: Cascade)
 
   @@map("users_social")
+}
+
+model UserPosts {
+  id        String    @id @unique @default(uuid())
+  email     String
+  text      String?
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now()) @map("created_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  user      User        @relation(fields: [email], references: [email], onDelete: Cascade)
+  PostMedia PostMedia[]
+
+  @@map("users_posts")
+}
+
+model PostMedia {
+  id        String   @id @unique @default(uuid())
+  postId    String?
+  url       String
+  type      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  post UserPosts? @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@map("posts_media")
 }
 
 model SharedProperties {
