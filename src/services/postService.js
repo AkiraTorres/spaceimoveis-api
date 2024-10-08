@@ -104,9 +104,8 @@ export default class PostService {
     if (m.length > 0) transaction.push(prisma.postMedia.createMany({ data: m }));
 
     const [newPost] = await prisma.$transaction(transaction);
-    const PostMedia = await prisma.postMedia.findMany({ where: { postId: newPost.id } });
 
-    return { ...newPost, PostMedia };
+    return this.getPostDetails(newPost.id);
   }
 
   static async likePost(id, email) {
