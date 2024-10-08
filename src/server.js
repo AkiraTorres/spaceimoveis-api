@@ -12,6 +12,7 @@ import followerRoutes from './routes/followerRoutes.js';
 import loginRoutes from './routes/loginRoutes.js';
 import messageRoutes from './routes/messageRoutes.js';
 import ownerRoutes from './routes/ownerRoutes.js';
+import postRoutes from './routes/postRoutes.js';
 import propertyRoutes from './routes/propertyRoutes.js';
 import ratingRoutes from './routes/ratingRoutes.js';
 import realstateRoutes from './routes/realstateRoutes.js';
@@ -45,6 +46,7 @@ app.use('/chat', chatRoutes);
 app.use('/message', messageRoutes);
 app.use('/dashboard', sellerDashboardRoutes);
 app.use('/follow', followerRoutes);
+app.use('/posts', postRoutes);
 
 app.use('/', userRoutes);
 
