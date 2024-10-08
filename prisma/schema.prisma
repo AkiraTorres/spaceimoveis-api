@@ -87,7 +87,7 @@ model UserPhoto {
 
   user User @relation(fields: [email], references: [email], onDelete: Cascade)
 
-  @@map("user_photos")
+  @@map("users_photos")
 }
 
 model UserRating {
@@ -102,7 +102,7 @@ model UserRating {
   receiver User @relation("UserRatingReceiver", fields: [receiverEmail], references: [email], onDelete: Cascade)
   sender   User @relation("UserRatingSender", fields: [senderEmail], references: [email], onDelete: Cascade)
 
-  @@map("user_ratings")
+  @@map("users_ratings")
 }
 
 model UserSocial {
@@ -113,7 +113,7 @@ model UserSocial {
 
   user User @relation(fields: [email], references: [email], onDelete: Cascade)
 
-  @@map("users_social")
+  @@map("users_socials")
 }
 
 model UserPosts {
@@ -127,7 +127,7 @@ model UserPosts {
   user      User        @relation(fields: [email], references: [email], onDelete: Cascade)
   PostMedia PostMedia[]
 
-  @@map("users_posts")
+  @@map("posts")
 }
 
 model PostMedia {
@@ -139,7 +139,7 @@ model PostMedia {
 
   post UserPosts? @relation(fields: [postId], references: [id], onDelete: Cascade)
 
-  @@map("posts_media")
+  @@map("posts_medias")
 }
 
 model SharedProperties {
@@ -153,7 +153,7 @@ model SharedProperties {
   user     User     @relation(fields: [email], references: [email], onDelete: Cascade)
   property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
-  @@map("shared_properties")
+  @@map("properties_shared")
 }
 
 model Chat {
@@ -315,7 +315,7 @@ model PropertyPictures {
 
   property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
-  @@map("property_pictures")
+  @@map("properties_pictures")
 }
 
 model ReasonRejectedProperty {
@@ -325,7 +325,7 @@ model ReasonRejectedProperty {
 
   property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
-  @@map("reason_rejected_properties")
+  @@map("properties_rejected_reason")
 }
 
 model UserMessages {
@@ -337,7 +337,7 @@ model UserMessages {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
 
-  @@map("user_messages")
+  @@map("users_messages")
 }
 
 enum AnnouncementType {
