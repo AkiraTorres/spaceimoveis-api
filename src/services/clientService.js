@@ -9,7 +9,7 @@ import { validateEmail, validatePassword, validatePhone, validateString, validat
 import UserService from './userService.js';
 
 export default class ClientService extends UserService {
-  static async elevate(userEmail, params, photo, type) {
+  static async elevate(userEmail, params, photos, type) {
     const validatedEmail = validateEmail(userEmail);
 
     const oldUser = await this.find({ email: validatedEmail }, 'client');
@@ -50,23 +50,31 @@ export default class ClientService extends UserService {
       state: params.state ? validateUF(params.state) : oldUser.state,
     };
 
+    const transaction = [
+      prisma.user.update({ where: { email: validatedEmail }, data }),
+      prisma.userInfo.update({ where: { email: validatedEmail }, data: infoData }),
+      prisma.userAddress.update({ where: { email: validatedEmail }, data: updatedAddress }),
+    ];
+
     if (data.email !== oldUser.email && await prisma.userInfo.findUnique({ where: { email: data.email } })) throw new ConfigurableError('Email já cadastrado', 409);
     if (infoData.cpf !== oldUser.cpf && await prisma.userInfo.findUnique({ where: { cpf: infoData.cpf } })) throw new ConfigurableError('CPF já cadastrado', 409);
     if (infoData.cnpj !== oldUser.cnpj && await prisma.userInfo.findUnique({ where: { cnpj: infoData.cnpj } })) throw new ConfigurableError('CNPJ já cadastrado', 409);
     if (infoData.creci !== oldUser.creci && await prisma.userInfo.findUnique({ where: { creci: infoData.creci } })) throw new ConfigurableError('CRECI já cadastrado', 409);
 
-    const prof = await prisma.userPhoto.findUnique({ where: { email: oldUser.email } });
-    if (photo) {
-      const app = initializeApp(firebaseConfig);
-      const storage = getStorage(app);
+    const app = initializeApp(firebaseConfig);
+    const storage = getStorage(app);
 
-      if (prof) {
-        const storageRef = ref(storage, `images/${oldUser.type}s/${oldUser.email}/${prof.name}`);
-        await prisma.userPhoto.delete({ where: { email: oldUser.email } });
+    await Promise.all(photos.map(async (photo) => {
+      if (!['profile', 'banner'].includes(photo.fieldname)) throw new ConfigurableError("As fotos de usuário devem possuir a tag 'profile' ou 'banner'", 422);
+
+      const oldPhoto = await prisma.userPhoto.findFirst({ where: { email: data.email, type: photo.fieldname } });
+      if (oldPhoto) {
+        await prisma.userPhoto.delete({ where: { email: data.email, type: photo.fieldname } });
+        const storageRef = ref(storage, `images/users/${data.email}/${oldPhoto.name}`);
         await deleteObject(storageRef);
       }
 
-      const storageRef = ref(storage, `images/${oldUser.type}s/${data.email}/${photo.originalname}`);
+      const storageRef = ref(storage, `images/users/${data.email}/${photo.originalname}`);
       const metadata = { contentType: photo.mimetype };
       const snapshot = await uploadBytesResumable(storageRef, photo.buffer, metadata);
       const downloadUrl = await getDownloadURL(snapshot.ref);
@@ -76,22 +84,13 @@ export default class ClientService extends UserService {
         email: data.email,
         url: downloadUrl,
         name: photo.originalname,
-        type: 'profile',
+        type: photo.fieldname,
       };
 
-      await prisma.$transaction([
-        prisma.user.update({ where: { email: validatedEmail }, data }),
-        prisma.userInfo.update({ where: { email: validatedEmail }, data: infoData }),
-        prisma.userAddress.update({ where: { email: validatedEmail }, data: updatedAddress }),
-        prisma.userPhoto.create({ data: profileData }),
-      ]);
-    } else {
-      await prisma.$transaction([
-        prisma.user.update({ where: { email: validatedEmail }, data }),
-        prisma.userInfo.update({ where: { email: validatedEmail }, data: infoData }),
-        prisma.userAddress.update({ where: { email: validatedEmail }, data: updatedAddress }),
-      ]);
-    }
+      transaction.push(prisma.userPhoto.create({ data: profileData }));
+    }));
+
+    await prisma.$transaction(transaction);
 
     return this.userDetails(data.email);
   }

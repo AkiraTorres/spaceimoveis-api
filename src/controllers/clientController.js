@@ -24,13 +24,13 @@ export const find = asyncHandler(async (req, res, next) => {
 export const create = asyncHandler(async (req, res, next) => {
   try {
     const { data } = req.body;
-    const { file } = req;
+    const { files } = req;
 
     let clientData = {};
     if (data !== undefined) clientData = JSON.parse(data);
     clientData.type = 'client';
 
-    const result = await ClientService.create(clientData, file);
+    const result = await ClientService.create(clientData, files);
     res.status(201).json(result);
   } catch (error) {
     next(error);
@@ -40,12 +40,12 @@ export const create = asyncHandler(async (req, res, next) => {
 export const update = asyncHandler(async (req, res, next) => {
   try {
     const { data } = req.body;
-    const { file } = req;
+    const { files } = req;
 
     let clientData = {};
     if (data !== undefined) clientData = JSON.parse(data);
 
-    const result = await ClientService.update(req.params.email, clientData, file);
+    const result = await ClientService.update(req.params.email, clientData, files);
     res.status(200).json(result);
   } catch (error) {
     next(error);

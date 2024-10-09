@@ -26,13 +26,13 @@ export const findByPk = asyncHandler(async (req, res, next) => {
 export const create = asyncHandler(async (req, res, next) => {
   try {
     const { data } = req.body;
-    const { file } = req;
+    const { files } = req;
 
     let realtorData = {};
     if (data !== undefined) realtorData = JSON.parse(data);
     realtorData.type = 'realtor';
 
-    const result = await RealtorService.create(realtorData, file);
+    const result = await RealtorService.create(realtorData, files);
     res.status(201).json(result);
   } catch (error) {
     next(error);
@@ -42,12 +42,12 @@ export const create = asyncHandler(async (req, res, next) => {
 export const update = asyncHandler(async (req, res, next) => {
   try {
     const { data } = req.body;
-    const { file } = req;
+    const { files } = req;
 
     let realtorData = {};
     if (data !== undefined) realtorData = JSON.parse(data);
 
-    const result = await RealtorService.update(req.params.email, realtorData, file);
+    const result = await RealtorService.update(req.params.email, realtorData, files);
     res.status(200).json(result);
   } catch (error) {
     next(error);
@@ -57,12 +57,12 @@ export const update = asyncHandler(async (req, res, next) => {
 export const elevate = asyncHandler(async (req, res, next) => {
   try {
     const { data } = req.body;
-    const { file } = req;
+    const { files } = req;
 
     let realtorData = {};
     if (data !== undefined) realtorData = JSON.parse(data);
 
-    const result = await ClientService.elevate(req.params.email, realtorData, file, 'realtor');
+    const result = await ClientService.elevate(req.params.email, realtorData, files, 'realtor');
     res.status(201).json(result);
   } catch (error) {
     next(error);

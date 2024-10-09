@@ -15,13 +15,23 @@ sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 const app = initializeApp(firebaseConfig);
 const storage = getStorage(app);
 
+const generateUniqueHandler = async (handler) => {
+  const user = await prisma.user.findFirst({ where: { handler } });
+  if (!user) {
+    return handler;
+  }
+  const random = Math.floor(1000 + Math.random() * 9000);
+  return generateUniqueHandler(`${handler}${random}`);
+};
+
 export default class UserService {
   static async userDetails(userEmail) {
     const user = await prisma.user.findFirst({ where: { email: userEmail } });
 
     user.info = await prisma.userInfo.findFirst({ where: { email: userEmail } });
     user.address = await prisma.userAddress.findFirst({ where: { email: userEmail } });
-    user.profile = await prisma.userPhoto.findFirst({ where: { email: userEmail } });
+    user.profile = await prisma.userPhoto.findFirst({ where: { email: userEmail, type: 'profile' } });
+    user.banner = await prisma.userPhoto.findFirst({ where: { email: userEmail, type: 'banner' } });
     user.favorites = await prisma.favorite.findMany({ where: { userEmail } });
     user.followers = await prisma.follower.findMany({ where: { followedEmail: userEmail } });
     user.follow = await prisma.follower.findMany({ where: { followerEmail: userEmail } });
@@ -90,21 +100,21 @@ export default class UserService {
     return { users: result, pagination };
   }
 
-  static async create(params, photo) {
+  static async create(params, photos) {
     const newUser = {
       email: validateEmail(params.email, "O campo 'email' é obrigatório"),
       name: validateString(params.name, "O campo 'nome' é obrigatório"),
-      handler: validateString((params.email).split('@')[0], "O campo 'apelido' é obrigatório"),
+      handler: generateUniqueHandler(validateString((params.email).split('@')[0], "O campo 'apelido' é obrigatório")),
       password: params.password ? validatePassword(params.password, "O campo 'senha' é obrigatório") : null,
       type: validateUserType(params.type, "O campo 'tipo' é obrigatório"),
     };
 
     const newInfo = {
       email: newUser.email,
-      cpf: params.type !== 'client' && params.cpf ? validateCpf(params.cpf, "O campo 'cpf' é obrigatório") : null,
-      cnpj: params.cnpj && newUser.type === 'realstate' ? validateCnpj(params.cnpj, "O campo 'cnpj' é obrigatório") : null,
+      cpf: params.type !== 'client' || params.cpf ? validateCpf(params.cpf, "O campo 'cpf' é obrigatório") : null,
+      cnpj: newUser.type === 'realstate' || params.cnpj ? validateCnpj(params.cnpj, "O campo 'cnpj' é obrigatório") : null,
       rg: params.rg ? validateString(params.rg) : null,
-      creci: params.creci && newUser.type in ['realtor', 'realstate'] ? validateString(params.creci, "O campo 'creci' é obrigatório") : null,
+      creci: newUser.type in ['realtor', 'realstate'] || params.creci ? validateString(params.creci, "O campo 'creci' é obrigatório") : null,
       phone: params.phone ? validatePhone(params.phone) : null,
       idPhone: params.idPhone ? validateString(params.idPhone) : null,
       bio: params.bio ? validateString(params.bio) : null,
@@ -138,33 +148,34 @@ export default class UserService {
 
     if (socials) transaction.push(prisma.userSocial.createMany({ data: socials, skipDuplicates: true }));
 
-    let user;
-    if (photo) {
-      const storageRef = ref(storage, `images/${user.type}s/${user.email}/${photo.originalname}`);
+    await Promise.all(photos.map(async (photo) => {
+      if (!['profile', 'banner'].includes(photo.fieldname)) throw new ConfigurableError("As fotos de usuário devem possuir a tag 'profile' ou 'banner'", 422);
+
+      const storageRef = ref(storage, `images/users/${newUser.email}/${photo.originalname}`);
       const metadata = { contentType: photo.mimetype };
       const snapshot = await uploadBytesResumable(storageRef, photo.buffer, metadata);
       const downloadUrl = await getDownloadURL(snapshot.ref);
 
       const profileData = {
         id: uuid(),
-        email: user.email,
+        email: newUser.email,
         url: downloadUrl,
         name: photo.originalname,
-        type: 'profile',
+        type: photo.fieldname,
       };
 
       transaction.push(prisma.userPhoto.create({ data: profileData }));
-    }
+    }));
 
     await prisma.$transaction(transaction);
 
     return this.userDetails(newUser.email);
   }
 
-  static async update(email, params, photo) {
+  static async update(email, params, photos) {
     const validatedEmail = validateEmail(email);
 
-    if ((!params && !photo) || (Object.keys(params).length === 0 && !photo)) throw new ConfigurableError('Nenhum dado foi fornecido', 422);
+    if ((!params && !photos) || (Object.keys(params).length === 0 && !photos)) throw new ConfigurableError('Nenhum dado foi fornecido', 422);
 
     const oldUser = await this.find({ email: validatedEmail });
     if (!oldUser) throw new ConfigurableError('Usuário não encontrado', 404);
@@ -217,15 +228,17 @@ export default class UserService {
       if (socials) transaction.push(prisma.userSocial.createMany({ data: socials, skipDuplicates: true }));
     }
 
-    const profile = await prisma.userPhoto.findUnique({ where: { email: user.email } });
-    if (photo) {
-      if (profile) {
-        const storageRef = ref(storage, `images/admins/${user.email}/${profile.name}`);
-        await prisma.userPhoto.delete({ where: { email: user.email } });
+    await Promise.all(photos.map(async (photo) => {
+      if (!['profile', 'banner'].includes(photo.fieldname)) throw new ConfigurableError("As fotos de usuário devem possuir a tag 'profile' ou 'banner'", 422);
+
+      const oldPhoto = await prisma.userPhoto.findFirst({ where: { email: user.email, type: photo.fieldname } });
+      if (oldPhoto) {
+        await prisma.userPhoto.delete({ where: { email: user.email, type: photo.fieldname } });
+        const storageRef = ref(storage, `images/users/${user.email}/${oldPhoto.name}`);
         await deleteObject(storageRef);
       }
 
-      const storageRef = ref(storage, `images/admins/${user.email}/${photo.originalname}`);
+      const storageRef = ref(storage, `images/users/${user.email}/${photo.originalname}`);
       const metadata = { contentType: photo.mimetype };
       const snapshot = await uploadBytesResumable(storageRef, photo.buffer, metadata);
       const downloadUrl = await getDownloadURL(snapshot.ref);
@@ -235,11 +248,11 @@ export default class UserService {
         email: user.email,
         url: downloadUrl,
         name: photo.originalname,
-        type: 'profile',
+        type: photo.fieldname,
       };
 
       transaction.push(prisma.userPhoto.create({ data: profileData }));
-    }
+    }));
 
     await prisma.$transaction(transaction);
 

@@ -26,13 +26,13 @@ export const findByPk = asyncHandler(async (req, res, next) => {
 export const create = asyncHandler(async (req, res, next) => {
   try {
     const { data } = req.body;
-    const { file } = req;
+    const { files } = req;
 
     let ownerData = {};
     if (data !== undefined) ownerData = JSON.parse(data);
     ownerData.type = 'owner';
 
-    const result = await OwnerService.create(ownerData, file);
+    const result = await OwnerService.create(ownerData, files);
     res.status(201).json(result);
   } catch (error) {
     next(error);
@@ -42,12 +42,12 @@ export const create = asyncHandler(async (req, res, next) => {
 export const update = asyncHandler(async (req, res, next) => {
   try {
     const { data } = req.body;
-    const { file } = req;
+    const { files } = req;
 
     let ownerData = {};
     if (data !== undefined) ownerData = JSON.parse(data);
 
-    const result = await OwnerService.update(req.params.email, ownerData, file);
+    const result = await OwnerService.update(req.params.email, ownerData, files);
     res.status(200).json(result);
   } catch (error) {
     next(error);
@@ -57,12 +57,12 @@ export const update = asyncHandler(async (req, res, next) => {
 export const elevate = asyncHandler(async (req, res, next) => {
   try {
     const { data } = req.body;
-    const { file } = req;
+    const { files } = req;
 
     let ownerData = {};
     if (data !== undefined) ownerData = JSON.parse(data);
 
-    const result = await ClientService.elevate(req.params.email, ownerData, file, 'owner');
+    const result = await ClientService.elevate(req.params.email, ownerData, files, 'owner');
     res.status(201).json(result);
   } catch (error) {
     next(error);

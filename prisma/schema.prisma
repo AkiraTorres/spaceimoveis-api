@@ -28,7 +28,6 @@ model User {
 
   userInfo           UserInfo?
   UserAddress        UserAddress?
-  UserPhoto          UserPhoto?
   UserRatingReceiver UserRating[]       @relation("UserRatingReceiver")
   UserRatingSender   UserRating[]       @relation("UserRatingSender")
   SharedProperties   SharedProperties[]
@@ -43,6 +42,7 @@ model User {
   UserPosts          UserPosts[]
   PostComments       PostComments[]
   PostLikes          PostLikes[]
+  UserPhoto          UserPhoto[]
 
   @@map("users")
 }
@@ -80,7 +80,7 @@ model UserAddress {
 
 model UserPhoto {
   id        String   @id @unique @default(uuid())
-  email     String   @unique
+  email     String
   url       String
   name      String
   type      String
