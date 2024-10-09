@@ -26,13 +26,13 @@ export const findByPk = asyncHandler(async (req, res, next) => {
 export const create = asyncHandler(async (req, res, next) => {
   try {
     const { data } = req.body;
-    const { file } = req;
+    const { files } = req;
 
     let realstateData = {};
     if (data !== undefined) realstateData = JSON.parse(data);
     realstateData.type = 'realstate';
 
-    const result = await RealstateService.create(realstateData, file);
+    const result = await RealstateService.create(realstateData, files);
     res.status(201).json(result);
   } catch (error) {
     next(error);
@@ -42,12 +42,12 @@ export const create = asyncHandler(async (req, res, next) => {
 export const update = asyncHandler(async (req, res, next) => {
   try {
     const { data } = req.body;
-    const { file } = req;
+    const { files } = req;
 
     let realstateData = {};
     if (data !== undefined) realstateData = JSON.parse(data);
 
-    const result = await RealstateService.update(req.params.email, realstateData, file);
+    const result = await RealstateService.update(req.params.email, realstateData, files);
     res.status(200).json(result);
   } catch (error) {
     next(error);
@@ -57,12 +57,12 @@ export const update = asyncHandler(async (req, res, next) => {
 export const elevate = asyncHandler(async (req, res, next) => {
   try {
     const { data } = req.body;
-    const { file } = req;
+    const { files } = req;
 
     let realstateData = {};
     if (data !== undefined) realstateData = JSON.parse(data);
 
-    const result = await ClientService.elevate(req.params.email, realstateData, file, 'realstate');
+    const result = await ClientService.elevate(req.params.email, realstateData, files, 'realstate');
     res.status(201).json(result);
   } catch (error) {
     next(error);
