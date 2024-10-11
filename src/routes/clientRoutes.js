@@ -13,7 +13,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 router.get('/', controller.findAll);
 router.get('/:email', controller.find);
 router.post('/', upload.any(), controller.create);
-router.put('/:email', verifyGoogleToken, verifyJwt, upload.single(), matchEmail, controller.update);
+router.put('/:email', verifyGoogleToken, verifyJwt, upload.any(), matchEmail, controller.update);
 router.put('/:email/elevate', verifyGoogleToken, verifyJwt, matchEmail, controller.elevate);
 router.delete('/:email', verifyGoogleToken, verifyJwt, matchEmail, controller.destroy);
 
