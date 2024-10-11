@@ -405,9 +405,7 @@ export default class PropertyService {
       elevator: params.elevator ? validateBoolean(params.elevator) : oldProperty.elevator,
     };
 
-    if (updatedData.isHighlight && !oldProperty.isHighlight) {
-      await this.checkHighlightLimit(validatedSellerEmail);
-    }
+    if (updatedData.isHighlight && !oldProperty.isHighlight) await this.checkHighlightLimit(validatedSellerEmail);
 
     // TODO: enable this line again when in production
     // if (updatedData.description !== oldProperty.description || files.length > 0) updatedData.verified = 'pending';

@@ -15,13 +15,15 @@ sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 const app = initializeApp(firebaseConfig);
 const storage = getStorage(app);
 
-const generateUniqueHandler = async (handler) => {
-  const user = await prisma.user.findFirst({ where: { handler } });
-  if (!user) {
-    return handler;
-  }
-  const random = Math.floor(1000 + Math.random() * 9000);
-  return generateUniqueHandler(`${handler}${random}`);
+const generateUniqueHandler = async (h) => {
+  let user;
+  let handler = h;
+  do {
+    handler = `${h}${Math.floor(1000 + Math.random() * 9000)}`;
+    // eslint-disable-next-line no-await-in-loop
+    user = await prisma.user.findFirst({ where: { handler } });
+  } while (user);
+  return handler;
 };
 
 export default class UserService {
@@ -104,7 +106,7 @@ export default class UserService {
     const newUser = {
       email: validateEmail(params.email, "O campo 'email' é obrigatório"),
       name: validateString(params.name, "O campo 'nome' é obrigatório"),
-      handler: generateUniqueHandler(validateString((params.email).split('@')[0], "O campo 'apelido' é obrigatório")),
+      handler: await generateUniqueHandler(validateString((params.email).split('@')[0], "O campo 'apelido' é obrigatório")),
       password: params.password ? validatePassword(params.password, "O campo 'senha' é obrigatório") : null,
       type: validateUserType(params.type, "O campo 'tipo' é obrigatório"),
     };
@@ -187,7 +189,7 @@ export default class UserService {
       const updatedData = {
         email: params.email ? validateEmail(params.email) : oldUser.email,
         name: params.name ? validateString(params.name, 'O campo nome é obrigatório') : oldUser.name,
-        handler: params.email ? validateString((params.email).split('@')[0]) : oldUser.handler,
+        handler: params.handler ? await generateUniqueHandler(validateString(params.handler)) : oldUser.handler,
       };
 
       const updatedInfo = {
@@ -233,7 +235,7 @@ export default class UserService {
 
       const oldPhoto = await prisma.userPhoto.findFirst({ where: { email: user.email, type: photo.fieldname } });
       if (oldPhoto) {
-        await prisma.userPhoto.delete({ where: { email: user.email, type: photo.fieldname } });
+        transaction.push(prisma.userPhoto.delete({ where: { id: oldPhoto.id } }));
         const storageRef = ref(storage, `images/users/${user.email}/${oldPhoto.name}`);
         await deleteObject(storageRef);
       }

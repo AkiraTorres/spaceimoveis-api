@@ -8,6 +8,17 @@ import ConfigurableError from '../errors/ConfigurableError.js';
 import { validateEmail, validatePassword, validatePhone, validateString, validateUF, validateUserType } from '../validators/inputValidators.js';
 import UserService from './userService.js';
 
+const generateUniqueHandler = async (h) => {
+  let user;
+  let handler = h;
+  do {
+    handler = `${h}${Math.floor(1000 + Math.random() * 9000)}`;
+    // eslint-disable-next-line no-await-in-loop
+    user = await prisma.user.findFirst({ where: { handler } });
+  } while (user);
+  return handler;
+};
+
 export default class ClientService extends UserService {
   static async elevate(userEmail, params, photos, type) {
     const validatedEmail = validateEmail(userEmail);
@@ -25,7 +36,7 @@ export default class ClientService extends UserService {
       email: params.email ? validateEmail(params.email) : oldUser.email,
       name: params.name ? validateString(params.name, 'O campo nome é obrigatório') : oldUser.name,
       password: params.password ? validatePassword(params.password) : oldUser.password,
-      handler: params.email ? validateString((params.email).split('@')[0]) : oldUser.handler,
+      handler: params.handler ? await generateUniqueHandler(validateString(params.handler)) : oldUser.handler,
       type: validateUserType(type),
     };
 
