@@ -16,7 +16,7 @@ datasource db {
 model User {
   email     String    @id @unique
   name      String
-  handler   String    @unique @db.VarChar(16)
+  handler   String    @unique @db.VarChar(32)
   password  String?
   type      Type      @default(client)
   otp       String?   @db.VarChar(6)
