@@ -12,14 +12,24 @@ const storage = getStorage(app);
 
 export default class PostService {
   static async getPostDetails(id) {
-    return prisma.userPosts.findUnique({
+    const post = await prisma.userPosts.findUnique({
       where: { id, active: true },
       include: {
         PostMedia: true,
         PostLikes: true,
-        PostComments: true,
+        PostComments: { orderBy: { createdAt: 'desc' } },
       },
     });
+
+    const user = await prisma.user.findFirst({ where: { email: post.email }, include: { UserPhoto: { where: { type: 'profile' } } } });
+    const comments = await Promise.all(post.PostComments.map(async (comment) => this.getCommentDetails(comment.id)));
+    return { ...post, name: user.name, photo: (user.UserPhoto[0].url || null), PostComments: comments };
+  }
+
+  static async getCommentDetails(id) {
+    const comment = await prisma.postComments.findUnique({ where: { id } });
+    const user = await prisma.user.findFirst({ where: { email: comment.email }, include: { UserPhoto: { where: { type: 'profile' } } } });
+    return { ...comment, name: user.name, photo: (user.UserPhoto[0].url || null) };
   }
 
   static async getPostsByUserEmail(email, page = 1, limit = 5) {
@@ -48,7 +58,10 @@ export default class PostService {
   }
 
   static async getPostById(id) {
-    return prisma.userPosts.findUnique({ where: { id, active: true }, include: { PostMedia: true } });
+    const post = await prisma.userPosts.findUnique({ where: { id, active: true }, include: { PostMedia: true } });
+    if (!post) throw new ConfigurableError('Post não encontrado', 404);
+
+    return this.getPostDetails(post.id);
   }
 
   static async getPostsByFollowed(email, page, limit) {
@@ -60,7 +73,7 @@ export default class PostService {
     const total = await prisma.userPosts.count({ where: { email: { in: followed }, active: true } });
     const lastPage = Math.ceil(total / limit);
 
-    const result = await prisma.userPosts.findMany({
+    const posts = await prisma.userPosts.findMany({
       where: { email: { in: followed }, active: true },
       include: { PostMedia: true },
       orderBy: { createdAt: 'desc' },
@@ -76,6 +89,8 @@ export default class PostService {
       lastPage,
       total,
     };
+
+    const result = await Promise.all(posts.map(async (post) => this.getPostDetails(post.id)));
 
     return { result, pagination };
   }
@@ -104,7 +119,6 @@ export default class PostService {
     if (m.length > 0) transaction.push(prisma.postMedia.createMany({ data: m }));
 
     const [newPost] = await prisma.$transaction(transaction);
-
     return this.getPostDetails(newPost.id);
   }
 
@@ -140,7 +154,8 @@ export default class PostService {
     const user = await prisma.user.findUnique({ where: { email: validateEmail(email) } });
     if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
 
-    return prisma.postComments.create({ data: { postId: post.id, email: user.email, text: validateString(content) } });
+    const comment = await prisma.postComments.create({ data: { postId: post.id, email: user.email, text: validateString(content) } });
+    return this.getCommentDetails(comment.id);
   }
 
   static async deletePost(id, email) {
