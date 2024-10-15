@@ -69,8 +69,8 @@ export const commentPost = asyncHandler(async (req, res, next) => {
     const { email } = req;
     const { text } = req.body;
 
-    await PostService.commentPost(id, email, text);
-    res.status(201).send();
+    const result = await PostService.commentPost(id, email, text);
+    res.status(201).json(result);
   } catch (error) {
     next(error);
   }
