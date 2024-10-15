@@ -1,10 +1,10 @@
 import sgMail from '@sendgrid/mail';
+import axios from 'axios';
 import dotenv from 'dotenv';
 import { initializeApp } from 'firebase/app';
 import { deleteObject, getDownloadURL, getStorage, ref, uploadBytesResumable } from 'firebase/storage';
 import { v4 as uuid } from 'uuid';
 
-import axios from 'axios';
 import firebaseConfig from '../config/firebase.js';
 import prisma from '../config/prisma.js';
 import ConfigurableError from '../errors/ConfigurableError.js';
