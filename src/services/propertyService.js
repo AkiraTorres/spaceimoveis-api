@@ -548,16 +548,25 @@ export default class PropertyService {
       },
 
       // Filter by prices, using related table PropertiesPrices
-      PropertiesPrices: {
-        rentPrice: filters.announcementType !== undefined && filters.announcementType !== 'sell' ? {
-          gte: filters.minPrice ? validatePrice(filters.minPrice) : 0,
-          lte: filters.maxPrice ? validatePrice(filters.maxPrice) : 999999999,
-        } : undefined,
-        sellPrice: filters.announcementType !== 'rent' ? {
-          gte: filters.minPrice ? validatePrice(filters.minPrice) : 0,
-          lte: filters.maxPrice ? validatePrice(filters.maxPrice) : 999999999,
-        } : undefined,
-      },
+      // Prices with OR condition
+      OR: [
+        filters.announcementType !== 'sell' && {
+          PropertiesPrices: {
+            rentPrice: {
+              gte: filters.minPrice ? validatePrice(filters.minPrice) : 0,
+              lte: filters.maxPrice ? validatePrice(filters.maxPrice) : 999999999,
+            },
+          },
+        },
+        filters.announcementType !== 'rent' && {
+          PropertiesPrices: {
+            sellPrice: {
+              gte: filters.minPrice ? validatePrice(filters.minPrice) : 0,
+              lte: filters.maxPrice ? validatePrice(filters.maxPrice) : 999999999,
+            },
+          },
+        },
+      ].filter(Boolean), // Remove any `false` or `undefined` from the array
 
       // Filter by property amenities, using related table PropertiesCommodities
       PropertiesCommodities: {
