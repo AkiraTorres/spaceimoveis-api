@@ -76,12 +76,35 @@ export const commentPost = asyncHandler(async (req, res, next) => {
   }
 });
 
+export const likeComment = asyncHandler(async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { email } = req;
+
+    res.status(200).json(await PostService.likeComment(id, email));
+  } catch (error) {
+    next(error);
+  }
+});
+
 export const deletePost = asyncHandler(async (req, res, next) => {
   try {
     const { id } = req.params;
     const { email } = req;
 
     await PostService.deletePost(id, email);
+    res.status(204).send();
+  } catch (error) {
+    next(error);
+  }
+});
+
+export const deleteComment = asyncHandler(async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { email } = req;
+
+    await PostService.deleteComment(id, email);
     res.status(204).send();
   } catch (error) {
     next(error);
