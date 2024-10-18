@@ -593,8 +593,8 @@ export default class PropertyService {
     const properties = await prisma.property.findMany({
       where,
       // orderBy: filters.orderBy ? filters.orderBy : { updatedAt: 'desc' },
-      skip: take * (page - 1),
-      take,
+      skip: Number(take * (page - 1)),
+      take: Number(take),
       include: {
         PropertiesPrices: true,
         PropertiesAddresses: true,
