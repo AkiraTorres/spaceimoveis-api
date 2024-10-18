@@ -65,10 +65,11 @@ export default class PostService {
   }
 
   static async getPostsByFollowed(email, page, limit) {
-    const user = await prisma.user.findUnique({ where: { email: validateEmail(email) }, include: { follower: true } });
+    const user = await prisma.user.findUnique({ where: { email: validateEmail(email) }, include: { Follower: true } });
     if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
+    if (user.Follower.length === 0) return { result: [], pagination: { total: 0 } };
 
-    const followed = user.followed.map((f) => f.followedEmail);
+    const followed = user.Follower.map((f) => f.followedEmail);
 
     const total = await prisma.userPosts.count({ where: { email: { in: followed }, active: true } });
     const lastPage = Math.ceil(total / limit);
@@ -158,11 +159,44 @@ export default class PostService {
     return this.getCommentDetails(comment.id);
   }
 
+  static async likeComment(id, email) {
+    const comment = await prisma.postComments.findUnique({ where: { id: validateString(id) } });
+    if (!comment) throw new ConfigurableError('Comentário não encontrado', 404);
+
+    const user = await prisma.user.findUnique({ where: { email: validateEmail(email) } });
+    if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
+
+    const transaction = [];
+    let result = null;
+
+    const like = await prisma.commentLikes.findFirst({ where: { commentId: comment.id, email: user.email } });
+    if (like) {
+      transaction.push(prisma.commentLikes.delete({ where: { id: like.id } }));
+      transaction.push(prisma.postComments.update({ where: { id: comment.id }, data: { likes: { decrement: 1 } } }));
+      result = { liked: false };
+    } else {
+      transaction.push(prisma.commentLikes.create({ data: { commentId: comment.id, email: user.email } }));
+      transaction.push(prisma.postComments.update({ where: { id: comment.id }, data: { likes: { increment: 1 } } }));
+      result = { liked: true };
+    }
+
+    await prisma.$transaction(transaction);
+    return result;
+  }
+
   static async deletePost(id, email) {
     const post = await prisma.userPosts.findUnique({ where: { id, active: true } });
     if (!post) throw new ConfigurableError('Post não encontrado', 404);
     if (post.email !== validateEmail(email)) throw new ConfigurableError('Você não tem permissão para deletar este post', 403);
 
     return prisma.userPosts.update({ where: { id }, data: { active: false, deletedAt: new Date() } });
+  }
+
+  static async deleteComment(id, email) {
+    const comment = await prisma.postComments.findUnique({ where: { id } });
+    if (!comment) throw new ConfigurableError('Comentário não encontrado', 404);
+    if (comment.email !== validateEmail(email)) throw new ConfigurableError('Você não tem permissão para deletar este comentário', 403);
+
+    return prisma.postComments.delete({ where: { id } });
   }
 }
