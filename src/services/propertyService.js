@@ -29,6 +29,7 @@ sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 const app = initializeApp(firebaseConfig);
 const storage = getStorage(app);
+const apiKey = process.env.API_KEY;
 
 export default class PropertyService {
   static async checkHighlightLimit(email) {
@@ -56,6 +57,18 @@ export default class PropertyService {
     property.seller = await UserService.find({ email: property.advertiserEmail });
 
     return property;
+  }
+
+  static async getCoordinates(address) {
+    const encodedAddress = encodeURIComponent(address);
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodedAddress}&key=${apiKey}`;
+
+    const response = await axios.get(url);
+    if (response.data.status === 'OK') {
+      const { location } = response.data.results[0].geometry;
+      return location;
+    }
+    throw new ConfigurableError('Erro ao buscar coordenadas', 500);
   }
 
   static async findAll(page = 1, isHighlight = false, isPublished = true, take = 6) {
@@ -251,24 +264,12 @@ export default class PropertyService {
       state: validateUF(params.state),
       neighborhood: validateString(params.neighborhood, 'O campo "bairro" é obrigatório'),
       complement: params.complement ? validateString(params.complement) : null,
-      latitude: params.latitude ? validateString(params.latitude) : null,
-      longitude: params.longitude ? validateString(params.longitude) : null,
     };
 
-    const encodedAddress = encodeURIComponent(`${addressData.street}, ${addressData.city}, ${addressData.state}`);
-    const url = `https://nominatim.openstreetmap.org/search?q=${encodedAddress}&format=json&addressdetails=1&limit=1`;
-
-    try {
-      const response = await axios.get(url);
-      if (response.data.length <= 0) {
-        throw new ConfigurableError('Endereço não encontrado', 400);
-      }
-      const location = response.data[0];
-      addressData.latitude = location.lat;
-      addressData.longitude = location.lon;
-    } catch (error) {
-      // throw error;
-    }
+    const location = `${addressData.street}, ${addressData.street} - ${addressData.neighborhood}, ${addressData.city} - ${addressData.state}, ${addressData.cep}`;
+    const addressLocation = await this.getCoordinates(location);
+    addressData.latitude = addressLocation.lat.toString();
+    addressData.longitude = addressLocation.lng.toString();
 
     const commoditiesData = { propertyId: data.id };
     if (params.pool !== undefined) commoditiesData.pool = validateBoolean(params.pool);
@@ -366,25 +367,17 @@ export default class PropertyService {
 
     const updatedAddress = {
       cep: params.cep ? validateCep(params.cep) : oldProperty.cep,
-      address: params.address ? validateString(params.address) : oldProperty.address,
       number: params.number ? validateString(params.number) : oldProperty.number,
       city: params.city ? validateString(params.city) : oldProperty.city,
       state: params.state ? validateUF(params.state) : oldProperty.state,
       neighborhood: params.neighborhood ? validateString(params.neighborhood) : oldProperty.neighborhood,
       complement: params.complement ? validateString(params.complement) : oldProperty.complement,
-      latitude: params.latitude ? validateString(params.latitude) : oldProperty.latitude,
-      longitude: params.longitude ? validateString(params.longitude) : oldProperty.longitude,
     };
 
-    const encodedAddress = encodeURIComponent(`${updatedAddress.street}, ${updatedAddress.city}, ${updatedAddress.state}`);
-    const url = `https://nominatim.openstreetmap.org/search?q=${encodedAddress}&format=json&addressdetails=1&limit=1`;
-
-    const response = await axios.get(url);
-    if (response.data.length > 0) {
-      const location = response.data[0];
-      updatedAddress.latitude = location.lat;
-      updatedAddress.longitude = location.lon;
-    }
+    const location = `${updatedAddress.street}, ${updatedAddress.street} - ${updatedAddress.neighborhood}, ${updatedAddress.city} - ${updatedAddress.state}, ${updatedAddress.cep}`;
+    const addressLocation = await this.getCoordinates(location);
+    updatedAddress.latitude = addressLocation.lat.toString() || oldProperty.latitude;
+    updatedAddress.longitude = addressLocation.lng.toString() || oldProperty.longitude;
 
     const updatedCommodities = {
       pool: params.pool ? validateBoolean(params.pool) : oldProperty.pool,
