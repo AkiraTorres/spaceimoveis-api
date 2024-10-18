@@ -17,7 +17,7 @@ export default class FollowerService {
     const follow = await prisma.follower.findFirst({ where: { followerEmail: validatedFollowerEmail, followedEmail: validatedFollowedEmail } });
     if (follow) throw new ConfigurableError('Já seguindo', 409);
 
-    return prisma.follower.create({ followerEmail, followedEmail });
+    return prisma.follower.create({ data: { followerEmail, followedEmail } });
   }
 
   static async unfollow(followerEmail, followedEmail) {
@@ -33,31 +33,69 @@ export default class FollowerService {
     const follow = await prisma.follower.findFirst({ where: { followerEmail: validatedFollowerEmail, followedEmail: validatedFollowedEmail } });
     if (!follow) throw new ConfigurableError('Não está seguindo o usuário', 409);
 
-    return prisma.follower.delete({ where: { followerEmail, followedEmail } });
+    return prisma.follower.delete({ where: { id: follow.id } });
   }
 
-  static async getFollowers(email) {
+  static async getFollowers(email, page = 1, limit = 10) {
     const validatedEmail = validateEmail(email);
 
     const followed = await UserService.find({ email: validatedEmail });
     if (!followed) throw new ConfigurableError('Usuário não encontrado', 404);
 
-    const followers = await prisma.follower.findMany({ where: { followedEmail: validatedEmail } });
+    const total = await prisma.follower.count({ where: { followedEmail: validatedEmail } });
+    const lastPage = Math.ceil(total / limit);
+
+    const followers = await prisma.follower.findMany({
+      where: { followedEmail: validatedEmail },
+      orderBy: { createdAt: 'desc' },
+      take: Number(limit),
+      skip: Number(limit * (page - 1)),
+    });
     if (!followers) throw new ConfigurableError('Você não tem seguidores', 404);
 
-    return followers;
+    const result = await Promise.all(followers.map(async (follow) => UserService.userDetails(follow.followerEmail)));
+
+    const pagination = {
+      path: '/follow/followers',
+      page,
+      prev_page_url: page - 1 >= 1 ? page - 1 : null,
+      next_page_url: Number(page) + 1 <= lastPage ? Number(page) + 1 : null,
+      lastPage,
+      total,
+    };
+
+    return { result, pagination };
   }
 
-  static async getFollowing(email) {
+  static async getFollowing(email, page = 1, limit = 10) {
     const validatedEmail = validateEmail(email);
 
     const follower = await UserService.find({ email: validatedEmail });
     if (!follower) throw new ConfigurableError('Usuário não encontrado', 404);
 
-    const following = await prisma.follower.findMany({ where: { followerEmail: validatedEmail } });
+    const total = await prisma.follower.count({ where: { followerEmail: validatedEmail } });
+    const lastPage = Math.ceil(total / limit);
+
+    const following = await prisma.follower.findMany({
+      where: { followerEmail: validatedEmail },
+      orderBy: { createdAt: 'desc' },
+      take: Number(limit),
+      skip: Number(limit * (page - 1)),
+    });
     if (!following) throw new ConfigurableError('Você não está seguindo ninguém', 404);
 
-    return following;
+    const result = await Promise.all(following.map(async (follow) => UserService.userDetails(follow.followedEmail)));
+
+    const pagination = {
+      path: '/follow/following',
+      page,
+      prev_page_url: page - 1 >= 1 ? page - 1 : null,
+      next_page_url: Number(page) + 1 <= lastPage ? Number(page) + 1 : null,
+      lastPage,
+      total,
+    };
+
+    return { result, pagination };
   }
 
   static async isFollowing(followerEmail, followedEmail) {

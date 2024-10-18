@@ -27,8 +27,9 @@ export const unfollow = asyncHandler(async (req, res, next) => {
 export const getFollowers = asyncHandler(async (req, res, next) => {
   try {
     const { email } = req.params;
+    const { page = 1, limit = 10 } = req.query;
 
-    res.status(200).json(await FollowerService.getFollowers(email));
+    res.status(200).json(await FollowerService.getFollowers(email, page, limit));
   } catch (error) {
     next(error);
   }
@@ -37,8 +38,9 @@ export const getFollowers = asyncHandler(async (req, res, next) => {
 export const getFollowing = asyncHandler(async (req, res, next) => {
   try {
     const { email } = req.params;
+    const { page = 1, limit = 10 } = req.query;
 
-    res.status(200).json(await FollowerService.getFollowing(email));
+    res.status(200).json(await FollowerService.getFollowing(email, page, limit));
   } catch (error) {
     next(error);
   }
