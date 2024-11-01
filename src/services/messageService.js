@@ -82,7 +82,8 @@ export default class MessageService {
     const validatedEmail = validateEmail(sender);
     const validatedChatId = validateString(chatId);
     const type = validateMessageType(t);
-    const validatedText = text === '' || text === undefined ? '' : validateString(text);
+    // const validatedText = text === '' || text === undefined ? '' : validateString(text);
+    const validatedText = text;
 
     const user = await UserService.find({ email: validatedEmail });
     if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
