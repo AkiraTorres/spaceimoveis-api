@@ -60,30 +60,13 @@ export default class MessageService {
 
     messages.sort((a, b) => a.createdAt - b.createdAt);
     return messages;
-
-    // return Promise.all(messages.map(async (msg) => {
-    //   const editedMsg = msg;
-
-    //   const sender = chat.user1.email === editedMsg.sender ? chat.user1 : chat.user2;
-    //   const receiver = chat.user1.email === editedMsg.sender ? chat.user2 : chat.user1;
-
-    //   editedMsg.senderName = sender.name;
-    //   editedMsg.senderEmail = sender.email;
-    //   editedMsg.senderProfile = sender.profile;
-    //   editedMsg.receiverName = receiver.name;
-    //   editedMsg.receiverEmail = receiver.email;
-    //   editedMsg.receiverProfile = receiver.profile;
-
-    //   return editedMsg;
-    // }));
   }
 
   static async createFileMessage({ chatId, sender, file, text, t, fileName, contentType, platform }) {
     const validatedEmail = validateEmail(sender);
     const validatedChatId = validateString(chatId);
     const type = validateMessageType(t);
-    // const validatedText = text === '' || text === undefined ? '' : validateString(text);
-    const validatedText = text;
+    const validatedText = text === '' || text === undefined ? '' : validateString(text);
 
     const user = await UserService.find({ email: validatedEmail });
     if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
@@ -97,12 +80,10 @@ export default class MessageService {
 
     const msgId = uuid();
 
-    // return true;
-
     let uploadFile = file.buffer;
     let name = fileName;
     let ct = contentType;
-    if (type === 'image' || platform === 'mobile') {
+    if (['image', 'audio'].includes(type) || platform === 'mobile') {
       const buf = Buffer.from(file, 'base64');
       const filename = fileURLToPath(import.meta.url);
       const dirname = path.dirname(filename);
@@ -112,7 +93,9 @@ export default class MessageService {
       await fs.writeFile(fileFullPath, buf);
       uploadFile = await fs.readFile(fileFullPath);
 
-      if (type === 'audio') {
+      fs.rm(path.join(dirname, 'public'), { recursive: true, force: true });
+
+      if (type === 'audio' && platform === 'mobile') {
         name = name.replace(/\.aac$/, '.wav');
         ct = 'audio/wav';
       }
@@ -128,17 +111,9 @@ export default class MessageService {
       throw new ConfigurableError('Erro ao salvar arquivo', 500);
     }
 
-    const message = await prisma.message.create({ data: {
-      id: msgId,
-      chatId: validatedChatId,
-      senderEmail: validatedEmail,
-      text: validatedText,
-      url: downloadUrl,
-      filename: fileName,
-      type,
-    } });
+    const data = { chatId: validatedChatId, senderEmail: validatedEmail, text: validatedText, url: downloadUrl, filename: name, type };
 
-    return message;
+    return prisma.message.create({ data });
   }
 
   static async deleteMessage(id, sender) {
