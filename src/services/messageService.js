@@ -97,6 +97,8 @@ export default class MessageService {
 
     const msgId = uuid();
 
+    // return true;
+
     let uploadFile = file.buffer;
     let name = fileName;
     let ct = contentType;
@@ -132,7 +134,6 @@ export default class MessageService {
       senderEmail: validatedEmail,
       text: validatedText,
       url: downloadUrl,
-      fileName,
       type,
     } });
 
