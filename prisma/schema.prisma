@@ -250,6 +250,7 @@ model Message {
   senderEmail String?
   text        String      @db.VarChar(16384)
   url         String?     @db.VarChar(2048)
+  filename    String?     @db.VarChar(255)
   isDeleted   Boolean     @default(false) @map("is_deleted")
   type        MessageType @default(text)
   createdAt   DateTime    @default(now()) @map("created_at")
