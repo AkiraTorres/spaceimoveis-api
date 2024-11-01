@@ -28,7 +28,7 @@ io.on('connection', (socket) => {
         sender: data.email,
         file: data.file,
         text: data.text,
-        type: data.type,
+        t: data.type,
         contentType: data.contentType,
         fileName: data.fileName,
         platform: data.platform,
@@ -39,7 +39,7 @@ io.on('connection', (socket) => {
         callback(error);
       } catch (err) {
         // eslint-disable-next-line no-console
-        console.error(err);
+        console.error(error);
       }
     }
   });
