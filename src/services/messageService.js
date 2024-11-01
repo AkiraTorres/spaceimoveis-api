@@ -134,6 +134,7 @@ export default class MessageService {
       senderEmail: validatedEmail,
       text: validatedText,
       url: downloadUrl,
+      filename: fileName,
       type,
     } });
 
