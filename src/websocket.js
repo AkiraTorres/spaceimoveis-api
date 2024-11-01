@@ -35,7 +35,12 @@ io.on('connection', (socket) => {
       });
       io.to(data.chatId).emit('message', msgRes);
     } catch (error) {
-      callback(error);
+      try {
+        callback(error);
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error(err);
+      }
     }
   });
 
