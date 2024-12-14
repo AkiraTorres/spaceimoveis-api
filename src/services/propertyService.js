@@ -207,6 +207,8 @@ export default class PropertyService {
     const property = await prisma.property.findFirst({ where: { id: validatedId } });
     if (!property) throw new ConfigurableError('Imóvel não encontrado', 404);
 
+    await prisma.visualization.create({ data: { propertyId: validatedId } });
+
     return prisma.property.update({ where: { id: validatedId }, data: { timesSeen: (property.timesSeen + 1) } });
     // await prisma.sharedProperties.update({ where: { id: sharedProperty.id, email: validatedEmail }, data: { accepted: true } });
   }
