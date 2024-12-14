@@ -34,7 +34,7 @@ export default class SellerDashboardService {
   static async propertiesData(email) {
     const validatedEmail = validateEmail(email);
     const now = new Date();
-    const beginYear = new Date(now.getFullYear() - 1, 11, 31);
+    const beginYear = new Date(now.getFullYear(), now.getMonth() - 11, 1);
 
     const user = await UserService.find({ email: validatedEmail });
     if (!user) throw new ConfigurableError('Usuário não encontrado com o email informado', 404);
@@ -45,20 +45,27 @@ export default class SellerDashboardService {
     });
 
     const propertiesIds = properties.map((property) => property.id);
-    let months = [];
+    const months = [];
 
-    for (let i = 0; i < now.getMonth(); i++) {
-      const month = properties.filter((property) => property.createdAt.getMonth() === i);
+    for (let i = 11; i >= 0; i--) {
+      const targetDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const nextMonth = new Date(targetDate.getFullYear(), targetDate.getMonth() + 1, 1);
+      const month = properties.filter(
+        (property) => property.createdAt >= targetDate && property.createdAt < nextMonth,
+      );
+
       const views = month.reduce((acc, property) => acc + property.timesSeen, 0);
-
-      months = [...months, { month: i, views }];
+      months.push({ month: targetDate.getMonth(), year: targetDate.getFullYear(), views });
     }
 
     return Promise.all(months.map(async (month) => {
+      const start = new Date(month.year, month.month, 1);
+      const end = new Date(month.year, month.month + 1, 1);
+
       const likes = await prisma.favorite.count({
         where: {
           propertyId: { in: propertiesIds },
-          createdAt: { gte: new Date(now.getFullYear(), month.month, 1), lt: new Date(now.getFullYear(), month.month + 1, 0) },
+          createdAt: { gte: start, lt: end },
         },
       });
 
@@ -85,6 +92,8 @@ export default class SellerDashboardService {
   static async propertiesViewsMonthly(email) {
     const dataset = await this.propertiesData(email);
 
+    console.log(dataset);
+
     const monthNames = [
       'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
       'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
@@ -109,5 +118,22 @@ export default class SellerDashboardService {
     const sorted = properties.sort((a, b) => b.timesSeen - a.timesSeen);
 
     return Promise.all(sorted.slice(0, 5).map(async (property) => PropertyService.getPropertyDetails(property.id)));
+  }
+
+  static async propertiesProportions(email) {
+    const validatedEmail = validateEmail(email);
+
+    const user = await UserService.find({ email: validatedEmail });
+    if (!user) throw new ConfigurableError('Usuário não encontrado com o email informado', 404);
+
+    const properties = await prisma.property.findMany({ where: { advertiserEmail: validatedEmail } });
+
+    const total = properties.length;
+    const house = properties.filter((property) => property.propertyType === 'house').length;
+    const apartment = properties.filter((property) => property.propertyType === 'apartment').length;
+    const land = properties.filter((property) => property.propertyType === 'land').length;
+    const farm = properties.filter((property) => property.propertyType === 'farm').length;
+
+    return { total, house, apartment, land, farm };
   }
 }

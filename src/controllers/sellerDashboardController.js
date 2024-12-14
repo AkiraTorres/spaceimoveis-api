@@ -66,3 +66,14 @@ export const propertiesFilter = asyncHandler(async (req, res, next) => {
     next(error);
   }
 });
+
+export const propertiesProportions = asyncHandler(async (req, res, next) => {
+  try {
+    const { email } = req;
+    const result = await SellerDashboardService.propertiesProportions(email);
+
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+});
