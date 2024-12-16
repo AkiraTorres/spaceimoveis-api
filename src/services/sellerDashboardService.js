@@ -41,70 +41,42 @@ export default class SellerDashboardService {
 
     const properties = await prisma.property.findMany({
       where: { createdAt: { gte: beginYear, lte: now }, advertiserEmail: email },
-      select: { id: true, createdAt: true, timesSeen: true },
+      select: { id: true, createdAt: true },
     });
 
     const propertiesIds = properties.map((property) => property.id);
-    const months = [];
 
-    for (let i = 11; i >= 0; i--) {
-      const targetDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const nextMonth = new Date(targetDate.getFullYear(), targetDate.getMonth() + 1, 1);
-      const month = properties.filter(
-        (property) => property.createdAt >= targetDate && property.createdAt < nextMonth,
-      );
+    const months = await Promise.all(
+      Array.from({ length: 12 }, async (_, i) => {
+        const targetDate = new Date(now.getFullYear(), now.getMonth() - (11 - i), 1);
+        const nextMonth = new Date(targetDate.getFullYear(), targetDate.getMonth() + 1, 1);
 
-      const views = month.reduce((acc, property) => acc + property.timesSeen, 0);
-      months.push({ month: targetDate.getMonth(), year: targetDate.getFullYear(), views });
-    }
+        const views = await prisma.visualization.count({
+          where: {
+            propertyId: { in: propertiesIds },
+            createdAt: { gte: targetDate, lt: nextMonth },
+          },
+        });
 
-    return Promise.all(months.map(async (month) => {
-      const start = new Date(month.year, month.month, 1);
-      const end = new Date(month.year, month.month + 1, 1);
+        return { month: targetDate.getMonth(), year: targetDate.getFullYear(), views };
+      }),
+    );
 
-      const likes = await prisma.favorite.count({
-        where: {
-          propertyId: { in: propertiesIds },
-          createdAt: { gte: start, lt: end },
-        },
-      });
+    return Promise.all(
+      months.map(async (month) => {
+        const start = new Date(month.year, month.month, 1);
+        const end = new Date(month.year, month.month + 1, 1);
 
-      return { ...month, likes };
-    }));
-  }
+        const likes = await prisma.favorite.count({
+          where: {
+            propertyId: { in: propertiesIds },
+            createdAt: { gte: start, lt: end },
+          },
+        });
 
-  static async propertiesLikesMonthly(email) {
-    const dataset = await this.propertiesData(email);
-
-    const monthNames = [
-      'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
-    ];
-
-    return dataset.map((data) => {
-      const m = data.month;
-      const value = data.likes;
-
-      return { month: monthNames[m], value };
-    });
-  }
-
-  static async propertiesViewsMonthly(email) {
-    const dataset = await this.propertiesData(email);
-
-    console.log(dataset);
-
-    const monthNames = [
-      'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
-    ];
-
-    return dataset.map((data) => {
-      const m = data.month;
-      const value = data.views;
-
-      return { month: monthNames[m], value };
-    });
+        return { ...month, likes };
+      }),
+    );
   }
 
   static async topProperties(email) {

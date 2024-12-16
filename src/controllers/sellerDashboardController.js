@@ -23,20 +23,10 @@ export const totalPropertiesViews = asyncHandler(async (req, res, next) => {
   }
 });
 
-export const propertiesLikesMonthly = asyncHandler(async (req, res, next) => {
+export const propertiesData = asyncHandler(async (req, res, next) => {
   try {
     const { email } = req;
-    const result = await SellerDashboardService.propertiesLikesMonthly(email);
-    res.status(200).json(result);
-  } catch (error) {
-    next(error);
-  }
-});
-
-export const propertiesViewsMonthly = asyncHandler(async (req, res, next) => {
-  try {
-    const { email } = req;
-    const result = await SellerDashboardService.propertiesViewsMonthly(email);
+    const result = await SellerDashboardService.propertiesData(email);
     res.status(200).json(result);
   } catch (error) {
     next(error);
