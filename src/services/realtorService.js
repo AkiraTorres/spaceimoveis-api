@@ -78,4 +78,69 @@ export default class RealtorService extends UserService {
 
     return { result, pagination };
   }
+
+  static translateDay(day) {
+    const daysMap = {
+      domingo: 'sunday',
+      segunda: 'monday',
+      terça: 'tuesday',
+      quarta: 'wednesday',
+      quinta: 'thursday',
+      sexta: 'friday',
+      sábado: 'saturday',
+      sunday: 'domingo',
+      monday: 'segunda',
+      tuesday: 'terça',
+      wednesday: 'quarta',
+      thursday: 'quinta',
+      friday: 'sexta',
+      saturday: 'sábado',
+    };
+
+    return daysMap[day] || null;
+  }
+
+  static async getAvailability(email) {
+    const validatedEmail = validateEmail(email);
+    const user = await prisma.user.findFirst({ where: { email: validatedEmail } });
+    if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
+    if (!['realtor', 'realstate'].includes(user.type)) throw new ConfigurableError('Usuário não é um corretor/imobiliária', 400);
+
+    const availability = await prisma.availableTime.findMany({ where: { advertiserEmail: validatedEmail } });
+
+    return availability.map((day) => {
+      const { weekDay, start, end } = day;
+      return { dia: this.translateDay(weekDay), inicio: start, fim: end };
+    });
+  }
+
+  static async setAvailability(email, availability) {
+    const validatedEmail = validateEmail(email);
+    const user = await prisma.user.findFirst({ where: { email: validatedEmail } });
+    if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
+    if (!['realtor', 'realstate'].includes(user.type)) throw new ConfigurableError('Usuário não é um corretor/imobiliária', 400);
+
+    let transformedAvailability = [];
+    if (availability) {
+      transformedAvailability = availability.map((day) => {
+        const { dia, inicio: start, fim: end } = day;
+        const weekDay = this.translateDay(dia);
+
+        if (!weekDay) throw new ConfigurableError('Dia da semana inválido', 400);
+        if (!start || !end) throw new ConfigurableError('Horário de início e/ou fim não informados', 400);
+
+        return { advertiserEmail: validatedEmail, weekDay, start, end };
+      });
+    }
+
+    const transactions = [
+      prisma.availableTime.deleteMany({ where: { advertiserEmail: validatedEmail } }),
+    ];
+
+    if (transformedAvailability.length > 0) {
+      transactions.push(prisma.availableTime.createMany({ data: transformedAvailability }));
+    }
+
+    return prisma.$transaction(transactions);
+  }
 }

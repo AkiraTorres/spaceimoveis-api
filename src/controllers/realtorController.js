@@ -89,3 +89,22 @@ export const destroy = asyncHandler(async (req, res, next) => {
     next(error);
   }
 });
+
+export const getAvailability = asyncHandler(async (req, res, next) => {
+  try {
+    const result = await RealtorService.getAvailability(req.params.email);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+export const setAvailability = asyncHandler(async (req, res, next) => {
+  try {
+    const { disponibilidade } = req.body;
+    const result = await RealtorService.setAvailability(req.email, disponibilidade);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+});
