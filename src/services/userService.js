@@ -330,12 +330,13 @@ export default class UserService {
   static async contact({ name, email, message, type }) {
     const newData = {
       id: uuid(),
-      user_name: validateString(name, 'O campo nome é obrigatório'),
-      user_email: validateEmail(email, 'O campo email é obrigatório'),
-      user_type: type ? validateString(type) : null,
+      userName: validateString(name, 'O campo nome é obrigatório'),
+      userEmail: validateEmail(email, 'O campo email é obrigatório'),
+      userType: type ? validateUserType(type) : null,
       message: validateString(message, 'O campo mensagem é obrigatório'),
     };
-    await prisma.userMessages.create(newData);
+
+    await prisma.userMessages.create({ data: newData });
 
     return { message: 'Mensagem enviada com sucesso!' };
   }
