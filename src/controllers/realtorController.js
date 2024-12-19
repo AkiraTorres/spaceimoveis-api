@@ -108,3 +108,23 @@ export const setAvailability = asyncHandler(async (req, res, next) => {
     next(error);
   }
 });
+
+export const approveAppointment = asyncHandler(async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const result = await RealtorService.approveAppointment(id);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+export const rejectAppointment = asyncHandler(async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const result = await RealtorService.rejectAppointment(id);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+});

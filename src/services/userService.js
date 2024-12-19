@@ -340,4 +340,59 @@ export default class UserService {
 
     return { message: 'Mensagem enviada com sucesso!' };
   }
+
+  static async findAllAppointments(email) {
+    const validatedEmail = validateEmail(email);
+    const user = await prisma.user.findFirst({ where: { email: validatedEmail } });
+    if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
+    // if (!['realtor', 'realstate'].includes(user.type)) throw new ConfigurableError('Usuário não é um corretor/imobiliária', 400);
+
+    return prisma.appointment.findMany({
+      where: {
+        OR: [
+          { advertiserEmail: validatedEmail },
+          { solicitorEmail: validatedEmail },
+        ],
+      },
+    });
+  }
+
+  static async findAppointmentById(appointmentId, email) {
+    const validatedId = validateString(appointmentId);
+    const validatedEmail = validateEmail(email);
+
+    const appointment = await prisma.appointment.findFirst({
+      where: {
+        id: validatedId,
+        OR: [
+          { advertiserEmail: validatedEmail },
+          { solicitorEmail: validatedEmail },
+        ],
+      },
+    });
+    if (!appointment) throw new ConfigurableError('Agendamento não encontrado', 404);
+
+    return appointment;
+  }
+
+  static translateDay(day) {
+    const daysMap = {
+      domingo: 'sunday',
+      segunda: 'monday',
+      terça: 'tuesday',
+      quarta: 'wednesday',
+      quinta: 'thursday',
+      sexta: 'friday',
+      sábado: 'saturday',
+      sunday: 'domingo',
+      monday: 'segunda',
+      tuesday: 'terça',
+      wednesday: 'quarta',
+      thursday: 'quinta',
+      friday: 'sexta',
+      saturday: 'sábado',
+    };
+
+    return daysMap[day] || null;
+  }
 }

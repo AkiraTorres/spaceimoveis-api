@@ -79,32 +79,11 @@ export default class RealtorService extends UserService {
     return { result, pagination };
   }
 
-  static translateDay(day) {
-    const daysMap = {
-      domingo: 'sunday',
-      segunda: 'monday',
-      terça: 'tuesday',
-      quarta: 'wednesday',
-      quinta: 'thursday',
-      sexta: 'friday',
-      sábado: 'saturday',
-      sunday: 'domingo',
-      monday: 'segunda',
-      tuesday: 'terça',
-      wednesday: 'quarta',
-      thursday: 'quinta',
-      friday: 'sexta',
-      saturday: 'sábado',
-    };
-
-    return daysMap[day] || null;
-  }
-
   static async getAvailability(email) {
     const validatedEmail = validateEmail(email);
     const user = await prisma.user.findFirst({ where: { email: validatedEmail } });
     if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
-    if (!['realtor', 'realstate'].includes(user.type)) throw new ConfigurableError('Usuário não é um corretor/imobiliária', 400);
+    // if (!['realtor', 'realstate'].includes(user.type)) throw new ConfigurableError('Usuário não é um corretor/imobiliária', 400);
 
     const availability = await prisma.availableTime.findMany({ where: { advertiserEmail: validatedEmail } });
 
@@ -126,7 +105,6 @@ export default class RealtorService extends UserService {
         const { dia, inicio: start, fim: end } = day;
         const weekDay = this.translateDay(dia);
 
-        if (!weekDay) throw new ConfigurableError('Dia da semana inválido', 400);
         if (!start || !end) throw new ConfigurableError('Horário de início e/ou fim não informados', 400);
 
         return { advertiserEmail: validatedEmail, weekDay, start, end };
@@ -142,5 +120,21 @@ export default class RealtorService extends UserService {
     }
 
     return prisma.$transaction(transactions);
+  }
+
+  static async approveAppointment(appointmentId, email) {
+    const validatedId = validateString(appointmentId);
+    const appointment = await this.findAppointmentById(validatedId, email);
+    if (!appointment) throw new ConfigurableError('Agendamento não encontrado', 404);
+
+    return prisma.appointment.update({ where: { id: validatedId }, data: { status: 'accepted' } });
+  }
+
+  static async rejectAppointment(appointmentId) {
+    const validatedId = validateString(appointmentId);
+    const appointment = await prisma.appointment.findFirst({ where: { id: validatedId } });
+    if (!appointment) throw new ConfigurableError('Agendamento não encontrado', 404);
+
+    return prisma.appointment.update({ where: { id: validatedId }, data: { status: 'rejected' } });
   }
 }
