@@ -44,6 +44,8 @@ model User {
   PostLikes          PostLikes[]
   UserPhoto          UserPhoto[]
   CommentLikes       CommentLikes[]
+  Appointment        Appointment[]
+  AvailableTime      AvailableTime[]
 
   @@map("users")
 }
@@ -231,6 +233,17 @@ model Favorite {
   @@map("favorites")
 }
 
+model Visualization {
+  id         String   @id @unique @default(uuid())
+  propertyId String   @map("property_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at")
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@map("visualizations")
+}
+
 model Follower {
   id            String   @id @unique @default(uuid())
   followerEmail String   @map("follower_email")
@@ -295,6 +308,8 @@ model Property {
   PropertiesCommodities PropertiesCommodities?
   PropertyPictures      PropertyPictures[]
   ReasonRejected        ReasonRejectedProperty[]
+  Visualization         Visualization[]
+  Appointment           Appointment[]
 
   @@map("properties")
 }
@@ -388,6 +403,38 @@ model UserMessages {
   @@map("users_messages")
 }
 
+model Appointment {
+  id              String            @id @unique @default(uuid())
+  title           String
+  propertyId      String            @map("property_id")
+  solicitorEmail  String            @map("user_email")
+  advertiserEmail String            @map("advertiser_email")
+  start           DateTime
+  end             DateTime
+  status          AppointmentStatus @default(pending)
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @default(now()) @updatedAt @map("updated_at")
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [solicitorEmail], references: [email], onDelete: Cascade)
+
+  @@map("appointments")
+}
+
+model AvailableTime {
+  id              String   @id @unique @default(uuid())
+  advertiserEmail String   @map("advertiser_email")
+  weekDay         Week     @map("week_day")
+  start           String
+  end             String
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at")
+
+  advertiser User @relation(fields: [advertiserEmail], references: [email], onDelete: Cascade)
+
+  @@map("available_times")
+}
+
 enum AnnouncementType {
   rent
   sell
@@ -428,4 +475,20 @@ enum Verified {
   pending
   verified
   rejected
+}
+
+enum AppointmentStatus {
+  pending
+  accepted
+  rejected
+}
+
+enum Week {
+  sunday
+  monday
+  tuesday
+  wednesday
+  thursday
+  friday
+  saturday
 }

@@ -34,68 +34,49 @@ export default class SellerDashboardService {
   static async propertiesData(email) {
     const validatedEmail = validateEmail(email);
     const now = new Date();
-    const beginYear = new Date(now.getFullYear() - 1, 11, 31);
+    const beginYear = new Date(now.getFullYear(), now.getMonth() - 11, 1);
 
     const user = await UserService.find({ email: validatedEmail });
     if (!user) throw new ConfigurableError('Usuário não encontrado com o email informado', 404);
 
     const properties = await prisma.property.findMany({
       where: { createdAt: { gte: beginYear, lte: now }, advertiserEmail: email },
-      select: { id: true, createdAt: true, timesSeen: true },
+      select: { id: true, createdAt: true },
     });
 
     const propertiesIds = properties.map((property) => property.id);
-    let months = [];
 
-    for (let i = 0; i < now.getMonth(); i++) {
-      const month = properties.filter((property) => property.createdAt.getMonth() === i);
-      const views = month.reduce((acc, property) => acc + property.timesSeen, 0);
+    const months = await Promise.all(
+      Array.from({ length: 12 }, async (_, i) => {
+        const targetDate = new Date(now.getFullYear(), now.getMonth() - (11 - i), 1);
+        const nextMonth = new Date(targetDate.getFullYear(), targetDate.getMonth() + 1, 1);
 
-      months = [...months, { month: i, views }];
-    }
+        const views = await prisma.visualization.count({
+          where: {
+            propertyId: { in: propertiesIds },
+            createdAt: { gte: targetDate, lt: nextMonth },
+          },
+        });
 
-    return Promise.all(months.map(async (month) => {
-      const likes = await prisma.favorite.count({
-        where: {
-          propertyId: { in: propertiesIds },
-          createdAt: { gte: new Date(now.getFullYear(), month.month, 1), lt: new Date(now.getFullYear(), month.month + 1, 0) },
-        },
-      });
+        return { month: targetDate.getMonth(), year: targetDate.getFullYear(), views };
+      }),
+    );
 
-      return { ...month, likes };
-    }));
-  }
+    return Promise.all(
+      months.map(async (month) => {
+        const start = new Date(month.year, month.month, 1);
+        const end = new Date(month.year, month.month + 1, 1);
 
-  static async propertiesLikesMonthly(email) {
-    const dataset = await this.propertiesData(email);
+        const likes = await prisma.favorite.count({
+          where: {
+            propertyId: { in: propertiesIds },
+            createdAt: { gte: start, lt: end },
+          },
+        });
 
-    const monthNames = [
-      'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
-    ];
-
-    return dataset.map((data) => {
-      const m = data.month;
-      const value = data.likes;
-
-      return { month: monthNames[m], value };
-    });
-  }
-
-  static async propertiesViewsMonthly(email) {
-    const dataset = await this.propertiesData(email);
-
-    const monthNames = [
-      'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
-    ];
-
-    return dataset.map((data) => {
-      const m = data.month;
-      const value = data.views;
-
-      return { month: monthNames[m], value };
-    });
+        return { ...month, likes };
+      }),
+    );
   }
 
   static async topProperties(email) {
@@ -109,5 +90,22 @@ export default class SellerDashboardService {
     const sorted = properties.sort((a, b) => b.timesSeen - a.timesSeen);
 
     return Promise.all(sorted.slice(0, 5).map(async (property) => PropertyService.getPropertyDetails(property.id)));
+  }
+
+  static async propertiesProportions(email) {
+    const validatedEmail = validateEmail(email);
+
+    const user = await UserService.find({ email: validatedEmail });
+    if (!user) throw new ConfigurableError('Usuário não encontrado com o email informado', 404);
+
+    const properties = await prisma.property.findMany({ where: { advertiserEmail: validatedEmail } });
+
+    const total = properties.length;
+    const house = properties.filter((property) => property.propertyType === 'house').length;
+    const apartment = properties.filter((property) => property.propertyType === 'apartment').length;
+    const land = properties.filter((property) => property.propertyType === 'land').length;
+    const farm = properties.filter((property) => property.propertyType === 'farm').length;
+
+    return { total, house, apartment, land, farm };
   }
 }

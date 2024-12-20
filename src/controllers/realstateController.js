@@ -89,3 +89,42 @@ export const destroy = asyncHandler(async (req, res, next) => {
     next(error);
   }
 });
+
+export const getAvailability = asyncHandler(async (req, res, next) => {
+  try {
+    const result = await RealstateService.getAvailability(req.params.email);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+export const setAvailability = asyncHandler(async (req, res, next) => {
+  try {
+    const { disponibilidade } = req.body;
+    const result = await RealstateService.setAvailability(req.email, disponibilidade);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+export const approveAppointment = asyncHandler(async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const result = await RealstateService.approveAppointment(id);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+export const rejectAppointment = asyncHandler(async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const result = await RealstateService.rejectAppointment(id);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+});

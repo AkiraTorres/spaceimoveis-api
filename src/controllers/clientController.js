@@ -1,6 +1,7 @@
 import asyncHandler from 'express-async-handler';
 
 import ClientService from '../services/clientService.js';
+import RealtorService from '../services/realtorService.js';
 
 export const findAll = asyncHandler(async (req, res, next) => {
   try {
@@ -71,6 +72,21 @@ export const elevate = asyncHandler(async (req, res, next) => {
 
     const result = await ClientService.elevate(req.params.email, clientData, file);
     res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+export const MakeAnAppointment = asyncHandler(async (req, res, next) => {
+  try {
+    const data = req.body;
+    const userEmail = req.email;
+    const { advertiserEmail } = data;
+    const advertiserAvailability = await RealtorService.getAvailability(advertiserEmail);
+
+    const result = await ClientService.MakeAnAppointment(userEmail, data, advertiserEmail, advertiserAvailability);
+
+    res.status(201).json(result);
   } catch (error) {
     next(error);
   }

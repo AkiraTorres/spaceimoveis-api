@@ -9,9 +9,9 @@ const router = Express.Router();
 
 router.get('/likes', verifyGoogleToken, verifyJwt, controller.totalPropertiesLikes);
 router.get('/views', verifyGoogleToken, verifyJwt, controller.totalPropertiesViews);
-router.get('/likes/monthly', verifyGoogleToken, verifyJwt, controller.propertiesLikesMonthly);
-router.get('/views/monthly', verifyGoogleToken, verifyJwt, controller.propertiesViewsMonthly);
 router.get('/top/properties', verifyGoogleToken, verifyJwt, controller.topProperties);
+router.get('/properties/data/monthly', verifyGoogleToken, verifyJwt, controller.propertiesData);
+router.get('/properties/proportions', verifyGoogleToken, verifyJwt, controller.propertiesProportions);
 router.put('/properties/filter', verifyGoogleToken, verifyJwt, controller.propertiesFilter);
 
 export default router;

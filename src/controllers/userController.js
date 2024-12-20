@@ -50,3 +50,26 @@ export const contact = asyncHandler(async (req, res, next) => {
     next(error);
   }
 });
+
+export const findAllAppointments = asyncHandler(async (req, res, next) => {
+  try {
+    const { email } = req.params;
+
+    const result = await UserService.findAllAppointments(email);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+export const findAppointmentById = asyncHandler(async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { email } = req;
+
+    const result = await UserService.findAppointmentById(id, email);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+});

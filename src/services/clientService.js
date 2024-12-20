@@ -105,4 +105,34 @@ export default class ClientService extends UserService {
 
     return this.userDetails(data.email);
   }
+
+  static async MakeAnAppointment(email, data, advertiserEmail, advertiserAvailability) {
+    const validatedEmail = validateEmail(email);
+    if (!validatedEmail) throw new ConfigurableError('Cliente não encontrado', 404);
+
+    const validatedAdvertiserEmail = validateEmail(advertiserEmail);
+    if (!validatedAdvertiserEmail) throw new ConfigurableError('Corretor não encontrado', 404);
+
+    const start = new Date(data.start);
+    const end = new Date(data.end);
+
+    if (start >= end) throw new ConfigurableError('Horário de início deve ser anterior ao horário de fim', 400);
+
+    // const startTime = start.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    // const endTime = end.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+
+    // const validTime = advertiserAvailability.some((time) => time.start === startTime && time.end === endTime);
+    // if (!validTime) throw new ConfigurableError('Horário não disponível', 400);
+
+    return prisma.appointment.create({
+      data: {
+        title: validateString(data.title, 'O campo título é obrigatório'),
+        propertyId: validateString(data.propertyId, 'O campo ID do imóvel é obrigatório'),
+        solicitorEmail: validatedEmail,
+        advertiserEmail,
+        start,
+        end,
+      },
+    });
+  }
 }

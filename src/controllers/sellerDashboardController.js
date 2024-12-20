@@ -23,20 +23,10 @@ export const totalPropertiesViews = asyncHandler(async (req, res, next) => {
   }
 });
 
-export const propertiesLikesMonthly = asyncHandler(async (req, res, next) => {
+export const propertiesData = asyncHandler(async (req, res, next) => {
   try {
     const { email } = req;
-    const result = await SellerDashboardService.propertiesLikesMonthly(email);
-    res.status(200).json(result);
-  } catch (error) {
-    next(error);
-  }
-});
-
-export const propertiesViewsMonthly = asyncHandler(async (req, res, next) => {
-  try {
-    const { email } = req;
-    const result = await SellerDashboardService.propertiesViewsMonthly(email);
+    const result = await SellerDashboardService.propertiesData(email);
     res.status(200).json(result);
   } catch (error) {
     next(error);
@@ -61,6 +51,17 @@ export const propertiesFilter = asyncHandler(async (req, res, next) => {
     data.advertiserEmail = email;
 
     const result = await PropertyService.filter(data, page, limit, '/dashboard/properties/filter');
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+export const propertiesProportions = asyncHandler(async (req, res, next) => {
+  try {
+    const { email } = req;
+    const result = await SellerDashboardService.propertiesProportions(email);
+
     res.status(200).json(result);
   } catch (error) {
     next(error);

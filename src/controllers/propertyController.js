@@ -81,7 +81,7 @@ export const addTimesSeen = asyncHandler(async (req, res, next) => {
     const { id } = req.params;
 
     const result = await PropertyService.addTimesSeen(id);
-    res.status(200).json(result);
+    res.status(201).json(result);
   } catch (error) {
     next(error);
   }
