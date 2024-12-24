@@ -60,7 +60,7 @@ export default class UserService {
     return this.userDetails(user.email);
   }
 
-  static async findAll(page = 1, type = null, active = true) {
+  static async findAll(page = 1, limit = 6, type = null, active = true) {
     const where = { active: validateBoolean(active) };
 
     if (page < 1 || !type) {
@@ -70,7 +70,6 @@ export default class UserService {
       return Promise.all(users.map(async (user) => this.userDetails(user.email)));
     }
 
-    const limit = 6;
     where.type = validateUserType(type, "O campo 'tipo' é obrigatório");
     const total = await prisma.user.count({ where });
 

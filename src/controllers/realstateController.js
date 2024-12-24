@@ -6,8 +6,9 @@ import RealstateService from '../services/realstateService.js';
 export const findAll = asyncHandler(async (req, res, next) => {
   try {
     const { page = 1 } = req.query;
+    const { limit = 6 } = req.query;
 
-    const result = await RealstateService.findAll(page, 'realstate');
+    const result = await RealstateService.findAll(page, limit, 'realstate');
     res.status(200).json(result);
   } catch (error) {
     next(error);

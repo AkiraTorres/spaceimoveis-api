@@ -6,7 +6,9 @@ import RealtorService from '../services/realtorService.js';
 export const findAll = asyncHandler(async (req, res, next) => {
   try {
     const { page = 1 } = req.query;
-    const result = await ClientService.findAll(page, 'client');
+    const { limit = 6 } = req.query;
+
+    const result = await ClientService.findAll(page, limit, 'client');
     res.status(200).json(result);
   } catch (error) {
     next(error);
