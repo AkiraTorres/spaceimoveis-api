@@ -113,7 +113,9 @@ export const setAvailability = asyncHandler(async (req, res, next) => {
 export const approveAppointment = asyncHandler(async (req, res, next) => {
   try {
     const { id } = req.params;
-    const result = await RealstateService.approveAppointment(id);
+    const { email } = req;
+
+    const result = await RealstateService.approveAppointment(id, email);
     res.status(200).json(result);
   } catch (error) {
     next(error);
@@ -123,7 +125,9 @@ export const approveAppointment = asyncHandler(async (req, res, next) => {
 export const rejectAppointment = asyncHandler(async (req, res, next) => {
   try {
     const { id } = req.params;
-    const result = await RealstateService.rejectAppointment(id);
+    const { email } = req;
+
+    const result = await RealstateService.rejectAppointment(id, email);
     res.status(200).json(result);
   } catch (error) {
     next(error);

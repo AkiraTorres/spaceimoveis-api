@@ -130,9 +130,9 @@ export default class RealtorService extends UserService {
     return prisma.appointment.update({ where: { id: validatedId }, data: { status: 'accepted' } });
   }
 
-  static async rejectAppointment(appointmentId) {
+  static async rejectAppointment(appointmentId, email) {
     const validatedId = validateString(appointmentId);
-    const appointment = await prisma.appointment.findFirst({ where: { id: validatedId } });
+    const appointment = await this.findAppointmentById(validatedId, email);
     if (!appointment) throw new ConfigurableError('Agendamento não encontrado', 404);
 
     return prisma.appointment.update({ where: { id: validatedId }, data: { status: 'rejected' } });
