@@ -53,9 +53,20 @@ export default class PropertyService {
     if (subscription === 'gold') limit = 9999;
     if (subscription === 'diamond') limit = 9999;
 
-    const totalProperties = await prisma.property.count({ where: { email, isHighlighted: false }, include: { SharedProperties: true } });
+    const totalProperties = await prisma.property.count({ where: { email, isHighlighted: false, isPublished: true }, include: { SharedProperties: true } });
 
     if (totalProperties >= limit) throw new ConfigurableError('Limite de destaques atingido', 400);
+  }
+
+  static async checkLimits(email) {
+    const validatedEmail = validateEmail(email);
+
+    // const { subscription } = await UserService.find({ email: validatedEmail });
+
+    const totalPublishProperties = await prisma.property.count({ where: { advertiserEmail: validatedEmail, isHighlight: false, isPublished: true } });
+    const totalHighlightedProperties = await prisma.property.count({ where: { advertiserEmail: validatedEmail, isHighlight: true } });
+
+    return { totalPublishProperties, totalHighlightedProperties, publishLimit: 3, highlightLimit: 1 };
   }
 
   static async getPropertyDetails(propertyId) {

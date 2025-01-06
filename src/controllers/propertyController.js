@@ -196,3 +196,14 @@ export const negateSharedProperty = asyncHandler(async (req, res, next) => {
     next(error);
   }
 });
+
+export const checkLimits = asyncHandler(async (req, res, next) => {
+  try {
+    const { email } = req;
+
+    const result = await PropertyService.checkLimits(email);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+});
