@@ -35,14 +35,27 @@ export default class PropertyService {
   static async checkHighlightLimit(email) {
     let highlightLimit;
     const { subscription } = await prisma.user.find(email);
-    if (subscription === 'free') highlightLimit = 3;
-    if (subscription === 'platinum') highlightLimit = 5;
+    if (subscription === 'free') highlightLimit = 1;
+    if (subscription === 'platinum') highlightLimit = 3;
     if (subscription === 'gold') highlightLimit = 9999;
     if (subscription === 'diamond') highlightLimit = 9999;
 
     const totalHighlightedProperties = await prisma.property.count({ where: { email, isHighlighted: true }, include: { SharedProperties: true } });
 
     if (totalHighlightedProperties >= highlightLimit) throw new ConfigurableError('Limite de destaques atingido', 400);
+  }
+
+  static async checkPublishLimit(email) {
+    let limit;
+    const { subscription } = await prisma.user.find(email);
+    if (subscription === 'free') limit = 3;
+    if (subscription === 'platinum') limit = 5;
+    if (subscription === 'gold') limit = 9999;
+    if (subscription === 'diamond') limit = 9999;
+
+    const totalProperties = await prisma.property.count({ where: { email, isHighlighted: false }, include: { SharedProperties: true } });
+
+    if (totalProperties >= limit) throw new ConfigurableError('Limite de destaques atingido', 400);
   }
 
   static async getPropertyDetails(propertyId) {
@@ -295,6 +308,7 @@ export default class PropertyService {
     const { subscription } = await UserService.find({ email: sellerEmail });
     if (subscription === 'free' || subscription === 'platinum') {
       if (data.isHighlight) this.checkHighlightLimit(sellerEmail);
+      else this.checkPublishLimit(sellerEmail);
     }
 
     await prisma.$transaction(async (p) => {
@@ -402,6 +416,7 @@ export default class PropertyService {
     };
 
     if (updatedData.isHighlight && !oldProperty.isHighlight) await this.checkHighlightLimit(validatedSellerEmail);
+    if (updatedData.isPublished && !oldProperty.isPublished) await this.checkPublishLimit(validatedSellerEmail);
 
     // TODO: enable this line again when in production
     // if (updatedData.description !== oldProperty.description || files.length > 0) updatedData.verified = 'pending';
