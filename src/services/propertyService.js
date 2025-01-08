@@ -643,17 +643,7 @@ export default class PropertyService {
       total,
     };
 
-    const result = properties.map((property) => ({
-      ...property,
-      prices: property.PropertiesPrices,
-      address: property.PropertiesAddresses,
-      commodities: property.PropertiesCommodities,
-      pictures: property.PropertyPictures,
-      PropertiesAddresses: undefined,
-      PropertiesPrices: undefined,
-      PropertiesCommodities: undefined,
-      PropertyPictures: undefined,
-    }));
+    const result = properties.map((property) => this.getPropertyDetails(property.id));
 
     return { result, pagination };
   }
