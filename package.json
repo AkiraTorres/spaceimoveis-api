@@ -5,7 +5,7 @@
   "main": "src/index .js",
   "type": "module",
   "scripts": {
-    "build": "npx prisma migrate deploy",
+    "build": "npm i",
     "dev": "nodemon --no-deprecation src/index.js",
     "start": "npx prisma migrate deploy && node --no-deprecation src/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
