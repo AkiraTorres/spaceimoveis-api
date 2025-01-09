@@ -643,7 +643,7 @@ export default class PropertyService {
       total,
     };
 
-    const result = properties.map((property) => this.getPropertyDetails(property.id));
+    const result = await Promise.all(properties.map((property) => this.getPropertyDetails(property.id)));
 
     return { result, pagination };
   }
