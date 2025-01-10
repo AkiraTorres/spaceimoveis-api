@@ -154,9 +154,8 @@ export default class MessageService {
 
     const messages = await prisma.message.findMany({
       where: {
-        chatId: { not: null },
         senderEmail: { not: validatedEmail },
-        isRead: false,
+        // isRead: false,
       },
     });
 
