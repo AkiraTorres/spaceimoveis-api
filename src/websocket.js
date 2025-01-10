@@ -17,6 +17,7 @@ io.on('connection', (socket) => {
 
   socket.on('open_notification', async (data, callback) => {
     socket.join(data.email);
+
     const unreadMessages = await MessageService.getUnreadMessages(data.email);
     callback(unreadMessages);
   });
@@ -31,8 +32,7 @@ io.on('connection', (socket) => {
     const msgRes = await MessageService.createMessage(msgData);
     io.to(data.chatId).emit('message', msgRes);
 
-    emitUnreadMessages(data.email);
-    emitUnreadMessages(data.receiver);
+    await emitUnreadMessages(data.receiver);
   });
 
   socket.on('upload', async (data, callback) => {
@@ -50,8 +50,7 @@ io.on('connection', (socket) => {
       });
       io.to(data.chatId).emit('message', msgRes);
 
-      emitUnreadMessages(data.email);
-      emitUnreadMessages(data.receiver);
+      await emitUnreadMessages(data.receiver);
     } catch (error) {
       try {
         callback(error);
