@@ -265,6 +265,7 @@ model Message {
   url         String?     @db.VarChar(2048)
   filename    String?     @db.VarChar(255)
   isDeleted   Boolean     @default(false) @map("is_deleted")
+  isRead      Boolean     @default(false) @map("is_read")
   type        MessageType @default(text)
   createdAt   DateTime    @default(now()) @map("created_at")
   updatedAt   DateTime    @default(now()) @updatedAt @map("updated_at")
