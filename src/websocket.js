@@ -4,7 +4,7 @@ import MessageService from './services/messageService.js';
 async function emitUnreadMessages(email) {
   const unreadMessages = await MessageService.getUnreadMessages(email);
   console.log('unreadMessages', unreadMessages);
-  if (unreadMessages) io.to(email).emit('notification', unreadMessages);
+  io.to(email).emit('notification', unreadMessages);
 }
 
 io.on('connection', (socket) => {
