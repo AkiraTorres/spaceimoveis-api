@@ -181,7 +181,6 @@ export default class UserService {
     const oldUser = await this.find({ email: validatedEmail });
     if (!oldUser) throw new ConfigurableError('Usuário não encontrado', 404);
 
-    const user = oldUser;
     let transaction = [];
 
     if (params) {
@@ -232,32 +231,30 @@ export default class UserService {
     await Promise.all(photos.map(async (photo) => {
       if (!['profile', 'banner'].includes(photo.fieldname)) throw new ConfigurableError("As fotos de usuário devem possuir a tag 'profile' ou 'banner'", 422);
 
-      const oldPhoto = await prisma.userPhoto.findFirst({ where: { email: user.email, type: photo.fieldname } });
+      const oldPhoto = await prisma.userPhoto.findFirst({ where: { email: validatedEmail, type: photo.fieldname } });
       if (oldPhoto) {
         transaction.push(prisma.userPhoto.delete({ where: { id: oldPhoto.id } }));
-        const storageRef = ref(storage, `images/users/${user.email}/${oldPhoto.name}`);
-        await deleteObject(storageRef);
+        await deleteObject(ref(storage, `images/users/${validatedEmail}/${oldPhoto.name}`));
       }
 
-      const storageRef = ref(storage, `images/users/${user.email}/${photo.originalname}`);
-      const metadata = { contentType: photo.mimetype };
-      const snapshot = await uploadBytesResumable(storageRef, photo.buffer, metadata);
+      const storageRef = ref(storage, `images/users/${validatedEmail}/${photo.originalname}`);
+      const snapshot = await uploadBytesResumable(storageRef, photo.buffer, { contentType: photo.mimetype });
       const downloadUrl = await getDownloadURL(snapshot.ref);
 
-      const profileData = {
-        id: uuid(),
-        email: user.email,
-        url: downloadUrl,
-        name: photo.originalname,
-        type: photo.fieldname,
-      };
-
-      transaction.push(prisma.userPhoto.create({ data: profileData }));
+      transaction.push(prisma.userPhoto.create({
+        data: {
+          id: uuid(),
+          email: validatedEmail,
+          url: downloadUrl,
+          name: photo.originalname,
+          type: photo.fieldname,
+        },
+      }));
     }));
 
     await prisma.$transaction(transaction);
 
-    return this.userDetails(user.email);
+    return this.userDetails(validatedEmail);
   }
 
   static async destroy(email) {
