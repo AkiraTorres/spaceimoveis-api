@@ -1,12 +1,22 @@
 import { io } from './server.js';
 import MessageService from './services/messageService.js';
 
+async function emitUnreadMessages(email) {
+  const unreadMessages = await MessageService.getUnreadMessages(email);
+  if (unreadMessages) io.to(email).emit('unread_messages', unreadMessages);
+}
+
 io.on('connection', (socket) => {
   socket.on('open_chat', async (data, callback) => {
     socket.join(data.chatId);
 
     const messagesRoom = await MessageService.findMessages(data.chatId, data.email);
     callback(messagesRoom);
+  });
+
+  socket.on('login', (data) => {
+    socket.join(data.email);
+    emitUnreadMessages(data.email);
   });
 
   socket.on('message', async (data) => {
@@ -18,6 +28,9 @@ io.on('connection', (socket) => {
 
     const msgRes = await MessageService.createMessage(msgData);
     io.to(data.chatId).emit('message', msgRes);
+
+    emitUnreadMessages(data.email);
+    emitUnreadMessages(data.receiver);
   });
 
   socket.on('upload', async (data, callback) => {
@@ -34,6 +47,9 @@ io.on('connection', (socket) => {
         platform: data.platform,
       });
       io.to(data.chatId).emit('message', msgRes);
+
+      emitUnreadMessages(data.email);
+      emitUnreadMessages(data.receiver);
     } catch (error) {
       try {
         callback(error);
