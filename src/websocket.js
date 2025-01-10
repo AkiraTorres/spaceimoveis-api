@@ -3,7 +3,7 @@ import MessageService from './services/messageService.js';
 
 async function emitUnreadMessages(email) {
   const unreadMessages = await MessageService.getUnreadMessages(email);
-  if (unreadMessages) io.to(email).emit('unread_messages', unreadMessages);
+  if (unreadMessages) io.to(email).emit('notification', unreadMessages);
 }
 
 io.on('connection', (socket) => {
@@ -14,9 +14,10 @@ io.on('connection', (socket) => {
     callback(messagesRoom);
   });
 
-  socket.on('login', (data) => {
+  socket.on('open_notification', async (data, callback) => {
     socket.join(data.email);
-    emitUnreadMessages(data.email);
+    const unreadMessages = await MessageService.getUnreadMessages(data.email);
+    callback(unreadMessages);
   });
 
   socket.on('message', async (data) => {
