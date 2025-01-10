@@ -59,6 +59,17 @@ export default class MessageService {
     if (!messages || messages.length === 0) return [];
 
     messages.sort((a, b) => a.createdAt - b.createdAt);
+
+    const transactions = [];
+
+    messages.forEach((message) => {
+      if (message.senderEmail !== validatedEmail && !message.isRead) {
+        transactions.push(prisma.message.update({ where: { id: message.id }, data: { isRead: true } }));
+      }
+    });
+
+    await prisma.$transaction(transactions);
+
     return messages;
   }
 
@@ -133,5 +144,21 @@ export default class MessageService {
       await deleteObject(storageRef);
     }
     return { message: 'Mensagem deletada com sucesso' };
+  }
+
+  static async getUnreadMessages(email) {
+    const validatedEmail = validateEmail(email);
+
+    const user = await UserService.find({ email: validatedEmail });
+    if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
+
+    const messages = await prisma.message.findMany({
+      where: {
+        senderEmail: { not: validatedEmail },
+        isRead: false,
+      },
+    });
+
+    return { messages, total: messages.length };
   }
 }
