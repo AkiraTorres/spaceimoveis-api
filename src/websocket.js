@@ -30,7 +30,7 @@ io.on('connection', (socket) => {
     const unreadMessages = await MessageService.getUnreadMessages(data.receiver);
     console.log('unreadMessages', unreadMessages);
     console.log('data.receiver', data.receiver);
-    io.to(data.receiver).emit('notification', unreadMessages);
+    io.to(data.receiver).emit('notification', 'new message');
   });
 
   socket.on('upload', async (data, callback) => {
