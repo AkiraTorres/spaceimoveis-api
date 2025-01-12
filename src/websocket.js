@@ -11,6 +11,7 @@ io.on('connection', (socket) => {
 
   socket.on('open_notification', async (data, callback) => {
     socket.join(data.email);
+    console.log('open_notification', data.email);
 
     const unreadMessages = await MessageService.getUnreadMessages(data.email);
     callback(unreadMessages);
@@ -28,6 +29,7 @@ io.on('connection', (socket) => {
 
     const unreadMessages = await MessageService.getUnreadMessages(data.receiver);
     console.log('unreadMessages', unreadMessages);
+    console.log('data.receiver', data.receiver);
     io.to(data.receiver).emit('notification', unreadMessages);
   });
 
