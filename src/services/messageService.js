@@ -157,6 +157,9 @@ export default class MessageService {
         senderEmail: { not: validatedEmail },
         isRead: false,
       },
+      orderBy: {
+        updatedAt: 'desc',
+      },
     });
 
     return { messages, total: messages.length };
