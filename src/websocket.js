@@ -6,12 +6,14 @@ io.on('connection', (socket) => {
     socket.join(data.chatId);
 
     const messagesRoom = await MessageService.findMessages(data.chatId, data.email);
+    const unreadMessages = await MessageService.getUnreadMessages(data.email);
+
+    io.to(data.email).emit('notification', unreadMessages);
     callback(messagesRoom);
   });
 
   socket.on('open_notification', async (data, callback) => {
     socket.join(data.email);
-    console.log('open_notification', data.email);
 
     const unreadMessages = await MessageService.getUnreadMessages(data.email);
     callback(unreadMessages);
@@ -28,9 +30,7 @@ io.on('connection', (socket) => {
     io.to(data.chatId).emit('message', msgRes);
 
     const unreadMessages = await MessageService.getUnreadMessages(data.receiver);
-    console.log('unreadMessages', unreadMessages);
-    console.log('data.receiver', data.receiver);
-    io.to(data.receiver).emit('notification', 'new message');
+    io.to(data.receiver).emit('notification', unreadMessages);
   });
 
   socket.on('upload', async (data, callback) => {
@@ -49,7 +49,6 @@ io.on('connection', (socket) => {
       io.to(data.chatId).emit('message', msgRes);
 
       const unreadMessages = await MessageService.getUnreadMessages(data.receiver);
-      console.log('unreadMessages', unreadMessages);
       io.to(data.receiver).emit('notification', unreadMessages);
     } catch (error) {
       try {

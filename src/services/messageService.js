@@ -60,15 +60,15 @@ export default class MessageService {
 
     messages.sort((a, b) => a.createdAt - b.createdAt);
 
-    // const transactions = [];
+    const transactions = [];
 
-    // messages.forEach((message) => {
-    //   if (message.senderEmail !== validatedEmail && !message.isRead) {
-    //     transactions.push(prisma.message.update({ where: { id: message.id }, data: { isRead: true } }));
-    //   }
-    // });
+    messages.forEach((message) => {
+      if (message.senderEmail !== validatedEmail && !message.isRead) {
+        transactions.push(prisma.message.update({ where: { id: message.id }, data: { isRead: true } }));
+      }
+    });
 
-    // await prisma.$transaction(transactions);
+    await prisma.$transaction(transactions);
 
     return messages;
   }
@@ -155,7 +155,7 @@ export default class MessageService {
     const messages = await prisma.message.findMany({
       where: {
         senderEmail: { not: validatedEmail },
-        // isRead: false,
+        isRead: false,
       },
     });
 
