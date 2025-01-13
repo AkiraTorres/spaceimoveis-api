@@ -1,0 +1,495 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  email     String    @id @unique
+  name      String
+  handler   String    @unique @db.VarChar(32)
+  password  String?
+  type      Type      @default(client)
+  otp       String?   @db.VarChar(6)
+  otpTtl    DateTime? @map("otp_ttl")
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  userInfo           UserInfo?
+  UserAddress        UserAddress?
+  UserRatingReceiver UserRating[]       @relation("UserRatingReceiver")
+  UserRatingSender   UserRating[]       @relation("UserRatingSender")
+  SharedProperties   SharedProperties[]
+  ChatUser2          Chat[]             @relation("secondUser")
+  ChatUser1          Chat[]             @relation("firstUser")
+  Favorite           Favorite[]
+  Message            Message[]
+  Property           Property[]
+  Follower           Follower[]         @relation("follower")
+  Followed           Follower[]         @relation("followed")
+  UserSocial         UserSocial[]
+  UserPosts          UserPosts[]
+  PostComments       PostComments[]
+  PostLikes          PostLikes[]
+  UserPhoto          UserPhoto[]
+  CommentLikes       CommentLikes[]
+  Appointment        Appointment[]
+  AvailableTime      AvailableTime[]
+
+  @@map("users")
+}
+
+model UserInfo {
+  email        String  @id @unique
+  cpf          String? @unique @db.VarChar(11)
+  cnpj         String? @unique @db.VarChar(15)
+  rg           String? @unique
+  creci        String? @unique
+  phone        String? @db.VarChar(25)
+  idPhone      String? @map("id_phone")
+  bio          String? @db.VarChar(1024)
+  subscription String? @default("free")
+
+  user User @relation(fields: [email], references: [email], onDelete: Cascade)
+
+  @@map("users_infos")
+}
+
+model UserAddress {
+  email        String  @id @unique
+  street       String?
+  cep          String?
+  number       String?
+  complement   String?
+  neighborhood String?
+  city         String?
+  state        String? @db.VarChar(2)
+
+  user User @relation(fields: [email], references: [email], onDelete: Cascade)
+
+  @@map("users_addresses")
+}
+
+model UserPhoto {
+  id        String   @id @unique @default(uuid())
+  email     String
+  url       String
+  name      String
+  type      String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  user User @relation(fields: [email], references: [email], onDelete: Cascade)
+
+  @@map("users_photos")
+}
+
+model UserRating {
+  id            String   @id @unique @default(uuid())
+  rating        Int
+  comment       String?
+  receiverEmail String   @map("receiver_email")
+  senderEmail   String   @map("sender_email")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at")
+
+  receiver User @relation("UserRatingReceiver", fields: [receiverEmail], references: [email], onDelete: Cascade)
+  sender   User @relation("UserRatingSender", fields: [senderEmail], references: [email], onDelete: Cascade)
+
+  @@map("users_ratings")
+}
+
+model UserSocial {
+  id    String  @id @unique @default(uuid())
+  email String
+  type  String?
+  url   String?
+
+  user User @relation(fields: [email], references: [email], onDelete: Cascade)
+
+  @@map("users_socials")
+}
+
+model UserPosts {
+  id        String    @id @unique @default(uuid())
+  email     String
+  text      String?
+  likes     Int       @default(0)
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now()) @map("created_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  user         User           @relation(fields: [email], references: [email], onDelete: Cascade)
+  PostMedia    PostMedia[]
+  PostComments PostComments[]
+  PostLikes    PostLikes[]
+
+  @@map("posts")
+}
+
+model PostMedia {
+  id        String   @id @unique @default(uuid())
+  postId    String?
+  url       String
+  type      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  post UserPosts? @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@map("posts_medias")
+}
+
+model PostComments {
+  id        String    @id @unique @default(uuid())
+  postId    String
+  email     String
+  text      String
+  likes     Int       @default(0)
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now()) @map("created_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  post         UserPosts      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user         User           @relation(fields: [email], references: [email], onDelete: Cascade)
+  CommentLikes CommentLikes[]
+
+  @@map("posts_comments")
+}
+
+model PostLikes {
+  id        String   @id @unique @default(uuid())
+  postId    String
+  email     String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  post UserPosts @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User      @relation(fields: [email], references: [email], onDelete: Cascade)
+
+  @@map("posts_likes")
+}
+
+model CommentLikes {
+  id        String   @id @unique @default(uuid())
+  commentId String
+  email     String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  comment PostComments @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user    User         @relation(fields: [email], references: [email], onDelete: Cascade)
+
+  @@map("comments_likes")
+}
+
+model SharedProperties {
+  id         String   @id @unique @default(uuid())
+  email      String
+  propertyId String   @map("property_id")
+  accepted   Boolean  @default(false)
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at")
+
+  user     User     @relation(fields: [email], references: [email], onDelete: Cascade)
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@map("properties_shared")
+}
+
+model Chat {
+  id         String   @id @unique @default(uuid())
+  user1Email String?
+  user2Email String?
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at")
+
+  user1 User? @relation("firstUser", fields: [user1Email], references: [email], onDelete: SetNull)
+  user2 User? @relation("secondUser", fields: [user2Email], references: [email], onDelete: SetNull)
+
+  message Message[]
+
+  @@map("chats")
+}
+
+model Favorite {
+  id         String   @id @unique @default(uuid())
+  propertyId String   @map("property_id")
+  userEmail  String   @map("user_email")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at")
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userEmail], references: [email], onDelete: Cascade)
+
+  @@map("favorites")
+}
+
+model Visualization {
+  id         String   @id @unique @default(uuid())
+  propertyId String   @map("property_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at")
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@map("visualizations")
+}
+
+model Follower {
+  id            String   @id @unique @default(uuid())
+  followerEmail String   @map("follower_email")
+  followedEmail String   @map("followed_email")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at")
+
+  follower User @relation("follower", fields: [followerEmail], references: [email], onDelete: Cascade)
+  followed User @relation("followed", fields: [followedEmail], references: [email], onDelete: Cascade)
+
+  @@map("followers")
+}
+
+model Message {
+  id          String      @id @unique @default(uuid())
+  chatId      String
+  senderEmail String?
+  text        String      @db.LongText
+  url         String?     @db.VarChar(2048)
+  filename    String?     @db.VarChar(255)
+  isDeleted   Boolean     @default(false) @map("is_deleted")
+  isRead      Boolean     @default(false) @map("is_read")
+  type        MessageType @default(text)
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @default(now()) @updatedAt @map("updated_at")
+
+  chat   Chat  @relation(fields: [chatId], references: [id])
+  sender User? @relation(fields: [senderEmail], references: [email], onDelete: SetNull)
+
+  @@map("messages")
+}
+
+model Property {
+  id               String           @id @unique @default(uuid())
+  type             Type             @default(property)
+  advertiserEmail  String           @map("advertiser_email")
+  announcementType AnnouncementType @map("announcement_type")
+  propertyType     PropertyType     @map("property_type")
+  isHighlight      Boolean          @default(false) @map("is_highlight")
+  isPublished      Boolean          @default(false) @map("is_published")
+  floor            Int              @default(1)
+  size             Int
+  bathrooms        Int              @default(0)
+  bedrooms         Int              @default(0)
+  parkingSpaces    Int              @default(0) @map("parking_spaces")
+  description      String           @db.VarChar(1024)
+  contact          String
+  financiable      Boolean          @default(false)
+  negotiable       Boolean          @default(false)
+  suites           Int              @default(0)
+  furnished        Furnished?
+  verified         Verified         @default(pending)
+  timesSeen        Int              @default(0) @map("times_seen")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @default(now()) @updatedAt @map("updated_at")
+
+  advertiser User @relation(fields: [advertiserEmail], references: [email], onDelete: Cascade)
+
+  SharedProperties      SharedProperties[]
+  Favorite              Favorite[]
+  PropertiesPrices      PropertiesPrices?
+  PropertiesAddresses   PropertiesAddresses?
+  PropertiesCommodities PropertiesCommodities?
+  PropertyPictures      PropertyPictures[]
+  ReasonRejected        ReasonRejectedProperty[]
+  Visualization         Visualization[]
+  Appointment           Appointment[]
+
+  @@map("properties")
+}
+
+model PropertiesPrices {
+  propertyId    String @id @unique @map("property_id")
+  rentPrice     Int?   @map("rent_price")
+  sellPrice     Int?   @map("sell_price")
+  iptu          Int?
+  aditionalFees Int?   @map("aditional_fees")
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@map("properties_prices")
+}
+
+model PropertiesAddresses {
+  propertyId   String  @id @unique @map("property_id")
+  cep          String  @db.VarChar(9)
+  street       String
+  number       String? @map("number")
+  city         String
+  state        String  @db.VarChar(2)
+  neighborhood String
+  complement   String?
+  latitude     String?
+  longitude    String?
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@map("properties_addresses")
+}
+
+model PropertiesCommodities {
+  propertyId      String  @id @unique @map("property_id")
+  pool            Boolean @default(false)
+  grill           Boolean @default(false)
+  airConditioning Boolean @default(false) @map("air_conditioning")
+  playground      Boolean @default(false)
+  eventArea       Boolean @default(false) @map("event_area")
+  gourmetArea     Boolean @default(false) @map("gourmet_area")
+  garden          Boolean @default(false)
+  porch           Boolean @default(false)
+  slab            Boolean @default(false)
+  gatedCommunity  Boolean @default(false) @map("gated_community")
+  gym             Boolean @default(false)
+  balcony         Boolean @default(false)
+  solarEnergy     Boolean @default(false) @map("solar_energy")
+  concierge       Boolean @default(false)
+  yard            Boolean @default(false)
+  elevator        Boolean @default(false)
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@map("properties_comodities")
+}
+
+model PropertyPictures {
+  id         String   @id @unique @default(uuid())
+  propertyId String   @map("property_id")
+  url        String   @db.VarChar(2048)
+  name       String
+  type       String
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at")
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@map("properties_pictures")
+}
+
+model ReasonRejectedProperty {
+  id         String @id @unique @default(uuid())
+  propertyId String @map("property_id")
+  reason     String
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@map("properties_rejected_reason")
+}
+
+model UserMessages {
+  id        String   @id @unique @default(uuid())
+  userName  String   @map("user_name") @db.VarChar(25)
+  userEmail String   @map("user_email") @db.VarChar(25)
+  userType  String?  @map("user_type") @db.VarChar(25)
+  message   String   @db.VarChar(4096)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("users_messages")
+}
+
+model Appointment {
+  id              String            @id @unique @default(uuid())
+  title           String
+  propertyId      String            @map("property_id")
+  solicitorEmail  String            @map("user_email")
+  advertiserEmail String            @map("advertiser_email")
+  start           DateTime
+  end             DateTime
+  status          AppointmentStatus @default(pending)
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @default(now()) @updatedAt @map("updated_at")
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [solicitorEmail], references: [email], onDelete: Cascade)
+
+  @@map("appointments")
+}
+
+model AvailableTime {
+  id              String   @id @unique @default(uuid())
+  advertiserEmail String   @map("advertiser_email")
+  weekDay         Week     @map("week_day")
+  start           String
+  end             String
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at")
+
+  advertiser User @relation(fields: [advertiserEmail], references: [email], onDelete: Cascade)
+
+  @@map("available_times")
+}
+
+enum AnnouncementType {
+  rent
+  sell
+  both
+}
+
+enum PropertyType {
+  house
+  apartment
+  land
+  farm
+}
+
+enum Type {
+  client
+  owner
+  realtor
+  realstate
+  admin
+  property
+}
+
+enum MessageType {
+  text
+  image
+  video
+  audio
+  file
+}
+
+enum Furnished {
+  yes
+  no
+  partial
+}
+
+enum Verified {
+  pending
+  verified
+  rejected
+}
+
+enum AppointmentStatus {
+  pending
+  accepted
+  rejected
+}
+
+enum Week {
+  sunday
+  monday
+  tuesday
+  wednesday
+  thursday
+  friday
+  saturday
+}

@@ -1,110 +1,138 @@
-import Client from '../db/models/Client.js';
+import { deleteObject, getDownloadURL, getStorage, ref, uploadBytesResumable } from 'firebase/storage';
+import { v4 as uuid } from 'uuid';
 
-import ClientNotFound from '../errors/clientErrors/clientNotFound.js';
-import NoClientsFound from '../errors/clientErrors/noClientsFound.js';
-import { validateEmail, validateIfUniqueEmail, validatePassword, validatePhone, validateString } from '../validators/inputValidators.js';
+import { initializeApp } from 'firebase/app';
+import firebaseConfig from '../config/firebase.js';
+import prisma from '../config/prisma.js';
+import ConfigurableError from '../errors/ConfigurableError.js';
+import { validateEmail, validatePassword, validatePhone, validateString, validateUF, validateUserType } from '../validators/inputValidators.js';
+import UserService from './userService.js';
 
-async function findAll(page) {
-    if (page < 1) {
-      return await Client.findAll({
-        attributes: { exclude: ['otp', 'otp_ttl', 'password'] },
-        order: [['name', 'ASC']],
-      });
-    }
+const generateUniqueHandler = async (h) => {
+  let user;
+  let handler = h;
+  do {
+    handler = `${h}${Math.floor(1000 + Math.random() * 9000)}`;
+    // eslint-disable-next-line no-await-in-loop
+    user = await prisma.user.findFirst({ where: { handler } });
+  } while (user);
+  return handler;
+};
 
-    const limit = 6;
-    const countTotal = await Client.count();
+export default class ClientService extends UserService {
+  static async elevate(userEmail, params, photos, type) {
+    const validatedEmail = validateEmail(userEmail);
 
-    if (countTotal === 0) {
-      throw new NoClientsFound();
-    }
+    const oldUser = await this.find({ email: validatedEmail }, 'client');
+    if (!oldUser) throw new ConfigurableError('Cliente não encontrado', 404);
 
-    const lastPage = Math.ceil(countTotal / limit);
-    const offset = Number(limit * (page - 1));
+    if (!['owner', 'realtor', 'realstate'].includes(type)) throw new ConfigurableError('Tipo de usuário inválido para elevação', 400);
 
-    const clients = await Client.findAll({
-      attributes: { exclude: ['otp', 'otp_ttl', 'password'] },
-      order: [['name', 'ASC']],
-      offset,
-      limit,
-    });
+    if (type === 'owner' && !params.cpf) throw new ConfigurableError('CPF é obrigatório para elevar um cliente a proprietário', 400);
+    if (type === 'realtor' && !params.creci && !params.cpf) throw new ConfigurableError('CRECI e CPF são obrigatórios para elevar um cliente a corretor', 400);
+    if (type === 'realstate' && !params.cnpj) throw new ConfigurableError('CNPJ é obrigatório para elevar um cliente a imobiliária', 400);
 
-    if (clients.length === 0) {
-      throw new NoClientsFound();
-    }
-
-    const pagination = {
-      path: '/clients',
-      page,
-      prev_page_url: page - 1 >= 1 ? page - 1 : null,
-      next_page_url: Number(page) + 1 <= lastPage ? Number(page) + 1 : null,
-      lastPage,
-      total: countTotal,
+    const data = {
+      email: params.email ? validateEmail(params.email) : oldUser.email,
+      name: params.name ? validateString(params.name, 'O campo nome é obrigatório') : oldUser.name,
+      password: params.password ? validatePassword(params.password) : oldUser.password,
+      handler: params.handler ? await generateUniqueHandler(validateString(params.handler)) : oldUser.handler,
+      type: validateUserType(type),
     };
 
-    return { clients, pagination };
-}
+    const infoData = {
+      email: data.email,
+      cpf: params.cpf ? validateString(params.cpf, 'O campo CPF é obrigatório') : oldUser.cpf,
+      cnpj: params.cnpj ? validateString(params.cnpj) : oldUser.cnpj,
+      rg: params.rg ? validateString(params.rg, 'O campo RG é obrigatório') : oldUser.rg,
+      creci: params.creci ? validateString(params.creci, 'O campo CRECI é obrigatório') : oldUser.creci,
+      phone: params.phone ? validatePhone(params.phone) : oldUser.phone,
+      idPhone: params.idPhone ? validateString(params.idPhone) : oldUser.idPhone,
+      bio: params.bio ? validateString(params.bio) : oldUser.bio,
+    };
 
-async function findByPk(email, password = false, otp = false) {
-  const validatedEmail = validateEmail(email);
-  const attributes = { exclude: [] };
-  if (!otp) attributes.exclude.push('otp', 'otp_ttl');
-  if (!password) attributes.exclude.push('password');
+    const updatedAddress = {
+      street: params.street ? validateString(params.street) : oldUser.street,
+      cep: params.cep ? validateString(params.cep) : oldUser.cep,
+      number: params.number ? validateString(params.number) : oldUser.number,
+      complement: params.complement ? validateString(params.complement) : oldUser.complement,
+      neighborhood: params.neighborhood ? validateString(params.neighborhood) : oldUser.neighborhood,
+      city: params.city ? validateString(params.city) : oldUser.city,
+      state: params.state ? validateUF(params.state) : oldUser.state,
+    };
 
-  const client = await Client.findByPk(validatedEmail, {
-    attributes,
-  });
+    const transaction = [
+      prisma.user.update({ where: { email: validatedEmail }, data }),
+      prisma.userInfo.update({ where: { email: validatedEmail }, data: infoData }),
+      prisma.userAddress.update({ where: { email: validatedEmail }, data: updatedAddress }),
+    ];
 
-  if (!client) {
-    throw new ClientNotFound();
+    if (data.email !== oldUser.email && await prisma.userInfo.findUnique({ where: { email: data.email } })) throw new ConfigurableError('Email já cadastrado', 409);
+    if (infoData.cpf !== oldUser.cpf && await prisma.userInfo.findUnique({ where: { cpf: infoData.cpf } })) throw new ConfigurableError('CPF já cadastrado', 409);
+    if (infoData.cnpj !== oldUser.cnpj && await prisma.userInfo.findUnique({ where: { cnpj: infoData.cnpj } })) throw new ConfigurableError('CNPJ já cadastrado', 409);
+    if (infoData.creci !== oldUser.creci && await prisma.userInfo.findUnique({ where: { creci: infoData.creci } })) throw new ConfigurableError('CRECI já cadastrado', 409);
+
+    const app = initializeApp(firebaseConfig);
+    const storage = getStorage(app);
+
+    await Promise.all(photos.map(async (photo) => {
+      if (!['profile', 'banner'].includes(photo.fieldname)) throw new ConfigurableError("As fotos de usuário devem possuir a tag 'profile' ou 'banner'", 422);
+
+      const oldPhoto = await prisma.userPhoto.findFirst({ where: { email: data.email, type: photo.fieldname } });
+      if (oldPhoto) {
+        await prisma.userPhoto.delete({ where: { email: data.email, type: photo.fieldname } });
+        const storageRef = ref(storage, `images/users/${data.email}/${oldPhoto.name}`);
+        await deleteObject(storageRef);
+      }
+
+      const storageRef = ref(storage, `images/users/${data.email}/${photo.originalname}`);
+      const metadata = { contentType: photo.mimetype };
+      const snapshot = await uploadBytesResumable(storageRef, photo.buffer, metadata);
+      const downloadUrl = await getDownloadURL(snapshot.ref);
+
+      const profileData = {
+        id: uuid(),
+        email: data.email,
+        url: downloadUrl,
+        name: photo.originalname,
+        type: photo.fieldname,
+      };
+
+      transaction.push(prisma.userPhoto.create({ data: profileData }));
+    }));
+
+    await prisma.$transaction(transaction);
+
+    return this.userDetails(data.email);
   }
 
-  return client;
-}
-
-async function create(data) {
-    const client = {
-      email: validateEmail(data.email),
-      name: validateString(data.name, 'O campo nome é obrigatório'),
-      password: data.password ? validatePassword(data.password) : null,
-      phone: data.phone ? validatePhone(data.phone) : null,
-      idPhone: data.idPhone ? validateString(data.idPhone) : null,
-    };
-
-    await validateIfUniqueEmail(client.email);
-
-    return Client.create(client);
-}
-
-async function update(email, data) {
+  static async MakeAnAppointment(email, data, advertiserEmail, advertiserAvailability) {
     const validatedEmail = validateEmail(email);
+    if (!validatedEmail) throw new ConfigurableError('Cliente não encontrado', 404);
 
-    const oldClient = await Client.findByPk(validatedEmail);
-    if (!oldClient) {
-      throw new ClientNotFound();
-    }
+    const validatedAdvertiserEmail = validateEmail(advertiserEmail);
+    if (!validatedAdvertiserEmail) throw new ConfigurableError('Corretor não encontrado', 404);
 
-    const client = {
-      email: data.email ? validateEmail(data.email) : oldClient.email,
-      name: data.name ? validateString(data.name, 'O campo nome é obrigatório') : oldClient.name,
-      phone: data.phone ? validatePhone(data.phone) : oldClient.phone,
-      idPhone: data.idPhone ? validateString(data.idPhone) : oldClient.idPhone,
-    };
+    const start = new Date(data.start);
+    const end = new Date(data.end);
 
-    if (client.email !== validatedEmail) await validateIfUniqueEmail(client.email);
+    if (start >= end) throw new ConfigurableError('Horário de início deve ser anterior ao horário de fim', 400);
 
-    return Client.update(client, { where: { email: validatedEmail } });
+    // const startTime = start.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    // const endTime = end.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+
+    // const validTime = advertiserAvailability.some((time) => time.start === startTime && time.end === endTime);
+    // if (!validTime) throw new ConfigurableError('Horário não disponível', 400);
+
+    return prisma.appointment.create({
+      data: {
+        title: validateString(data.title, 'O campo título é obrigatório'),
+        propertyId: validateString(data.propertyId, 'O campo ID do imóvel é obrigatório'),
+        solicitorEmail: validatedEmail,
+        advertiserEmail,
+        start,
+        end,
+      },
+    });
+  }
 }
-
-async function destroy(email) {
-    const validatedEmail = validateEmail(email);
-
-    if (!await Client.findByPk(validatedEmail)) {
-      throw new ClientNotFound();
-    }
-
-    await Client.destroy({ where: { email: validatedEmail } });
-    return { message: 'Usuário apagado com sucesso' };
-}
-
-export { create, destroy, findAll, findByPk, update };

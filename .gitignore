@@ -160,7 +160,8 @@ dist
 .history
 .ionide
 
-# JetBrains IDE patch
+# ide files
 .idea
+.vscode
 
 # End of https://www.toptal.com/developers/gitignore/api/node,visualstudiocode

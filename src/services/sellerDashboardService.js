@@ -1,157 +1,111 @@
-import { Op } from 'sequelize';
-import Favorite from '../db/models/Favorite.js';
-import Photo from '../db/models/Photo.js';
-import Property from '../db/models/Property.js';
-
+import prisma from '../config/prisma.js';
+import ConfigurableError from '../errors/ConfigurableError.js';
 import { validateEmail } from '../validators/inputValidators.js';
-import { find } from './globalService.js';
+import PropertyService from './propertyService.js';
+import UserService from './userService.js';
 
-export async function totalPropertiesLikes(email) {
-  const validatedEmail = validateEmail(email);
+export default class SellerDashboardService {
+  static async totalPropertiesLikes(email) {
+    const validatedEmail = validateEmail(email);
 
-  const user = await find(validatedEmail);
+    const user = await UserService.find({ email: validatedEmail });
+    if (!user) throw new ConfigurableError('Usuário não encontrado com o email informado', 404);
 
-  if (!user) {
-    const error = new Error('Usuário não encontrado com o email informado');
-    error.status = 404;
-    throw error;
+    const ids = await prisma.property.findMany({ where: { advertiserEmail: validatedEmail }, select: { id: true } });
+
+    const propertiesIds = ids.map((id) => id.id);
+    const total = await prisma.favorite.count({ where: { propertyId: { in: propertiesIds } } });
+
+    return { total };
   }
 
-  const ids = await Property.findAll({ where: { [`${user.type}_email`]: validatedEmail }, attributes: ['id'], raw: true });
+  static async totalPropertiesViews(email) {
+    const validatedEmail = validateEmail(email);
 
-  const propertiesIds = ids.map((id) => id.id);
+    const user = await UserService.find({ email: validatedEmail });
+    if (!user) throw new ConfigurableError('Usuário não encontrado com o email informado', 404);
 
-  const total = await Favorite.count({
-    where: {
-      property_id: { [Op.in]: propertiesIds },
-    },
-  });
+    const total = await prisma.property.findMany({ where: { advertiserEmail: validatedEmail }, select: { id: true, timesSeen: true } })
+      .then((properties) => properties.reduce((acc, property) => acc + property.timesSeen, 0));
 
-  return { total };
-}
-
-export async function totalPropertiesViews(email) {
-  const validatedEmail = validateEmail(email);
-
-  const user = await find(validatedEmail);
-
-  if (!user) {
-    const error = new Error('Usuário não encontrado com o email informado');
-    error.status = 404;
-    throw error;
+    return { total };
   }
 
-  const total = await Property.findAll({ where: { [`${user.type}_email`]: validatedEmail }, attributes: ['id', 'times_seen'], raw: true })
-    .then((properties) => properties.reduce((acc, property) => acc + property.times_seen, 0));
+  static async propertiesData(email) {
+    const validatedEmail = validateEmail(email);
+    const now = new Date();
+    const beginYear = new Date(now.getFullYear(), now.getMonth() - 11, 1);
 
-  return { total };
-}
+    const user = await UserService.find({ email: validatedEmail });
+    if (!user) throw new ConfigurableError('Usuário não encontrado com o email informado', 404);
 
-async function propertiesData(email) {
-  const validatedEmail = validateEmail(email);
-  const now = new Date();
-  const beginYear = new Date(now.getFullYear() - 1, 11, 31);
-
-  const user = await find(validatedEmail);
-  if (!user) {
-    const error = new Error('Usuário não encontrado com o email informado');
-    error.status = 404;
-    throw error;
-  }
-
-  const properties = await Property.findAll({
-    where: {
-      createdAt: { [Op.between]: [beginYear, now] },
-      [`${user.type}_email`]: email,
-    },
-    attributes: ['id', 'createdAt', 'times_seen'],
-    raw: true,
-  });
-
-  const propertiesIds = properties.map((property) => property.id);
-  let months = [];
-
-  for (let i = 0; i < now.getMonth(); i++) {
-    const month = properties.filter((property) => property.createdAt.getMonth() === i);
-    const views = month.reduce((acc, property) => acc + property.times_seen, 0);
-
-    months = [...months, { month: i, views }];
-  }
-
-  return Promise.all(months.map(async (month) => {
-    const likes = await Favorite.count({
-      where: {
-        property_id: { [Op.in]: propertiesIds },
-        createdAt: { [Op.between]: [new Date(now.getFullYear(), month.month, 1), new Date(now.getFullYear(), month.month + 1, 0)] },
-      },
+    const properties = await prisma.property.findMany({
+      where: { createdAt: { gte: beginYear, lte: now }, advertiserEmail: email },
+      select: { id: true, createdAt: true },
     });
 
-    return { ...month, likes };
-  }));
-}
+    const propertiesIds = properties.map((property) => property.id);
 
-export async function propertiesLikesMonthly(email) {
-  const dataset = await propertiesData(email);
+    const months = await Promise.all(
+      Array.from({ length: 12 }, async (_, i) => {
+        const targetDate = new Date(now.getFullYear(), now.getMonth() - (11 - i), 1);
+        const nextMonth = new Date(targetDate.getFullYear(), targetDate.getMonth() + 1, 1);
 
-  const monthNames = [
-    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
-  ];
+        const views = await prisma.visualization.count({
+          where: {
+            propertyId: { in: propertiesIds },
+            createdAt: { gte: targetDate, lt: nextMonth },
+          },
+        });
 
-  return dataset.map((data) => {
-    const m = data.month;
-    const value = data.likes;
+        return { month: targetDate.getMonth(), year: targetDate.getFullYear(), views };
+      }),
+    );
 
-    return { month: monthNames[m], value };
-  });
-}
+    return Promise.all(
+      months.map(async (month) => {
+        const start = new Date(month.year, month.month, 1);
+        const end = new Date(month.year, month.month + 1, 1);
 
-export async function propertiesViewsMonthly(email) {
-  const dataset = await propertiesData(email);
+        const likes = await prisma.favorite.count({
+          where: {
+            propertyId: { in: propertiesIds },
+            createdAt: { gte: start, lt: end },
+          },
+        });
 
-  const monthNames = [
-    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
-  ];
-
-  return dataset.map((data) => {
-    const m = data.month;
-    const value = data.views;
-
-    return { month: monthNames[m], value };
-  });
-}
-
-export async function topProperties(email) {
-  const validatedEmail = validateEmail(email);
-
-  const user = await find(validatedEmail);
-  if (!user) {
-    const error = new Error('Usuário não encontrado com o email informado');
-    error.status = 404;
-    throw error;
+        return { ...month, likes };
+      }),
+    );
   }
 
-  const properties = await Property.findAll({
-    where: { [`${user.type}_email`]: validatedEmail },
-    raw: true,
-  });
+  static async topProperties(email) {
+    const validatedEmail = validateEmail(email);
 
-  const sorted = properties.sort((a, b) => b.times_seen - a.times_seen);
+    const user = await UserService.find({ email: validatedEmail });
+    if (!user) throw new ConfigurableError('Usuário não encontrado com o email informado', 404);
 
-  return Promise.all(sorted.slice(0, 5).map(async (property) => {
-    const editedProperty = property;
-    if (property.owner_email) editedProperty.email = editedProperty.owner_email;
-    if (property.realstate_email) editedProperty.email = editedProperty.realstate_email;
-    if (property.realtor_email) editedProperty.email = editedProperty.realtor_email;
+    const properties = await prisma.property.findMany({ where: { advertiserEmail: validatedEmail } });
 
-    editedProperty.shared = !!((property.owner_email && property.realtor_email)
-        || (property.owner_email && property.realstate_email));
+    const sorted = properties.sort((a, b) => b.timesSeen - a.timesSeen);
 
-    const seller = await find(editedProperty.email);
+    return Promise.all(sorted.slice(0, 5).map(async (property) => PropertyService.getPropertyDetails(property.id)));
+  }
 
-    const pictures = await Photo.findAll({ where: { property_id: property.id }, order: [['type', 'ASC']] });
+  static async propertiesProportions(email) {
+    const validatedEmail = validateEmail(email);
 
-    return { ...editedProperty, pictures, seller };
-  }));
+    const user = await UserService.find({ email: validatedEmail });
+    if (!user) throw new ConfigurableError('Usuário não encontrado com o email informado', 404);
+
+    const properties = await prisma.property.findMany({ where: { advertiserEmail: validatedEmail } });
+
+    const total = properties.length;
+    const house = properties.filter((property) => property.propertyType === 'house').length;
+    const apartment = properties.filter((property) => property.propertyType === 'apartment').length;
+    const land = properties.filter((property) => property.propertyType === 'land').length;
+    const farm = properties.filter((property) => property.propertyType === 'farm').length;
+
+    return { total, house, apartment, land, farm };
+  }
 }

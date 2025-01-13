@@ -1,8 +1,8 @@
 import Express from 'express';
 
 import * as followerController from '../controllers/followerController.js';
-import verifyJwt from '../middlewares/verifyJwt.js';
 import { verifyGoogleToken } from '../middlewares/verifyGoogle.cjs';
+import verifyJwt from '../middlewares/verifyJwt.js';
 
 const router = Express.Router();
 
