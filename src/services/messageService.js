@@ -162,10 +162,15 @@ export default class MessageService {
       },
     });
 
-    const messages = m.map((message) => ({
-      ...message,
-      senderName: user.name,
-      senderProfile: user.profile,
+    const messages = await Promise.all(m.map(async (message) => {
+      const sender = await UserService.find({ email: message.senderEmail });
+
+      return {
+        ...message,
+        senderName: sender.name,
+        // senderEmail: sender.email,
+        senderProfile: sender.profile,
+      };
     }));
 
     return { messages, total: messages.length };
