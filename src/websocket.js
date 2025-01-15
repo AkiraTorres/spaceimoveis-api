@@ -9,7 +9,7 @@ io.on('connection', (socket) => {
     const unreadMessages = await MessageService.getUnreadMessages(data.email);
 
     io.to(data.email).emit('notification', unreadMessages);
-    callback(messagesRoom);
+    if (typeof callback === 'function') callback(messagesRoom);
   });
 
   socket.on('open_notification', async (data, callback) => {
