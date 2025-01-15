@@ -63,7 +63,7 @@ export default class MessageService {
     const transactions = [];
 
     messages.forEach((message) => {
-      if (message.senderEmail !== validatedEmail && !message.isRead) {
+      if (message.senderEmail === validatedEmail && !message.isRead) {
         transactions.push(prisma.message.update({ where: { id: message.id }, data: { isRead: true } }));
       }
     });
