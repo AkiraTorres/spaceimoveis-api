@@ -152,8 +152,11 @@ export default class MessageService {
     const user = await UserService.find({ email: validatedEmail });
     if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
 
+    const chats = await ChatService.findUserChats(validatedEmail);
+
     const m = await prisma.message.findMany({
       where: {
+        chatId: { in: chats.map((chat) => chat.id) },
         senderEmail: { not: validatedEmail },
         isRead: false,
       },
