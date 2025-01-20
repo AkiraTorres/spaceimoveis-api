@@ -302,10 +302,10 @@ export default class PropertyService {
       complement: params.complement ? validateString(params.complement) : null,
     };
 
-    const location = `${addressData.street}, ${addressData.street} - ${addressData.neighborhood}, ${addressData.city} - ${addressData.state}, ${addressData.cep}`;
-    const addressLocation = await this.getCoordinates(location);
-    addressData.latitude = addressLocation.lat.toString();
-    addressData.longitude = addressLocation.lng.toString();
+    // const location = `${addressData.street}, ${addressData.street} - ${addressData.neighborhood}, ${addressData.city} - ${addressData.state}, ${addressData.cep}`;
+    // const addressLocation = await this.getCoordinates(location);
+    // addressData.latitude = addressLocation.lat.toString();
+    // addressData.longitude = addressLocation.lng.toString();
 
     const commoditiesData = { propertyId: data.id };
     if (params.pool !== undefined) commoditiesData.pool = validateBoolean(params.pool);
