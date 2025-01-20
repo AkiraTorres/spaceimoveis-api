@@ -51,15 +51,17 @@ model User {
 }
 
 model UserInfo {
-  email        String  @id @unique
-  cpf          String? @unique @db.VarChar(11)
-  cnpj         String? @unique @db.VarChar(15)
-  rg           String? @unique
-  creci        String? @unique
-  phone        String? @db.VarChar(25)
-  idPhone      String? @map("id_phone")
-  bio          String? @db.VarChar(1024)
-  subscription String? @default("free")
+  email          String  @id @unique
+  cpf            String? @unique @db.VarChar(11)
+  cnpj           String? @unique @db.VarChar(15)
+  rg             String? @unique
+  creci          String? @unique
+  phone          String? @db.VarChar(25)
+  idPhone        String? @map("id_phone")
+  bio            String? @db.VarChar(1024)
+  subscription   String? @default("free")
+  highlightLimit Int?    @default(1) @map("highlight_limits")
+  publishLimit   Int?    @default(3) @map("publish_limits")
 
   user User @relation(fields: [email], references: [email], onDelete: Cascade)
 
