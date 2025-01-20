@@ -316,11 +316,14 @@ model Property {
 }
 
 model PropertiesPrices {
-  propertyId    String @id @unique @map("property_id")
-  rentPrice     Int?   @map("rent_price")
-  sellPrice     Int?   @map("sell_price")
-  iptu          Int?
-  aditionalFees Int?   @map("aditional_fees")
+  propertyId          String @id @unique @map("property_id")
+  rentPrice           Int?   @map("rent_price")
+  sellPrice           Int?   @map("sell_price")
+  iptu                Int?
+  aditionalFees       Int?   @map("aditional_fees")
+  deposit             Int?
+  timesDeposit        Int?   @map("times_deposit")
+  depositInstallments Int?   @map("deposit_installments")
 
   property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
