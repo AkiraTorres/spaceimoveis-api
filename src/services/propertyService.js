@@ -66,7 +66,9 @@ export default class PropertyService {
     const totalPublishProperties = await prisma.property.count({ where: { advertiserEmail: validatedEmail, isHighlight: false, isPublished: true } });
     const totalHighlightedProperties = await prisma.property.count({ where: { advertiserEmail: validatedEmail, isHighlight: true } });
 
-    return { totalPublishProperties, totalHighlightedProperties, publishLimit: 3, highlightLimit: 1 };
+    const userInfo = await prisma.userInfo.findFirst({ where: { email: validatedEmail } });
+
+    return { totalPublishProperties, totalHighlightedProperties, publishLimit: userInfo.publishLimit, highlightLimit: userInfo.highlightLimit };
   }
 
   static async getPropertyDetails(propertyId) {
@@ -280,7 +282,14 @@ export default class PropertyService {
       sellPrice: params.sellPrice || data.announcementType !== 'rent' ? validatePrice(params.sellPrice, 'O campo "preço de venda" é obrigatório') : null,
       iptu: params.iptu ? validatePrice(params.iptu) : null,
       aditionalFees: params.aditionalFees ? validatePrice(params.aditionalFees) : null,
+      deposit: params.deposit ? validatePrice(params.deposit) : null,
+      timesDeposit: params.timesDeposit ? validateInteger(params.timesDeposit) : null,
+      depositInstallments: params.depositInstallments ? validateInteger(params.depositInstallments) : null,
     };
+
+    if (pricesData.deposit === -1) pricesData.deposit = null;
+    if (pricesData.timesDeposit === -1) pricesData.timesDeposit = null;
+    if (pricesData.depositInstallments === -1) pricesData.depositInstallments = null;
 
     const addressData = {
       propertyId: data.id,
@@ -391,7 +400,14 @@ export default class PropertyService {
       sellPrice: params.sellPrice && updatedData.announcementType !== 'rent' ? validatePrice(params.sellPrice) : oldProperty.sellPrice,
       iptu: params.iptu ? validatePrice(params.iptu) : oldProperty.iptu,
       aditionalFees: params.aditionalFees ? validatePrice(params.aditionalFees) : oldProperty.aditionalFees,
+      deposit: params.deposit ? validatePrice(params.deposit) : oldProperty.deposit,
+      timesDeposit: params.timesDeposit ? validateInteger(params.timesDeposit) : oldProperty.timesDeposit,
+      depositInstallments: params.depositInstallments ? validateInteger(params.depositInstallments) : oldProperty.depositInstallments,
     };
+
+    if (updatedPrices.deposit === -1) updatedPrices.deposit = null;
+    if (updatedPrices.timesDeposit === -1) updatedPrices.timesDeposit = null;
+    if (updatedPrices.depositInstallments === -1) updatedPrices.depositInstallments = null;
 
     const updatedAddress = {
       cep: params.cep ? validateCep(params.cep) : oldProperty.cep,
@@ -402,10 +418,10 @@ export default class PropertyService {
       complement: params.complement ? validateString(params.complement) : oldProperty.complement,
     };
 
-    const location = `${updatedAddress.street}, ${updatedAddress.street} - ${updatedAddress.neighborhood}, ${updatedAddress.city} - ${updatedAddress.state}, ${updatedAddress.cep}`;
-    const addressLocation = await this.getCoordinates(location);
-    updatedAddress.latitude = addressLocation.lat.toString() || oldProperty.latitude;
-    updatedAddress.longitude = addressLocation.lng.toString() || oldProperty.longitude;
+    // const location = `${updatedAddress.street}, ${updatedAddress.street} - ${updatedAddress.neighborhood}, ${updatedAddress.city} - ${updatedAddress.state}, ${updatedAddress.cep}`;
+    // const addressLocation = await this.getCoordinates(location);
+    // updatedAddress.latitude = addressLocation.lat.toString() || oldProperty.latitude;
+    // updatedAddress.longitude = addressLocation.lng.toString() || oldProperty.longitude;
 
     const updatedCommodities = {
       pool: params.pool ? validateBoolean(params.pool) : oldProperty.pool,
