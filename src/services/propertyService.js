@@ -729,7 +729,7 @@ export default class PropertyService {
     };
 
     const properties = await Promise.all(shared.map(async (sharedProperty) => {
-      const property = await prisma.property.findOne({ where: { id: sharedProperty.propertyId } });
+      const property = await prisma.property.findFirst({ where: { id: sharedProperty.propertyId } });
       return this.getPropertyDetails(property.id);
     }));
 
