@@ -166,8 +166,9 @@ export const shareProperty = asyncHandler(async (req, res, next) => {
 export const getSharedProperties = asyncHandler(async (req, res, next) => {
   try {
     const { email } = req;
+    const { page = 1, limit = 6, status = null } = req.query;
 
-    const result = await PropertyService.getSharedProperties(email);
+    const result = await PropertyService.getSharedProperties(email, status, page, limit);
     res.status(200).json(result);
   } catch (error) {
     next(error);

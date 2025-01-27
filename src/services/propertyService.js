@@ -706,16 +706,15 @@ export default class PropertyService {
     return { message: response };
   }
 
-  static async getSharedProperties(email, page = 1, take = 6) {
+  static async getSharedProperties(email, status = null, page = 1, take = 6) {
     const validatedEmail = validateEmail(email);
     const user = await UserService.find({ email: validatedEmail });
     if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
 
-    const shared = await prisma.sharedProperties.findMany({
-      where: { email: validatedEmail, accepted: false },
-      orderBy: { createdAt: 'desc' },
-      take,
-    });
+    const where = { email: validatedEmail };
+    if (status !== null && status !== undefined) where.status = status;
+
+    const shared = await prisma.sharedProperties.findMany({ where, orderBy: { createdAt: 'desc' }, take });
 
     if (shared.length === 0) throw new ConfigurableError('Nenhum imóvel compartilhado com você', 404);
 
@@ -761,15 +760,15 @@ export default class PropertyService {
     const sharedProperty = await prisma.sharedProperties.findFirst({ where: { propertyId: validatedPropertyId, email: validatedEmail } });
     if (!sharedProperty) throw new ConfigurableError('Imóvel compartilhado não encontrado', 404);
 
-    const property = await prisma.property.findFirst(validatedPropertyId);
+    const property = await prisma.property.findFirst({ where: { id: validatedPropertyId } });
 
-    await prisma.sharedProperties.update({ where: { id: sharedProperty.id, email: validatedEmail }, data: { accepted: true } });
+    await prisma.sharedProperties.update({ where: { id: sharedProperty.id, email: validatedEmail }, data: { status: 'accepted' } });
     await prisma.sharedProperties.deleteMany({ where: { propertyId: validatedPropertyId, email: { not: validatedEmail } } });
 
     if (user.type === 'realtor') {
-      emailBody = `O corretor ${user.name} aceitou o compartilhamento do imóvel com o id ${sharedProperty.property_id}!`;
+      emailBody = `O corretor ${user.name} aceitou o compartilhamento do imóvel com o id ${sharedProperty.propertyId}!`;
     } else if (user.type === 'realstate') {
-      emailBody = `A imobiliária ${user.name} aceitou o compartilhamento do imóvel com o id ${sharedProperty.property_id}!`;
+      emailBody = `A imobiliária ${user.name} aceitou o compartilhamento do imóvel com o id ${sharedProperty.propertyId}!`;
     }
 
     const mailOptions = {
@@ -799,16 +798,16 @@ export default class PropertyService {
     const sharedProperty = await prisma.sharedProperties.findFirst({ where: { propertyId: validatedPropertyId, email: validatedEmail } });
     if (!sharedProperty) throw new ConfigurableError('Imóvel compartilhado não encontrado', 404);
 
-    await prisma.sharedProperties.delete({ where: { id: sharedProperty.id, email: validatedEmail } });
+    await prisma.sharedProperties.update({ where: { id: sharedProperty.id, email: validatedEmail }, data: { status: 'rejected' } });
     if (user.type === 'realtor') {
-      emailBody = `Infelizmente, o corretor ${user.name} negou o compartilhamento do imóvel com o id ${sharedProperty.property_id}.`;
+      emailBody = `Infelizmente, o corretor ${user.name} negou o compartilhamento do imóvel com o id ${sharedProperty.propertyId}.`;
     } else if (user.type === 'realstate') {
-      emailBody = `Infelizmente, a imobiliária ${user.name} negou o compartilhamento do imóvel com o id ${sharedProperty.property_id}.`;
+      emailBody = `Infelizmente, a imobiliária ${user.name} negou o compartilhamento do imóvel com o id ${sharedProperty.propertyId}.`;
     }
 
     emailBody += validatedReason;
 
-    const property = await prisma.property.findFirst(validatedPropertyId);
+    const property = await prisma.property.findFirst({ where: { id: validatedPropertyId } });
 
     const mailOptions = {
       from: process.env.EMAIL_ADDRESS,
