@@ -13,6 +13,7 @@ import {
   validateBoolean,
   validateCep,
   validateEmail,
+  validateFloat,
   validateFurnished,
   validateInteger,
   validatePhone,
@@ -77,10 +78,14 @@ export default class PropertyService {
     property.address = await prisma.propertiesAddresses.findFirst({ where: { propertyId: property.id } });
     property.commodities = await prisma.propertiesCommodities.findFirst({ where: { propertyId: property.id } });
     property.prices = await prisma.propertiesPrices.findFirst({ where: { propertyId: property.id } });
-    property.shared = await prisma.sharedProperties.findFirst({ where: { propertyId: property.id, email: property.advertiserEmail } }) || false;
+    property.shared = await prisma.sharedProperties.findMany({ where: { propertyId: property.id } });
     property.totalFavorites = await FavoriteService.getPropertyTotalFavorites(property.id);
     property.pictures = await prisma.propertyPictures.findMany({ where: { propertyId: property.id }, orderBy: { type: 'asc' } });
     property.seller = await UserService.find({ email: property.advertiserEmail });
+
+    if (property.verified === 'rejected') {
+      property.reasonRejected = (await prisma.reasonRejectedProperty.findFirst({ where: { propertyId: property.id } })).reason;
+    }
 
     return property;
   }
@@ -272,7 +277,7 @@ export default class PropertyService {
       negotiable: params.negotiable ? validateBoolean(params.negotiable) : false,
       suites: params.suites ? validateInteger(params.suites) : 0,
       furnished: params.furnished ? validateFurnished(params.furnished) : 'no',
-      verified: 'verified', // TODO: change to 'pending' when moving to production
+      verified: 'pending', // TODO: change to 'pending' when moving to production
     };
     if (data.isHighlight) data.isPublished = true;
 
@@ -446,7 +451,7 @@ export default class PropertyService {
     if (updatedData.isPublished && !oldProperty.isPublished) await this.checkPublishLimit(validatedSellerEmail);
 
     // TODO: enable this line again when in production
-    // if (updatedData.description !== oldProperty.description || files.length > 0) updatedData.verified = 'pending';
+    if (updatedData.description !== oldProperty.description || files.length > 0) updatedData.verified = 'pending';
 
     const property = await prisma.property.update({ where: { id: validatedId }, data: updatedData });
     property.prices = await prisma.propertiesPrices.update({ where: { propertyId: validatedId }, data: updatedPrices });
@@ -664,7 +669,7 @@ export default class PropertyService {
     return { result, pagination };
   }
 
-  static async shareProperty(propertyId, ownerEmail, guestEmail) {
+  static async shareProperty(propertyId, ownerEmail, { guestEmail, cut }) {
     const validatedPropertyId = validateString(propertyId);
     const validatedOwnerEmail = validateEmail(ownerEmail);
     const validatedGuestEmail = validateEmail(guestEmail);
@@ -675,13 +680,15 @@ export default class PropertyService {
     const guest = await UserService.find({ email: validatedGuestEmail });
     if (!guest) throw new ConfigurableError('O usuário que você tentou compartilhar o imóvel não encontrado', 404);
 
-    const property = await prisma.property.findFirst(validatedPropertyId);
+    const property = await prisma.property.findFirst({ where: { id: validatedPropertyId } });
     if (!property) throw new ConfigurableError('Imóvel não encontrado', 404);
 
-    const shared = prisma.sharedProperties.findFirst({ where: { email: validatedGuestEmail, propertyId: validatedPropertyId } });
+    const shared = await prisma.sharedProperties.findFirst({ where: { email: validatedGuestEmail, propertyId: validatedPropertyId } });
     if (shared) throw new ConfigurableError('Imóvel já compartilhado com este usuário', 400);
 
-    await prisma.sharedProperties.create({ id: uuid(), email: validatedGuestEmail, propertyId: validatedPropertyId });
+    const cutValue = cut && validateFloat(cut) && cut >= 0 && cut <= 1 ? cut : 0.03;
+
+    await prisma.sharedProperties.create({ data: { id: uuid(), email: validatedGuestEmail, propertyId: validatedPropertyId, cut: cutValue } });
 
     const mailOptions = {
       from: process.env.EMAIL_ADDRESS,
@@ -701,7 +708,7 @@ export default class PropertyService {
 
   static async getSharedProperties(email, page = 1, take = 6) {
     const validatedEmail = validateEmail(email);
-    const user = await this.find(validatedEmail);
+    const user = await UserService.find({ email: validatedEmail });
     if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
 
     const shared = await prisma.sharedProperties.findMany({
