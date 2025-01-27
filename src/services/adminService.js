@@ -22,7 +22,7 @@ export default class AdminService extends UserService {
     const date = new Date();
     date.setDate(date.getDate() - 3);
 
-    const where = { updatedAt: { gte: date } };
+    const where = { updatedAt: { gte: date }, verified: 'pending' };
 
     const total = await prisma.property.count({ where });
     const lastPage = Math.ceil(total / take);
@@ -73,7 +73,7 @@ export default class AdminService extends UserService {
   static async denyProperty(id, reason = false) {
     const validatedId = validateString(id);
     const validatedReason = reason ? ` \n Motivo: ${validateString(reason)}.` : '';
-    const property = await prisma.property.findFirst(validatedId);
+    const property = await prisma.property.findFirst({ where: { id: validatedId } });
 
     if (!property) throw new ConfigurableError('Imóvel não encontrado', 404);
 
@@ -81,9 +81,9 @@ export default class AdminService extends UserService {
       ? `Seu imóvel foi recusado pela administração. ${validatedReason}\nPor favor, edite o seu imóvel para resolver este problema.`
       : 'Seu imóvel foi recusado pela administração.\nPor favor, edite o seu imóvel para resolver este problema.';
 
-    const seller = await this.find(property.advertiserEmail);
+    const seller = await this.find({ email: property.advertiserEmail });
 
-    await prisma.reasonRejectedProperty.create({ propertyId: property.id, reason: reason || 'Sem motivo informado.' });
+    await prisma.reasonRejectedProperty.create({ data: { propertyId: property.id, reason: reason || 'Sem motivo informado.' } });
     await prisma.property.update({ where: { id: property.id }, data: { verified: 'rejected' } });
 
     let message = 'Anúncio rejeitado.';
@@ -105,13 +105,13 @@ export default class AdminService extends UserService {
   static async approveProperty(id) {
     const validatedId = validateString(id);
 
-    const property = await prisma.property.findByPk(validatedId);
+    const property = await prisma.property.findFirst({ where: { id: validatedId } });
     if (!property) throw new ConfigurableError('Imóvel não encontrado', 404);
 
     await prisma.property.update({ where: { id: property.id }, data: { verified: 'verified' } });
 
     const emailBody = 'Seu imóvel foi aprovado pela administração!';
-    const seller = await this.find(property.advertiserEmail);
+    const seller = await this.find({ email: property.advertiserEmail });
 
     let message = 'Imóvel aprovado com sucesso!';
 
