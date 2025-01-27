@@ -194,13 +194,13 @@ model CommentLikes {
 }
 
 model SharedProperties {
-  id         String   @id @unique @default(uuid())
+  id         String      @id @unique @default(uuid())
   email      String
-  propertyId String   @map("property_id")
-  cut        Decimal  @default(0.03)
-  accepted   Boolean  @default(false)
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at")
+  propertyId String      @map("property_id")
+  cut        Decimal     @default(0.03)
+  status     ShareStatus @default(pending)
+  createdAt  DateTime    @default(now()) @map("created_at")
+  updatedAt  DateTime    @default(now()) @updatedAt @map("updated_at")
 
   user     User     @relation(fields: [email], references: [email], onDelete: Cascade)
   property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
@@ -485,6 +485,12 @@ enum Verified {
 }
 
 enum AppointmentStatus {
+  pending
+  accepted
+  rejected
+}
+
+enum ShareStatus {
   pending
   accepted
   rejected
