@@ -75,16 +75,22 @@ export default class PropertyService {
   static async getPropertyDetails(propertyId) {
     const property = await prisma.property.findFirst({ where: { id: propertyId } });
 
+    property.shared = await prisma.sharedProperties.findFirst({ where: { propertyId: property.id } });
     property.address = await prisma.propertiesAddresses.findFirst({ where: { propertyId: property.id } });
     property.commodities = await prisma.propertiesCommodities.findFirst({ where: { propertyId: property.id } });
     property.prices = await prisma.propertiesPrices.findFirst({ where: { propertyId: property.id } });
-    property.shared = await prisma.sharedProperties.findMany({ where: { propertyId: property.id } });
     property.totalFavorites = await FavoriteService.getPropertyTotalFavorites(property.id);
     property.pictures = await prisma.propertyPictures.findMany({ where: { propertyId: property.id }, orderBy: { type: 'asc' } });
     property.seller = await UserService.find({ email: property.advertiserEmail });
 
     if (property.verified === 'rejected') {
-      property.reasonRejected = (await prisma.reasonRejectedProperty.findFirst({ where: { propertyId: property.id } })).reason;
+      property.reasonRejected = (await prisma.reasonRejectedProperty.findFirst({ where: { propertyId: property.id, sharingRejected: false } })).reason;
+    }
+
+    if (property.shared && property.shared.status === 'rejected') {
+      const reasonRejected = await prisma.reasonRejectedProperty.findFirst({ where: { propertyId: property.id, sharingRejected: true } });
+      if (reasonRejected) property.shared.reasonRejected = reasonRejected.reason.trim().replace(/\n/g, '');
+      else property.shared.reasonRejected = 'Sem motivo informado.';
     }
 
     return property;
@@ -723,7 +729,7 @@ export default class PropertyService {
     if (shared.length === 0) throw new ConfigurableError('Nenhum imóvel compartilhado com você', 404);
 
     const pagination = {
-      path: '/clients',
+      path: '/properties/shared/find',
       page,
       prev_page_url: page - 1 >= 1 ? page - 1 : null,
       next_page_url: Number(page) + 1 <= Math.ceil(shared.length / take) ? Number(page) + 1 : null,
@@ -802,7 +808,13 @@ export default class PropertyService {
     const sharedProperty = await prisma.sharedProperties.findFirst({ where: { propertyId: validatedPropertyId, email: validatedEmail } });
     if (!sharedProperty) throw new ConfigurableError('Imóvel compartilhado não encontrado', 404);
 
-    await prisma.sharedProperties.update({ where: { id: sharedProperty.id, email: validatedEmail }, data: { status: 'rejected' } });
+    const transactions = [
+      prisma.sharedProperties.update({ where: { id: sharedProperty.id, email: validatedEmail }, data: { status: 'rejected' } }),
+      prisma.reasonRejectedProperty.create({ data: { id: uuid(), propertyId: validatedPropertyId, reason: validatedReason, sharingRejected: true } }),
+    ];
+
+    await prisma.$transaction(transactions);
+
     if (user.type === 'realtor') {
       emailBody = `Infelizmente, o corretor ${user.name} negou o compartilhamento do imóvel com o id ${sharedProperty.propertyId}.`;
     } else if (user.type === 'realstate') {

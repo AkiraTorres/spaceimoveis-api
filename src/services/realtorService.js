@@ -1,6 +1,6 @@
 import prisma, { excludeFromObject } from '../config/prisma.js';
 import ConfigurableError from '../errors/ConfigurableError.js';
-import { validateBoolean, validateEmail, validateString, validateUF, validateUserType } from '../validators/inputValidators.js';
+import { validateEmail, validateString, validateUF, validateUserType } from '../validators/inputValidators.js';
 import UserService from './userService.js';
 
 export default class RealtorService extends UserService {
@@ -79,11 +79,11 @@ export default class RealtorService extends UserService {
     return { result, pagination };
   }
 
-  static async findAllRealtorsAndRealstates(page = 1, limit = 6, active = true) {
-    const where = { type: { in: ['realtor', 'realstate'] }, active: validateBoolean(active) };
+  static async findAllRealtorsAndRealstates(page = 1, limit = 6) {
+    const where = { type: { in: ['realtor', 'realstate'] } };
 
     if (page < 1) {
-      const users = prisma.user.findMany({ where, orderBy: { name: 'asc' } });
+      const users = await prisma.user.findMany({ where, orderBy: { name: 'asc' } });
       // if (users.length === 0) throw new ConfigurableError('Não existe nenhum corretor ou imobiliária cadastrado.', 404);
       if (users.length === 0) return [];
 

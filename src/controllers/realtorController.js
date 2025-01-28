@@ -95,9 +95,8 @@ export const findAllRealtorsAndRealstates = asyncHandler(async (req, res, next) 
   try {
     const { page = 1 } = req.query;
     const { limit = 6 } = req.query;
-    const { active = true } = req.query;
 
-    const result = await RealtorService.findAllRealtorsAndRealstates(page, limit, active);
+    const result = await RealtorService.findAllRealtorsAndRealstates(page, limit);
     res.status(200).json(result);
   } catch (error) {
     next(error);
