@@ -1,6 +1,6 @@
 import prisma, { excludeFromObject } from '../config/prisma.js';
 import ConfigurableError from '../errors/ConfigurableError.js';
-import { validateEmail, validateString, validateUF, validateUserType } from '../validators/inputValidators.js';
+import { validateBoolean, validateEmail, validateString, validateUF, validateUserType } from '../validators/inputValidators.js';
 import UserService from './userService.js';
 
 export default class RealtorService extends UserService {
@@ -75,6 +75,41 @@ export default class RealtorService extends UserService {
     const result = await Promise.all(realtors.map(async (realtor) => this.userDetails(realtor.email)));
 
     result.sort(async (a, b) => (await a.avgRating < await b.avgRating ? 1 : -1));
+
+    return { result, pagination };
+  }
+
+  static async findAllRealtorsAndRealstates(page = 1, limit = 6, active = true) {
+    const where = { type: { in: ['realtor', 'realstate'] }, active: validateBoolean(active) };
+
+    if (page < 1) {
+      const users = prisma.user.findMany({ where, orderBy: { name: 'asc' } });
+      // if (users.length === 0) throw new ConfigurableError('Não existe nenhum corretor ou imobiliária cadastrado.', 404);
+      if (users.length === 0) return [];
+
+      const result = await Promise.all(users.map(async (user) => RealtorService.userDetails(user.email)));
+      result.sort((a, b) => b.avgRating - a.avgRating);
+      return result;
+    }
+
+    const total = await prisma.user.count({ where });
+    if (total === 0) return { result: [], pagination: {} };
+
+    const lastPage = Math.ceil(total / limit);
+    const offset = Number(limit * (page - 1));
+
+    const users = await prisma.user.findMany({ where, orderBy: { name: 'asc' }, skip: offset, take: limit });
+    const result = await Promise.all(users.map(async (user) => RealtorService.userDetails(user.email)));
+    result.sort((a, b) => b.avgRating - a.avgRating);
+
+    const pagination = {
+      path: '/realtors-and-realstates',
+      page,
+      prev_page_url: page - 1 >= 1 ? page - 1 : null,
+      next_page_url: Number(page) + 1 <= lastPage ? Number(page) + 1 : null,
+      lastPage,
+      total,
+    };
 
     return { result, pagination };
   }
