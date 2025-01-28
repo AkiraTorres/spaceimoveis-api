@@ -389,9 +389,10 @@ model PropertyPictures {
 }
 
 model ReasonRejectedProperty {
-  id         String @id @unique @default(uuid())
-  propertyId String @map("property_id")
-  reason     String
+  id              String  @id @unique @default(uuid())
+  propertyId      String  @map("property_id")
+  reason          String
+  sharingRejected Boolean @default(false) @map("sharing_rejected")
 
   property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
