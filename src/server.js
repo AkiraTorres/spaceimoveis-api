@@ -58,6 +58,10 @@ app.use('/', userRoutes);
 
 app.use('/admin', adminRoutes);
 
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
+
 app.all('*', (req, res) => {
   res.status(404).send('Not Found');
 });
