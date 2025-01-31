@@ -30,7 +30,8 @@ sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 const app = initializeApp(firebaseConfig);
 const storage = getStorage(app);
-const apiKey = process.env.API_KEY;
+// const apiKey = process.env.API_KEY;
+const positionStackApiKey = process.env.POSITION_STACK_API_KEY;
 
 export default class PropertyService {
   static async checkHighlightLimit(email) {
@@ -97,13 +98,21 @@ export default class PropertyService {
   }
 
   static async getCoordinates(address) {
-    const encodedAddress = encodeURIComponent(address);
-    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodedAddress}&key=${apiKey}`;
+    // const encodedAddress = encodeURIComponent(address);
+    // const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodedAddress}&key=${apiKey}`; // Google Maps API
+    const url = 'http://api.positionstack.com/v1/forward'; // PositionStack API
 
-    const response = await axios.get(url);
-    if (response.data.status === 'OK') {
-      const { location } = response.data.results[0].geometry;
-      return location;
+    const response = await axios.get(url, {
+      params: {
+        access_key: positionStackApiKey,
+        query: address,
+        limit: 1,
+      },
+    }); // .then((response) => console.log(response.data.data[0])).catch((error) => console.log(error));
+
+    if (response.status === 200) {
+      const { latitude, longitude } = response.data.data[0];
+      return { latitude, longitude };
     }
     throw new ConfigurableError('Erro ao buscar coordenadas', 500);
   }
@@ -313,10 +322,10 @@ export default class PropertyService {
       complement: params.complement ? validateString(params.complement) : null,
     };
 
-    // const location = `${addressData.street}, ${addressData.street} - ${addressData.neighborhood}, ${addressData.city} - ${addressData.state}, ${addressData.cep}`;
-    // const addressLocation = await this.getCoordinates(location);
-    // addressData.latitude = addressLocation.lat.toString();
-    // addressData.longitude = addressLocation.lng.toString();
+    const location = `${addressData.number} ${addressData.street}, ${addressData.city} ${addressData.state}`;
+    const addressLocation = await this.getCoordinates(location);
+    addressData.latitude = addressLocation.latitude.toString();
+    addressData.longitude = addressLocation.longitude.toString();
 
     const commoditiesData = { propertyId: data.id };
     if (params.pool !== undefined) commoditiesData.pool = validateBoolean(params.pool);
@@ -433,6 +442,11 @@ export default class PropertyService {
     // const addressLocation = await this.getCoordinates(location);
     // updatedAddress.latitude = addressLocation.lat.toString() || oldProperty.latitude;
     // updatedAddress.longitude = addressLocation.lng.toString() || oldProperty.longitude;
+
+    const location = `${updatedAddress.number} ${updatedAddress.street}, ${updatedAddress.city} ${updatedAddress.state}`;
+    const addressLocation = await this.getCoordinates(location);
+    updatedAddress.latitude = addressLocation.latitude.toString();
+    updatedAddress.longitude = addressLocation.longitude.toString();
 
     const updatedCommodities = {
       pool: params.pool ? validateBoolean(params.pool) : oldProperty.pool,
