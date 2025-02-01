@@ -22,14 +22,16 @@ export default class PostService {
     });
 
     const user = await prisma.user.findFirst({ where: { email: post.email }, include: { UserPhoto: { where: { type: 'profile' } } } });
+    const url = user.UserPhoto[0] ? user.UserPhoto[0].url : null;
     const comments = await Promise.all(post.PostComments.map(async (comment) => this.getCommentDetails(comment.id)));
-    return { ...post, name: user.name, photo: (user.UserPhoto[0].url || null), PostComments: comments };
+    return { ...post, name: user.name, photo: url, PostComments: comments };
   }
 
   static async getCommentDetails(id) {
     const comment = await prisma.postComments.findUnique({ where: { id } });
     const user = await prisma.user.findFirst({ where: { email: comment.email }, include: { UserPhoto: { where: { type: 'profile' } } } });
-    return { ...comment, name: user.name, photo: (user.UserPhoto[0].url || null) };
+    const url = user.UserPhoto[0] ? user.UserPhoto[0].url : null;
+    return { ...comment, name: user.name, photo: url };
   }
 
   static async getPostsByUserEmail(email, page = 1, limit = 5) {
