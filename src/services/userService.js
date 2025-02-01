@@ -227,7 +227,10 @@ export default class UserService {
         prisma.userSocial.deleteMany({ where: { email: validatedEmail, NOT: { url: { in: oldSocialsUrlsValidated } } } }),
       ];
 
-      if (socials) transaction.push(prisma.userSocial.createMany({ data: socials, skipDuplicates: true }));
+      if (socials) {
+        transaction.push(prisma.userSocial.deleteMany({ where: { email: validatedEmail } }));
+        transaction.push(prisma.userSocial.createMany({ data: socials, skipDuplicates: true }));
+      }
     }
 
     await Promise.all(photos.map(async (photo) => {
