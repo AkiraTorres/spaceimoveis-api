@@ -187,7 +187,7 @@ export default class UserService {
 
     if (params) {
       const updatedData = {
-        // email: params.email ? validateEmail(params.email) : oldUser.email,
+        email: params.email ? validateEmail(params.email) : oldUser.email,
         name: params.name ? validateString(params.name, 'O campo nome é obrigatório') : oldUser.name,
         handler: params.handler ? await generateUniqueHandler(validateString(params.handler)) : oldUser.handler,
       };
