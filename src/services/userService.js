@@ -265,10 +265,11 @@ export default class UserService {
   static async destroy(email) {
     const validatedEmail = validateEmail(email);
 
-    const user = await prisma.user.findUnique({ where: { email: validatedEmail, active: true } });
+    const user = await prisma.user.findUnique({ where: { email: validatedEmail } }); // , active: true
     if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
 
-    await prisma.user.update({ where: { email: validatedEmail }, data: { active: false, deletedAt: new Date() } });
+    // await prisma.user.update({ where: { email: validatedEmail }, data: { active: false, deletedAt: new Date() } });
+    await prisma.user.delete({ where: { email: validatedEmail } });
     return { message: 'Usuário apagado com sucesso' };
   }
 
