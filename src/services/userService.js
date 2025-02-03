@@ -187,7 +187,7 @@ export default class UserService {
 
     if (params) {
       const updatedData = {
-        email: params.email ? validateEmail(params.email) : oldUser.email,
+        // email: params.email ? validateEmail(params.email) : oldUser.email,
         name: params.name ? validateString(params.name, 'O campo nome é obrigatório') : oldUser.name,
         handler: params.handler ? await generateUniqueHandler(validateString(params.handler)) : oldUser.handler,
       };
@@ -215,7 +215,7 @@ export default class UserService {
       const oldSocialsUrlsValidated = params.oldSocialsUrls ? params.oldSocialsUrls.map((socialUrl) => validateString(socialUrl)) : [];
 
       const socials = params.socials ? params.socials.map((social) => ({
-        email: updatedData.email,
+        email: validatedEmail,
         type: validateString(social.type),
         url: validateString(social.url),
       })) : null;
@@ -228,7 +228,7 @@ export default class UserService {
       ];
 
       if (socials) {
-        transaction.push(prisma.userSocial.deleteMany({ where: { email: validatedEmail } }));
+        // transaction.push(prisma.userSocial.deleteMany({ where: { email: validatedEmail } }));
         transaction.push(prisma.userSocial.createMany({ data: socials, skipDuplicates: true }));
       }
     }
