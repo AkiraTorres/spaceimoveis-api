@@ -6,7 +6,7 @@ import UserService from '../services/userService.js';
 import prisma from './prisma.js';
 
 const client = new MercadoPagoConfig({
-  accessToken: 'APP_USR-3992463666998012-011805-4c1c7e253770e4413b2c94a963c3ea80-492123749',
+  accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN,
   options: { timeout: 10000, idempotencyKey: uuid() },
 });
 
