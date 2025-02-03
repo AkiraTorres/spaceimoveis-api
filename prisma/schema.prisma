@@ -292,7 +292,7 @@ model Property {
   bathrooms        Int              @default(0)
   bedrooms         Int              @default(0)
   parkingSpaces    Int              @default(0) @map("parking_spaces")
-  description      String           @db.VarChar(1024)
+  description      String           @db.VarChar(2048)
   contact          String
   financiable      Boolean          @default(false)
   negotiable       Boolean          @default(false)
