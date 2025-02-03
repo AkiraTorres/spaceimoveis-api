@@ -51,15 +51,17 @@ model User {
 }
 
 model UserInfo {
-  email        String  @id @unique
-  cpf          String? @unique @db.VarChar(11)
-  cnpj         String? @unique @db.VarChar(15)
-  rg           String? @unique
-  creci        String? @unique
-  phone        String? @db.VarChar(25)
-  idPhone      String? @map("id_phone")
-  bio          String? @db.VarChar(1024)
-  subscription String? @default("free")
+  email          String  @id @unique
+  cpf            String? @unique @db.VarChar(11)
+  cnpj           String? @unique @db.VarChar(15)
+  rg             String? @unique
+  creci          String? @unique
+  phone          String? @db.VarChar(25)
+  idPhone        String? @map("id_phone")
+  bio            String? @db.VarChar(1024)
+  subscription   String? @default("free")
+  highlightLimit Int?    @default(1) @map("highlight_limits")
+  publishLimit   Int?    @default(3) @map("publish_limits")
 
   user User @relation(fields: [email], references: [email], onDelete: Cascade)
 
@@ -192,12 +194,13 @@ model CommentLikes {
 }
 
 model SharedProperties {
-  id         String   @id @unique @default(uuid())
+  id         String      @id @unique @default(uuid())
   email      String
-  propertyId String   @map("property_id")
-  accepted   Boolean  @default(false)
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at")
+  propertyId String      @map("property_id")
+  cut        Decimal     @default(0.03)
+  status     ShareStatus @default(pending)
+  createdAt  DateTime    @default(now()) @map("created_at")
+  updatedAt  DateTime    @default(now()) @updatedAt @map("updated_at")
 
   user     User     @relation(fields: [email], references: [email], onDelete: Cascade)
   property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
@@ -289,7 +292,7 @@ model Property {
   bathrooms        Int              @default(0)
   bedrooms         Int              @default(0)
   parkingSpaces    Int              @default(0) @map("parking_spaces")
-  description      String           @db.VarChar(1024)
+  description      String           @db.VarChar(2048)
   contact          String
   financiable      Boolean          @default(false)
   negotiable       Boolean          @default(false)
@@ -316,11 +319,14 @@ model Property {
 }
 
 model PropertiesPrices {
-  propertyId    String @id @unique @map("property_id")
-  rentPrice     Int?   @map("rent_price")
-  sellPrice     Int?   @map("sell_price")
-  iptu          Int?
-  aditionalFees Int?   @map("aditional_fees")
+  propertyId          String @id @unique @map("property_id")
+  rentPrice           Int?   @map("rent_price")
+  sellPrice           Int?   @map("sell_price")
+  iptu                Int?
+  aditionalFees       Int?   @map("aditional_fees")
+  deposit             Int?
+  timesDeposit        Int?   @map("times_deposit")
+  depositInstallments Int?   @map("deposit_installments")
 
   property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
@@ -383,9 +389,10 @@ model PropertyPictures {
 }
 
 model ReasonRejectedProperty {
-  id         String @id @unique @default(uuid())
-  propertyId String @map("property_id")
-  reason     String
+  id              String  @id @unique @default(uuid())
+  propertyId      String  @map("property_id")
+  reason          String
+  sharingRejected Boolean @default(false) @map("sharing_rejected")
 
   property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
@@ -479,6 +486,12 @@ enum Verified {
 }
 
 enum AppointmentStatus {
+  pending
+  accepted
+  rejected
+}
+
+enum ShareStatus {
   pending
   accepted
   rejected

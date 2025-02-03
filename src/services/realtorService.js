@@ -79,6 +79,41 @@ export default class RealtorService extends UserService {
     return { result, pagination };
   }
 
+  static async findAllRealtorsAndRealstates(page = 1, limit = 6) {
+    const where = { type: { in: ['realtor', 'realstate'] } };
+
+    if (page < 1) {
+      const users = await prisma.user.findMany({ where, orderBy: { name: 'asc' } });
+      // if (users.length === 0) throw new ConfigurableError('Não existe nenhum corretor ou imobiliária cadastrado.', 404);
+      if (users.length === 0) return [];
+
+      const result = await Promise.all(users.map(async (user) => RealtorService.userDetails(user.email)));
+      result.sort((a, b) => b.avgRating - a.avgRating);
+      return result;
+    }
+
+    const total = await prisma.user.count({ where });
+    if (total === 0) return { result: [], pagination: {} };
+
+    const lastPage = Math.ceil(total / limit);
+    const offset = Number(limit * (page - 1));
+
+    const users = await prisma.user.findMany({ where, orderBy: { name: 'asc' }, skip: offset, take: limit });
+    const result = await Promise.all(users.map(async (user) => RealtorService.userDetails(user.email)));
+    result.sort((a, b) => b.avgRating - a.avgRating);
+
+    const pagination = {
+      path: '/realtors-and-realstates',
+      page,
+      prev_page_url: page - 1 >= 1 ? page - 1 : null,
+      next_page_url: Number(page) + 1 <= lastPage ? Number(page) + 1 : null,
+      lastPage,
+      total,
+    };
+
+    return { result, pagination };
+  }
+
   static async getAvailability(email) {
     const validatedEmail = validateEmail(email);
     const user = await prisma.user.findFirst({ where: { email: validatedEmail } });

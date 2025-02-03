@@ -55,6 +55,17 @@ export function validatePrice(p, msg = "O campo 'preço' é obrigatório e deve 
   return sanitizedPrice;
 }
 
+export function validateFloat(float, msg = 'O campo é obrigatório e deve ser um número') {
+  if (float === null || float === undefined) throw new ConfigurableError(msg, 422);
+  const sanitizedFloat = parseFloat(float);
+
+  if (sanitizedFloat === undefined || Number.isNaN(sanitizedFloat)) {
+    throw new ConfigurableError(msg, 422);
+  }
+
+  return sanitizedFloat;
+}
+
 export function validateBoolean(bool, msg = 'O campo é obrigatório') {
   if (bool === null) throw new ConfigurableError(msg, 422);
   if (bool === false || bool === true) return bool;

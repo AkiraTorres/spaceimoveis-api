@@ -91,6 +91,18 @@ export const destroy = asyncHandler(async (req, res, next) => {
   }
 });
 
+export const findAllRealtorsAndRealstates = asyncHandler(async (req, res, next) => {
+  try {
+    const { page = 1 } = req.query;
+    const { limit = 6 } = req.query;
+
+    const result = await RealtorService.findAllRealtorsAndRealstates(page, limit);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
 export const getAvailability = asyncHandler(async (req, res, next) => {
   try {
     const result = await RealtorService.getAvailability(req.params.email);

@@ -4,6 +4,8 @@ import Express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 
+import { createPaymentPreference, paymentStatus } from './config/payment.js';
+import { findAllRealtorsAndRealstates } from './controllers/realtorController.js';
 import adminRoutes from './routes/adminRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
 import clientRoutes from './routes/clientRoutes.js';
@@ -48,9 +50,17 @@ app.use('/dashboard', sellerDashboardRoutes);
 app.use('/follow', followerRoutes);
 app.use('/posts', postRoutes);
 
+app.get('/realtors-and-realstates', findAllRealtorsAndRealstates);
+app.post('/criar-pix', createPaymentPreference);
+app.get('/payment-status/:paymentId', paymentStatus);
+
 app.use('/', userRoutes);
 
 app.use('/admin', adminRoutes);
+
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
 
 app.all('*', (req, res) => {
   res.status(404).send('Not Found');

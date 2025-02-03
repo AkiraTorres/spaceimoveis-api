@@ -28,8 +28,8 @@ router.put('/:id', verifyJwt, matchSellerEmail, upload.any(), controller.update)
 router.delete('/:id', verifyJwt, matchSellerEmail, controller.destroy);
 
 router.put('/share/:id', verifyGoogleToken, verifyJwt, controller.shareProperty);
-router.get('/shared/:id', verifyGoogleToken, verifyJwt, controller.getSharedProperties);
-router.get('/shared', verifyGoogleToken, verifyJwt, controller.getSharedProperties);
+router.get('/shared/find/:id', verifyGoogleToken, verifyJwt, controller.getSharedProperties);
+router.get('/shared/find/', verifyGoogleToken, verifyJwt, controller.getSharedProperties);
 router.post('/share/confirm/:id', verifyGoogleToken, verifyJwt, controller.confirmSharedProperty);
 router.post('/share/negate/:id', verifyGoogleToken, verifyJwt, controller.negateSharedProperty);
 

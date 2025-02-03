@@ -13,6 +13,7 @@ import {
   validateBoolean,
   validateCep,
   validateEmail,
+  validateFloat,
   validateFurnished,
   validateInteger,
   validatePhone,
@@ -29,7 +30,8 @@ sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 const app = initializeApp(firebaseConfig);
 const storage = getStorage(app);
-const apiKey = process.env.API_KEY;
+// const apiKey = process.env.API_KEY;
+const positionStackApiKey = process.env.POSITION_STACK_API_KEY;
 
 export default class PropertyService {
   static async checkHighlightLimit(email) {
@@ -66,31 +68,51 @@ export default class PropertyService {
     const totalPublishProperties = await prisma.property.count({ where: { advertiserEmail: validatedEmail, isHighlight: false, isPublished: true } });
     const totalHighlightedProperties = await prisma.property.count({ where: { advertiserEmail: validatedEmail, isHighlight: true } });
 
-    return { totalPublishProperties, totalHighlightedProperties, publishLimit: 3, highlightLimit: 1 };
+    const userInfo = await prisma.userInfo.findFirst({ where: { email: validatedEmail } });
+
+    return { totalPublishProperties, totalHighlightedProperties, publishLimit: userInfo.publishLimit, highlightLimit: userInfo.highlightLimit };
   }
 
   static async getPropertyDetails(propertyId) {
     const property = await prisma.property.findFirst({ where: { id: propertyId } });
 
+    property.shared = await prisma.sharedProperties.findFirst({ where: { propertyId: property.id } });
     property.address = await prisma.propertiesAddresses.findFirst({ where: { propertyId: property.id } });
     property.commodities = await prisma.propertiesCommodities.findFirst({ where: { propertyId: property.id } });
     property.prices = await prisma.propertiesPrices.findFirst({ where: { propertyId: property.id } });
-    property.shared = await prisma.sharedProperties.findFirst({ where: { propertyId: property.id, email: property.advertiserEmail } }) || false;
     property.totalFavorites = await FavoriteService.getPropertyTotalFavorites(property.id);
     property.pictures = await prisma.propertyPictures.findMany({ where: { propertyId: property.id }, orderBy: { type: 'asc' } });
     property.seller = await UserService.find({ email: property.advertiserEmail });
+
+    if (property.verified === 'rejected') {
+      property.reasonRejected = (await prisma.reasonRejectedProperty.findFirst({ where: { propertyId: property.id, sharingRejected: false } })).reason;
+    }
+
+    if (property.shared && property.shared.status === 'rejected') {
+      const reasonRejected = await prisma.reasonRejectedProperty.findFirst({ where: { propertyId: property.id, sharingRejected: true } });
+      if (reasonRejected) property.shared.reasonRejected = reasonRejected.reason.trim().replace(/\n/g, '');
+      else property.shared.reasonRejected = 'Sem motivo informado.';
+    }
 
     return property;
   }
 
   static async getCoordinates(address) {
-    const encodedAddress = encodeURIComponent(address);
-    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodedAddress}&key=${apiKey}`;
+    // const encodedAddress = encodeURIComponent(address);
+    // const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodedAddress}&key=${apiKey}`; // Google Maps API
+    const url = 'http://api.positionstack.com/v1/forward'; // PositionStack API
 
-    const response = await axios.get(url);
-    if (response.data.status === 'OK') {
-      const { location } = response.data.results[0].geometry;
-      return location;
+    const response = await axios.get(url, {
+      params: {
+        access_key: positionStackApiKey,
+        query: address,
+        limit: 1,
+      },
+    }); // .then((response) => console.log(response.data.data[0])).catch((error) => console.log(error));
+
+    if (response.status === 200) {
+      const { latitude, longitude } = response.data.data[0];
+      return { latitude, longitude };
     }
     throw new ConfigurableError('Erro ao buscar coordenadas', 500);
   }
@@ -270,7 +292,7 @@ export default class PropertyService {
       negotiable: params.negotiable ? validateBoolean(params.negotiable) : false,
       suites: params.suites ? validateInteger(params.suites) : 0,
       furnished: params.furnished ? validateFurnished(params.furnished) : 'no',
-      verified: 'verified', // TODO: change to 'pending' when moving to production
+      verified: 'pending', // TODO: change to 'pending' when moving to production
     };
     if (data.isHighlight) data.isPublished = true;
 
@@ -280,7 +302,14 @@ export default class PropertyService {
       sellPrice: params.sellPrice || data.announcementType !== 'rent' ? validatePrice(params.sellPrice, 'O campo "preço de venda" é obrigatório') : null,
       iptu: params.iptu ? validatePrice(params.iptu) : null,
       aditionalFees: params.aditionalFees ? validatePrice(params.aditionalFees) : null,
+      deposit: params.deposit ? validatePrice(params.deposit) : null,
+      timesDeposit: params.timesDeposit ? validateInteger(params.timesDeposit) : null,
+      depositInstallments: params.depositInstallments ? validateInteger(params.depositInstallments) : null,
     };
+
+    if (pricesData.deposit === -1) pricesData.deposit = null;
+    if (pricesData.timesDeposit === -1) pricesData.timesDeposit = null;
+    if (pricesData.depositInstallments === -1) pricesData.depositInstallments = null;
 
     const addressData = {
       propertyId: data.id,
@@ -293,10 +322,10 @@ export default class PropertyService {
       complement: params.complement ? validateString(params.complement) : null,
     };
 
-    const location = `${addressData.street}, ${addressData.street} - ${addressData.neighborhood}, ${addressData.city} - ${addressData.state}, ${addressData.cep}`;
+    const location = `${addressData.number} ${addressData.street}, ${addressData.city} ${addressData.state}`;
     const addressLocation = await this.getCoordinates(location);
-    addressData.latitude = addressLocation.lat.toString();
-    addressData.longitude = addressLocation.lng.toString();
+    addressData.latitude = addressLocation.latitude.toString();
+    addressData.longitude = addressLocation.longitude.toString();
 
     const commoditiesData = { propertyId: data.id };
     if (params.pool !== undefined) commoditiesData.pool = validateBoolean(params.pool);
@@ -391,7 +420,14 @@ export default class PropertyService {
       sellPrice: params.sellPrice && updatedData.announcementType !== 'rent' ? validatePrice(params.sellPrice) : oldProperty.sellPrice,
       iptu: params.iptu ? validatePrice(params.iptu) : oldProperty.iptu,
       aditionalFees: params.aditionalFees ? validatePrice(params.aditionalFees) : oldProperty.aditionalFees,
+      deposit: params.deposit ? validatePrice(params.deposit) : oldProperty.deposit,
+      timesDeposit: params.timesDeposit ? validateInteger(params.timesDeposit) : oldProperty.timesDeposit,
+      depositInstallments: params.depositInstallments ? validateInteger(params.depositInstallments) : oldProperty.depositInstallments,
     };
+
+    if (updatedPrices.deposit === -1) updatedPrices.deposit = null;
+    if (updatedPrices.timesDeposit === -1) updatedPrices.timesDeposit = null;
+    if (updatedPrices.depositInstallments === -1) updatedPrices.depositInstallments = null;
 
     const updatedAddress = {
       cep: params.cep ? validateCep(params.cep) : oldProperty.cep,
@@ -402,10 +438,15 @@ export default class PropertyService {
       complement: params.complement ? validateString(params.complement) : oldProperty.complement,
     };
 
-    const location = `${updatedAddress.street}, ${updatedAddress.street} - ${updatedAddress.neighborhood}, ${updatedAddress.city} - ${updatedAddress.state}, ${updatedAddress.cep}`;
+    // const location = `${updatedAddress.street}, ${updatedAddress.street} - ${updatedAddress.neighborhood}, ${updatedAddress.city} - ${updatedAddress.state}, ${updatedAddress.cep}`;
+    // const addressLocation = await this.getCoordinates(location);
+    // updatedAddress.latitude = addressLocation.lat.toString() || oldProperty.latitude;
+    // updatedAddress.longitude = addressLocation.lng.toString() || oldProperty.longitude;
+
+    const location = `${updatedAddress.number} ${updatedAddress.street}, ${updatedAddress.city} ${updatedAddress.state}`;
     const addressLocation = await this.getCoordinates(location);
-    updatedAddress.latitude = addressLocation.lat.toString() || oldProperty.latitude;
-    updatedAddress.longitude = addressLocation.lng.toString() || oldProperty.longitude;
+    updatedAddress.latitude = addressLocation.latitude.toString();
+    updatedAddress.longitude = addressLocation.longitude.toString();
 
     const updatedCommodities = {
       pool: params.pool ? validateBoolean(params.pool) : oldProperty.pool,
@@ -430,7 +471,7 @@ export default class PropertyService {
     if (updatedData.isPublished && !oldProperty.isPublished) await this.checkPublishLimit(validatedSellerEmail);
 
     // TODO: enable this line again when in production
-    // if (updatedData.description !== oldProperty.description || files.length > 0) updatedData.verified = 'pending';
+    if (updatedData.description !== oldProperty.description || files.length > 0) updatedData.verified = 'pending';
 
     const property = await prisma.property.update({ where: { id: validatedId }, data: updatedData });
     property.prices = await prisma.propertiesPrices.update({ where: { propertyId: validatedId }, data: updatedPrices });
@@ -648,7 +689,7 @@ export default class PropertyService {
     return { result, pagination };
   }
 
-  static async shareProperty(propertyId, ownerEmail, guestEmail) {
+  static async shareProperty(propertyId, ownerEmail, { guestEmail, cut }) {
     const validatedPropertyId = validateString(propertyId);
     const validatedOwnerEmail = validateEmail(ownerEmail);
     const validatedGuestEmail = validateEmail(guestEmail);
@@ -659,13 +700,19 @@ export default class PropertyService {
     const guest = await UserService.find({ email: validatedGuestEmail });
     if (!guest) throw new ConfigurableError('O usuário que você tentou compartilhar o imóvel não encontrado', 404);
 
-    const property = await prisma.property.findFirst(validatedPropertyId);
+    const property = await prisma.property.findFirst({ where: { id: validatedPropertyId } });
     if (!property) throw new ConfigurableError('Imóvel não encontrado', 404);
 
-    const shared = prisma.sharedProperties.findFirst({ where: { email: validatedGuestEmail, propertyId: validatedPropertyId } });
-    if (shared) throw new ConfigurableError('Imóvel já compartilhado com este usuário', 400);
+    const shared = await prisma.sharedProperties.findFirst({ where: { propertyId: validatedPropertyId } });
+    if (shared && shared.email === validatedGuestEmail && shared.status === 'pending') throw new ConfigurableError('Imóvel já compartilhado com este usuário e esperando aprovação', 400);
+    else if (shared && shared.status === 'pending') throw new ConfigurableError('Imóvel já compartilhado com outro usuário e esperando aprovação', 400);
+    else if (shared && shared.email === validatedGuestEmail && shared.status === 'accepted') throw new ConfigurableError('Imóvel já compartilhado e aceito por este usuário', 400);
+    else if (shared && shared.status === 'accepted') throw new ConfigurableError('Imóvel já compartilhado e aceito por outro usuário', 400);
 
-    await prisma.sharedProperties.create({ id: uuid(), email: validatedGuestEmail, propertyId: validatedPropertyId });
+    const cutValue = cut && validateFloat(cut) && cut >= 0 && cut <= 1 ? validateFloat(cut) : shared.cut || 0.03;
+
+    if (shared) await prisma.sharedProperties.update({ where: { id: shared.id }, data: { email: validatedGuestEmail, status: 'pending', cut: cutValue } });
+    else await prisma.sharedProperties.create({ data: { id: uuid(), email: validatedGuestEmail, propertyId: validatedPropertyId, cut: cutValue } });
 
     const mailOptions = {
       from: process.env.EMAIL_ADDRESS,
@@ -683,21 +730,20 @@ export default class PropertyService {
     return { message: response };
   }
 
-  static async getSharedProperties(email, page = 1, take = 6) {
+  static async getSharedProperties(email, status = null, page = 1, take = 6) {
     const validatedEmail = validateEmail(email);
-    const user = await this.find(validatedEmail);
+    const user = await UserService.find({ email: validatedEmail });
     if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
 
-    const shared = await prisma.sharedProperties.findMany({
-      where: { email: validatedEmail, accepted: false },
-      orderBy: { createdAt: 'desc' },
-      take,
-    });
+    const where = { email: validatedEmail };
+    if (status !== null && status !== undefined) where.status = status;
+
+    const shared = await prisma.sharedProperties.findMany({ where, orderBy: { createdAt: 'desc' }, take });
 
     if (shared.length === 0) throw new ConfigurableError('Nenhum imóvel compartilhado com você', 404);
 
     const pagination = {
-      path: '/clients',
+      path: '/properties/shared/find',
       page,
       prev_page_url: page - 1 >= 1 ? page - 1 : null,
       next_page_url: Number(page) + 1 <= Math.ceil(shared.length / take) ? Number(page) + 1 : null,
@@ -706,7 +752,7 @@ export default class PropertyService {
     };
 
     const properties = await Promise.all(shared.map(async (sharedProperty) => {
-      const property = await prisma.property.findOne({ where: { id: sharedProperty.propertyId } });
+      const property = await prisma.property.findFirst({ where: { id: sharedProperty.propertyId } });
       return this.getPropertyDetails(property.id);
     }));
 
@@ -738,15 +784,15 @@ export default class PropertyService {
     const sharedProperty = await prisma.sharedProperties.findFirst({ where: { propertyId: validatedPropertyId, email: validatedEmail } });
     if (!sharedProperty) throw new ConfigurableError('Imóvel compartilhado não encontrado', 404);
 
-    const property = await prisma.property.findFirst(validatedPropertyId);
+    const property = await prisma.property.findFirst({ where: { id: validatedPropertyId } });
 
-    await prisma.sharedProperties.update({ where: { id: sharedProperty.id, email: validatedEmail }, data: { accepted: true } });
+    await prisma.sharedProperties.update({ where: { id: sharedProperty.id, email: validatedEmail }, data: { status: 'accepted' } });
     await prisma.sharedProperties.deleteMany({ where: { propertyId: validatedPropertyId, email: { not: validatedEmail } } });
 
     if (user.type === 'realtor') {
-      emailBody = `O corretor ${user.name} aceitou o compartilhamento do imóvel com o id ${sharedProperty.property_id}!`;
+      emailBody = `O corretor ${user.name} aceitou o compartilhamento do imóvel com o id ${sharedProperty.propertyId}!`;
     } else if (user.type === 'realstate') {
-      emailBody = `A imobiliária ${user.name} aceitou o compartilhamento do imóvel com o id ${sharedProperty.property_id}!`;
+      emailBody = `A imobiliária ${user.name} aceitou o compartilhamento do imóvel com o id ${sharedProperty.propertyId}!`;
     }
 
     const mailOptions = {
@@ -776,16 +822,22 @@ export default class PropertyService {
     const sharedProperty = await prisma.sharedProperties.findFirst({ where: { propertyId: validatedPropertyId, email: validatedEmail } });
     if (!sharedProperty) throw new ConfigurableError('Imóvel compartilhado não encontrado', 404);
 
-    await prisma.sharedProperties.delete({ where: { id: sharedProperty.id, email: validatedEmail } });
+    const transactions = [
+      prisma.sharedProperties.update({ where: { id: sharedProperty.id, email: validatedEmail }, data: { status: 'rejected' } }),
+      prisma.reasonRejectedProperty.create({ data: { id: uuid(), propertyId: validatedPropertyId, reason: validatedReason, sharingRejected: true } }),
+    ];
+
+    await prisma.$transaction(transactions);
+
     if (user.type === 'realtor') {
-      emailBody = `Infelizmente, o corretor ${user.name} negou o compartilhamento do imóvel com o id ${sharedProperty.property_id}.`;
+      emailBody = `Infelizmente, o corretor ${user.name} negou o compartilhamento do imóvel com o id ${sharedProperty.propertyId}.`;
     } else if (user.type === 'realstate') {
-      emailBody = `Infelizmente, a imobiliária ${user.name} negou o compartilhamento do imóvel com o id ${sharedProperty.property_id}.`;
+      emailBody = `Infelizmente, a imobiliária ${user.name} negou o compartilhamento do imóvel com o id ${sharedProperty.propertyId}.`;
     }
 
     emailBody += validatedReason;
 
-    const property = await prisma.property.findFirst(validatedPropertyId);
+    const property = await prisma.property.findFirst({ where: { id: validatedPropertyId } });
 
     const mailOptions = {
       from: process.env.EMAIL_ADDRESS,

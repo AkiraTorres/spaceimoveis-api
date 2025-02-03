@@ -152,8 +152,11 @@ export default class MessageService {
     const user = await UserService.find({ email: validatedEmail });
     if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
 
+    const chats = await ChatService.findUserChats(validatedEmail);
+
     const m = await prisma.message.findMany({
       where: {
+        chatId: { in: chats.map((chat) => chat.id) },
         senderEmail: { not: validatedEmail },
         isRead: false,
       },
@@ -162,10 +165,15 @@ export default class MessageService {
       },
     });
 
-    const messages = m.map((message) => ({
-      ...message,
-      senderName: user.name,
-      senderProfile: user.profile,
+    const messages = await Promise.all(m.map(async (message) => {
+      const sender = await UserService.find({ email: message.senderEmail });
+
+      return {
+        ...message,
+        senderName: sender.name,
+        // senderEmail: sender.email,
+        senderProfile: sender.profile,
+      };
     }));
 
     return { messages, total: messages.length };

@@ -38,7 +38,7 @@ export async function loginGoogle({ googleToken }) {
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user) throw error;
 
-  return { user, accessToken: googleToken };
+  return { user: await UserService.userDetails(user.email), accessToken: googleToken };
 }
 
 export async function loginAdmin({ email, password }) {

@@ -154,8 +154,9 @@ export const shareProperty = asyncHandler(async (req, res, next) => {
   try {
     const { id } = req.params;
     const { email } = req;
+    const data = req.body;
 
-    const result = await PropertyService.shareProperty(id, email);
+    const result = await PropertyService.shareProperty(id, email, data);
     res.status(200).json(result);
   } catch (error) {
     next(error);
@@ -165,8 +166,9 @@ export const shareProperty = asyncHandler(async (req, res, next) => {
 export const getSharedProperties = asyncHandler(async (req, res, next) => {
   try {
     const { email } = req;
+    const { page = 1, limit = 6, status = null } = req.query;
 
-    const result = await PropertyService.getSharedProperties(email);
+    const result = await PropertyService.getSharedProperties(email, status, page, limit);
     res.status(200).json(result);
   } catch (error) {
     next(error);
@@ -189,8 +191,9 @@ export const negateSharedProperty = asyncHandler(async (req, res, next) => {
   try {
     const { id } = req.params;
     const { email } = req;
+    const { reason } = req.body;
 
-    const result = await PropertyService.negateSharedProperty(id, email);
+    const result = await PropertyService.negateSharedProperty(id, email, reason);
     res.status(200).json(result);
   } catch (error) {
     next(error);

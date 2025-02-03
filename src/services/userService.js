@@ -149,24 +149,26 @@ export default class UserService {
 
     if (socials) transaction.push(prisma.userSocial.createMany({ data: socials, skipDuplicates: true }));
 
-    await Promise.all(photos.map(async (photo) => {
-      if (!['profile', 'banner'].includes(photo.fieldname)) throw new ConfigurableError("As fotos de usuário devem possuir a tag 'profile' ou 'banner'", 422);
+    if (photos) {
+      await Promise.all(photos.map(async (photo) => {
+        if (!['profile', 'banner'].includes(photo.fieldname)) throw new ConfigurableError("As fotos de usuário devem possuir a tag 'profile' ou 'banner'", 422);
 
-      const storageRef = ref(storage, `images/users/${newUser.email}/${photo.originalname}`);
-      const metadata = { contentType: photo.mimetype };
-      const snapshot = await uploadBytesResumable(storageRef, photo.buffer, metadata);
-      const downloadUrl = await getDownloadURL(snapshot.ref);
+        const storageRef = ref(storage, `images/users/${newUser.email}/${photo.originalname}`);
+        const metadata = { contentType: photo.mimetype };
+        const snapshot = await uploadBytesResumable(storageRef, photo.buffer, metadata);
+        const downloadUrl = await getDownloadURL(snapshot.ref);
 
-      const profileData = {
-        id: uuid(),
-        email: newUser.email,
-        url: downloadUrl,
-        name: photo.originalname,
-        type: photo.fieldname,
-      };
+        const profileData = {
+          id: uuid(),
+          email: newUser.email,
+          url: downloadUrl,
+          name: photo.originalname,
+          type: photo.fieldname,
+        };
 
-      transaction.push(prisma.userPhoto.create({ data: profileData }));
-    }));
+        transaction.push(prisma.userPhoto.create({ data: profileData }));
+      }));
+    }
 
     await prisma.$transaction(transaction);
 
@@ -213,7 +215,7 @@ export default class UserService {
       const oldSocialsUrlsValidated = params.oldSocialsUrls ? params.oldSocialsUrls.map((socialUrl) => validateString(socialUrl)) : [];
 
       const socials = params.socials ? params.socials.map((social) => ({
-        email: updatedData.email,
+        email: validatedEmail,
         type: validateString(social.type),
         url: validateString(social.url),
       })) : null;
@@ -225,7 +227,10 @@ export default class UserService {
         prisma.userSocial.deleteMany({ where: { email: validatedEmail, NOT: { url: { in: oldSocialsUrlsValidated } } } }),
       ];
 
-      if (socials) transaction.push(prisma.userSocial.createMany({ data: socials, skipDuplicates: true }));
+      if (socials) {
+        // transaction.push(prisma.userSocial.deleteMany({ where: { email: validatedEmail } }));
+        transaction.push(prisma.userSocial.createMany({ data: socials, skipDuplicates: true }));
+      }
     }
 
     await Promise.all(photos.map(async (photo) => {

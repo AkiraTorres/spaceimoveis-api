@@ -9,14 +9,16 @@ io.on('connection', (socket) => {
     const unreadMessages = await MessageService.getUnreadMessages(data.email);
 
     io.to(data.email).emit('notification', unreadMessages);
-    callback(messagesRoom);
+    if (typeof callback === 'function') callback(messagesRoom);
   });
 
   socket.on('open_notification', async (data, callback) => {
     socket.join(data.email);
 
-    const unreadMessages = await MessageService.getUnreadMessages(data.email);
-    callback(unreadMessages);
+    if (typeof callback === 'function') {
+      const unreadMessages = await MessageService.getUnreadMessages(data.email);
+      callback(unreadMessages);
+    }
   });
 
   socket.on('message', async (data) => {
