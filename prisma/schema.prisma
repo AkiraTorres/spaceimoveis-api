@@ -443,6 +443,21 @@ model AvailableTime {
   @@map("available_times")
 }
 
+model Announcement {
+  id             String   @id @unique @default(uuid())
+  announcerName  String   @map("announcer_name")
+  announcerEmail String   @map("announcer_email")
+  announcerCpf   String   @map("announcer_cpf")
+  photoUrl       String   @map("photo_url")
+  siteUrl        String   @map("site_url")
+  paymentType    String   @map("payment_type")
+  type           String   @map("type")
+  active         Boolean  @default(false)
+  validUntil     DateTime @default(now()) @map("valid_until")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @default(now()) @updatedAt @map("updated_at")
+}
+
 enum AnnouncementType {
   rent
   sell
