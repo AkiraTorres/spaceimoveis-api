@@ -704,10 +704,10 @@ export default class PropertyService {
     if (!property) throw new ConfigurableError('Imóvel não encontrado', 404);
 
     const shared = await prisma.sharedProperties.findFirst({ where: { propertyId: validatedPropertyId } });
-    if (shared && shared.email === validatedGuestEmail && shared.status === 'pending') throw new ConfigurableError('Imóvel já compartilhado com este usuário e esperando aprovação', 400);
-    else if (shared && shared.status === 'pending') throw new ConfigurableError('Imóvel já compartilhado com outro usuário e esperando aprovação', 400);
-    else if (shared && shared.email === validatedGuestEmail && shared.status === 'accepted') throw new ConfigurableError('Imóvel já compartilhado e aceito por este usuário', 400);
-    else if (shared && shared.status === 'accepted') throw new ConfigurableError('Imóvel já compartilhado e aceito por outro usuário', 400);
+    // if (shared && shared.email === validatedGuestEmail && shared.status === 'pending') throw new ConfigurableError('Imóvel já compartilhado com este usuário e esperando aprovação', 400);
+    // else if (shared && shared.status === 'pending') throw new ConfigurableError('Imóvel já compartilhado com outro usuário e esperando aprovação', 400);
+    // else if (shared && shared.email === validatedGuestEmail && shared.status === 'accepted') throw new ConfigurableError('Imóvel já compartilhado e aceito por este usuário', 400);
+    // else if (shared && shared.status === 'accepted') throw new ConfigurableError('Imóvel já compartilhado e aceito por outro usuário', 400);
 
     const cutValue = cut && validateFloat(cut) && cut >= 0 && cut <= 1 ? validateFloat(cut) : shared.cut || 0.03;
 

@@ -9,6 +9,10 @@ const router = Express.Router();
 
 const upload = multer({ storage: multer.memoryStorage() });
 
+router.get('/announcement', verifyJwt, verifyAdmin, controller.getAnnouncements);
+router.post('/announcement', verifyJwt, verifyAdmin, upload.single('photo'), controller.createAnnouncement);
+router.post('/announcement/pay/:id', verifyJwt, verifyAdmin, controller.payAnnouncement);
+
 router.get('/', verifyJwt, verifyAdmin, controller.findAll);
 router.get('/:email', verifyJwt, verifyAdmin, controller.findByPk);
 router.get('/cpf/:cpf', verifyJwt, verifyAdmin, controller.findByCpf);
