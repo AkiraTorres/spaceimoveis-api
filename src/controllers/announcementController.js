@@ -2,6 +2,17 @@ import asyncHandler from 'express-async-handler';
 
 import AnnouncementService from '../services/announcementService.js';
 
+export const getAnnouncement = asyncHandler(async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const result = await AnnouncementService.getAnnouncement(id);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
 export const getAnnouncements = asyncHandler(async (req, res, next) => {
   try {
     const { active = null } = req.query;
@@ -53,6 +64,17 @@ export const handlePayment = asyncHandler(async (req, res, next) => {
     const { action, data } = req.body;
 
     const result = await AnnouncementService.handlePayment(action, data);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+export const deleteAnnouncement = asyncHandler(async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const result = await AnnouncementService.deleteAnnouncement(id);
     res.status(200).json(result);
   } catch (error) {
     next(error);

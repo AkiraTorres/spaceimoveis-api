@@ -19,6 +19,15 @@ dotenv.config();
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 export default class AnnouncementService {
+  static async getAnnouncement(id) {
+    const validatedId = validateString(id);
+
+    const announcement = await prisma.announcement.findFirst({ where: { id: validatedId } });
+    if (!announcement) throw new ConfigurableError('Anúncio não encontrado', 404);
+
+    return announcement;
+  }
+
   static async getAnnouncements(active = null) {
     const where = {};
     if (active !== null) where.active = active;
@@ -181,5 +190,16 @@ export default class AnnouncementService {
     }
 
     return { message: 'Evento de pagamento recebido.' };
+  }
+
+  static async deleteAnnouncement(id) {
+    const validatedId = validateString(id);
+
+    const announcement = await prisma.announcement.findFirst({ where: { id: validatedId } });
+    if (!announcement) throw new ConfigurableError('Anúncio não encontrado', 404);
+
+    await prisma.announcement.delete({ where: { id: validatedId } });
+
+    return { message: 'Anúncio excluído com sucesso.' };
   }
 }
