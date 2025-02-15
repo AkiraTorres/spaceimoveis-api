@@ -444,18 +444,24 @@ model AvailableTime {
 }
 
 model Announcement {
-  id             String   @id @unique @default(uuid())
-  announcerName  String   @map("announcer_name")
-  announcerEmail String   @map("announcer_email")
-  announcerCpf   String   @map("announcer_cpf")
-  photoUrl       String   @map("photo_url")
-  siteUrl        String   @map("site_url")
-  paymentType    String   @map("payment_type")
-  type           String   @map("type")
-  active         Boolean  @default(false)
-  validUntil     DateTime @default(now()) @map("valid_until")
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @default(now()) @updatedAt @map("updated_at")
+  id                String   @id @unique @default(uuid())
+  announcerName     String   @map("announcer_name")
+  announcerEmail    String   @map("announcer_email")
+  announcerCpf      String   @map("announcer_cpf")
+  photoUrl          String   @map("photo_url")
+  siteUrl           String   @map("site_url")
+  type              String   @map("type")
+  paymentType       String   @map("payment_type")
+  paymentId         String   @map("payment_id")
+  paymentStatus     String   @map("payment_status")
+  transactionAmount Float    @map("transaction_amount")
+  totalViews        Int      @default(0) @map("total_views")
+  active            Boolean  @default(false)
+  validUntil        DateTime @default(now()) @map("valid_until")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("announcements")
 }
 
 enum AnnouncementType {
