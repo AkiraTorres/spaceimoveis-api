@@ -158,7 +158,7 @@ export default class AnnouncementService {
     if (!announcement) throw new ConfigurableError('Anúncio não encontrado', 404);
 
     const views = announcement.views + 1;
-    await prisma.announcement.update({ where: { id: announcement.id }, data: { views } });
+    await prisma.announcement.update({ where: { id: announcement.id }, data: { totalViews: views } });
 
     return { views };
   }
