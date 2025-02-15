@@ -44,7 +44,7 @@ export default class PropertyService {
 
     const totalHighlightedProperties = await prisma.property.count({ where: { email, isHighlighted: true }, include: { SharedProperties: true } });
 
-    if (totalHighlightedProperties >= highlightLimit) throw new ConfigurableError('Limite de destaques atingido', 400);
+    return (totalHighlightedProperties >= highlightLimit);
   }
 
   static async checkPublishLimit(email) {
@@ -568,6 +568,22 @@ export default class PropertyService {
     return { message: 'Imóvel publicado com sucesso' };
   }
 
+  static async highlight(id, email) {
+    const validatedEmail = validateEmail(email);
+    const user = await UserService.find({ email: validatedEmail });
+    if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
+
+    const validatedId = validateString(id);
+    const property = await prisma.property.findFirst({ where: { id: validatedId } });
+    if (!property) throw new ConfigurableError('Imóvel não encontrado', 404);
+
+    if (property.advertiserEmail !== email) throw new ConfigurableError('Você não tem permissão para destacar este imóvel', 403);
+
+    if (this.checkHighlightLimit(email)) throw new ConfigurableError('Limite de destaques atingido', 400);
+
+    await prisma.property.update({ where: { id: validatedId }, data: { isHighlight: true, isPublished: true } });
+  }
+
   static async destroy(id, email) {
     const validatedId = validateString(id);
 
@@ -704,10 +720,10 @@ export default class PropertyService {
     if (!property) throw new ConfigurableError('Imóvel não encontrado', 404);
 
     const shared = await prisma.sharedProperties.findFirst({ where: { propertyId: validatedPropertyId } });
-    if (shared && shared.email === validatedGuestEmail && shared.status === 'pending') throw new ConfigurableError('Imóvel já compartilhado com este usuário e esperando aprovação', 400);
-    else if (shared && shared.status === 'pending') throw new ConfigurableError('Imóvel já compartilhado com outro usuário e esperando aprovação', 400);
-    else if (shared && shared.email === validatedGuestEmail && shared.status === 'accepted') throw new ConfigurableError('Imóvel já compartilhado e aceito por este usuário', 400);
-    else if (shared && shared.status === 'accepted') throw new ConfigurableError('Imóvel já compartilhado e aceito por outro usuário', 400);
+    // if (shared && shared.email === validatedGuestEmail && shared.status === 'pending') throw new ConfigurableError('Imóvel já compartilhado com este usuário e esperando aprovação', 400);
+    // else if (shared && shared.status === 'pending') throw new ConfigurableError('Imóvel já compartilhado com outro usuário e esperando aprovação', 400);
+    // else if (shared && shared.email === validatedGuestEmail && shared.status === 'accepted') throw new ConfigurableError('Imóvel já compartilhado e aceito por este usuário', 400);
+    // else if (shared && shared.status === 'accepted') throw new ConfigurableError('Imóvel já compartilhado e aceito por outro usuário', 400);
 
     const cutValue = cut && validateFloat(cut) && cut >= 0 && cut <= 1 ? validateFloat(cut) : shared.cut || 0.03;
 

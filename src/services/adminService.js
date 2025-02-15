@@ -3,11 +3,10 @@ import dotenv from 'dotenv';
 import { initializeApp } from 'firebase/app';
 import { deleteObject, getStorage, ref } from 'firebase/storage';
 
-import { validateString } from '../validators/inputValidators.js';
-
 import firebaseConfig from '../config/firebase.js';
 import prisma from '../config/prisma.js';
 import ConfigurableError from '../errors/ConfigurableError.js';
+import { validateString } from '../validators/inputValidators.js';
 import PropertyService from './propertyService.js';
 import UserService from './userService.js';
 

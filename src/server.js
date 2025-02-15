@@ -7,6 +7,7 @@ import { Server } from 'socket.io';
 import { createPaymentPreference, paymentStatus } from './config/payment.js';
 import { findAllRealtorsAndRealstates } from './controllers/realtorController.js';
 import adminRoutes from './routes/adminRoutes.js';
+import announcementRoutes from './routes/announcementRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
 import clientRoutes from './routes/clientRoutes.js';
 import favoriteRoutes from './routes/favoriteRoutes.js';
@@ -21,6 +22,7 @@ import realstateRoutes from './routes/realstateRoutes.js';
 import realtorRoutes from './routes/realtorRoutes.js';
 import sellerDashboardRoutes from './routes/sellerDashboardRoutes.js';
 import userRoutes from './routes/userRoutes.js';
+import startDeactivationTask from './tasks/deactivateExpired.js';
 
 const app = Express();
 const httpServer = createServer(app);
@@ -49,6 +51,7 @@ app.use('/message', messageRoutes);
 app.use('/dashboard', sellerDashboardRoutes);
 app.use('/follow', followerRoutes);
 app.use('/posts', postRoutes);
+app.use('/announcement', announcementRoutes);
 
 app.get('/realtors-and-realstates', findAllRealtorsAndRealstates);
 app.post('/criar-pix', createPaymentPreference);
@@ -74,5 +77,7 @@ app.use((error, req, res, next) => {
   console.error(error);
   res.status(status).json({ message });
 });
+
+startDeactivationTask();
 
 export { httpServer, io };
