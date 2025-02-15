@@ -5,9 +5,9 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 
 import { createPaymentPreference, paymentStatus } from './config/payment.js';
-import { getValidAnnouncements } from './controllers/adminController.js';
 import { findAllRealtorsAndRealstates } from './controllers/realtorController.js';
 import adminRoutes from './routes/adminRoutes.js';
+import announcementRoutes from './routes/announcementRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
 import clientRoutes from './routes/clientRoutes.js';
 import favoriteRoutes from './routes/favoriteRoutes.js';
@@ -51,12 +51,11 @@ app.use('/message', messageRoutes);
 app.use('/dashboard', sellerDashboardRoutes);
 app.use('/follow', followerRoutes);
 app.use('/posts', postRoutes);
+app.use('/announcement', announcementRoutes);
 
 app.get('/realtors-and-realstates', findAllRealtorsAndRealstates);
 app.post('/criar-pix', createPaymentPreference);
 app.get('/payment-status/:paymentId', paymentStatus);
-
-app.get('/announcement', getValidAnnouncements);
 
 app.use('/', userRoutes);
 

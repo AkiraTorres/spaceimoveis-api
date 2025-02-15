@@ -44,7 +44,7 @@ export default class PropertyService {
 
     const totalHighlightedProperties = await prisma.property.count({ where: { email, isHighlighted: true }, include: { SharedProperties: true } });
 
-    if (totalHighlightedProperties >= highlightLimit) throw new ConfigurableError('Limite de destaques atingido', 400);
+    return (totalHighlightedProperties >= highlightLimit);
   }
 
   static async checkPublishLimit(email) {
@@ -566,6 +566,22 @@ export default class PropertyService {
     }
 
     return { message: 'Imóvel publicado com sucesso' };
+  }
+
+  static async highlight(id, email) {
+    const validatedEmail = validateEmail(email);
+    const user = await UserService.find({ email: validatedEmail });
+    if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
+
+    const validatedId = validateString(id);
+    const property = await prisma.property.findFirst({ where: { id: validatedId } });
+    if (!property) throw new ConfigurableError('Imóvel não encontrado', 404);
+
+    if (property.advertiserEmail !== email) throw new ConfigurableError('Você não tem permissão para destacar este imóvel', 403);
+
+    if (this.checkHighlightLimit(email)) throw new ConfigurableError('Limite de destaques atingido', 400);
+
+    await prisma.property.update({ where: { id: validatedId }, data: { isHighlight: true, isPublished: true } });
   }
 
   static async destroy(id, email) {

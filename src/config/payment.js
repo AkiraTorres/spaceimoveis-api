@@ -1,12 +1,18 @@
 /* eslint-disable no-console */
+import dotenv from 'dotenv';
 import { MercadoPagoConfig, Payment } from 'mercadopago';
 import { scheduleJob } from 'node-schedule';
 import { v4 as uuid } from 'uuid';
-import UserService from '../services/userService.js';
 import prisma from './prisma.js';
 
+import UserService from '../services/userService.js';
+
+dotenv.config();
+
+const { MERCADOPAGO_ACCESS_TOKEN } = process.env;
+
 export const paymentClient = new MercadoPagoConfig({
-  accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN,
+  accessToken: MERCADOPAGO_ACCESS_TOKEN,
   options: { timeout: 10000, idempotencyKey: uuid() },
 });
 
@@ -76,6 +82,7 @@ export const paymentStatus = async (req, res, next) => {
   const { paymentId } = req.params;
 
   const payment = new Payment(paymentClient);
+  console.log(paymentId);
 
   try {
     const paymentDetails = await payment.get({ id: paymentId });

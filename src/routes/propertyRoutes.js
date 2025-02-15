@@ -19,6 +19,8 @@ router.get('/limits', verifyJwt, controller.checkLimits);
 router.get('/:id', controller.findByPk);
 router.put('/filter', controller.filter);
 
+router.put('/highlight/:id', verifyJwt, matchSellerEmail, controller.highlightProperty);
+
 router.get('/times-seen/:id', controller.getTimesSeen);
 router.get('/most-seen/:email', controller.getMostSeenPropertiesBySeller);
 router.post('/times-seen/:id', controller.addTimesSeen);
