@@ -371,7 +371,7 @@ model PropertiesCommodities {
 
   property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
-  @@map("properties_comodities")
+  @@map("properties_commodities")
 }
 
 model PropertyPictures {
