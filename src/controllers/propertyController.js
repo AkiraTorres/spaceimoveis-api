@@ -216,7 +216,7 @@ export const highlightProperty = asyncHandler(async (req, res, next) => {
     const { id } = req.params;
     const { email } = req;
 
-    const result = await PropertyService.highlightProperty(id, email);
+    const result = await PropertyService.highlight(id, email);
     res.status(200).json(result);
   } catch (error) {
     next(error);
