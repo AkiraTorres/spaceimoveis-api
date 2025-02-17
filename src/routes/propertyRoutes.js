@@ -24,7 +24,7 @@ router.put('/publish/:id', verifyJwt, matchSellerEmail, controller.publishProper
 router.put('/unpublish/:id', verifyJwt, matchSellerEmail, controller.unpublishProperty);
 
 router.get('/times-seen/:id', controller.getTimesSeen);
-router.get('/time-seen/monthly/:id', controller.getTimesSeenByMonth);
+router.get('/times-seen/monthly/:id', controller.getTimesSeenByMonth);
 router.get('/most-seen/:email', controller.getMostSeenPropertiesBySeller);
 router.post('/times-seen/:id', controller.addTimesSeen);
 
