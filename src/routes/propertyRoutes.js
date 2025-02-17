@@ -20,8 +20,11 @@ router.get('/:id', controller.findByPk);
 router.put('/filter', controller.filter);
 
 router.put('/highlight/:id', verifyJwt, matchSellerEmail, controller.highlightProperty);
+router.put('/publish/:id', verifyJwt, matchSellerEmail, controller.publishProperty);
+router.put('/unpublish/:id', verifyJwt, matchSellerEmail, controller.unpublishProperty);
 
 router.get('/times-seen/:id', controller.getTimesSeen);
+router.get('/time-seen/monthly/:id', controller.getTimesSeenByMonth);
 router.get('/most-seen/:email', controller.getMostSeenPropertiesBySeller);
 router.post('/times-seen/:id', controller.addTimesSeen);
 

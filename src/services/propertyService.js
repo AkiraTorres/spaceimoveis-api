@@ -35,29 +35,29 @@ const positionStackApiKey = process.env.POSITION_STACK_API_KEY;
 
 export default class PropertyService {
   static async checkHighlightLimit(email) {
-    let highlightLimit;
-    const { subscription } = await prisma.user.find(email);
-    if (subscription === 'free') highlightLimit = 1;
-    if (subscription === 'platinum') highlightLimit = 3;
-    if (subscription === 'gold') highlightLimit = 9999;
-    if (subscription === 'diamond') highlightLimit = 9999;
+    let highlightLimit = 1;
+    const { type } = await prisma.user.findFirst({ where: { email } });
+    if (['realtor', 'realstate'].includes(type)) highlightLimit = 9999;
 
-    const totalHighlightedProperties = await prisma.property.count({ where: { email, isHighlighted: true }, include: { SharedProperties: true } });
+    const highlightedProperties = await prisma.property.findMany({ include: { SharedProperties: true } });
 
-    return (totalHighlightedProperties >= highlightLimit);
+    const totalHighlightedProperties = highlightedProperties.filter((property) => property.isHighlight === true
+      && (property.advertiserEmail === email || property.SharedProperties.some((shared) => shared.email === email))).length;
+
+    return totalHighlightedProperties >= highlightLimit;
   }
 
   static async checkPublishLimit(email) {
-    let limit;
-    const { subscription } = await prisma.user.find(email);
-    if (subscription === 'free') limit = 3;
-    if (subscription === 'platinum') limit = 5;
-    if (subscription === 'gold') limit = 9999;
-    if (subscription === 'diamond') limit = 9999;
+    let publishLimit = 1;
+    const { type } = await prisma.user.findFirst({ where: { email } });
+    if (['realtor', 'realstate'].includes(type)) publishLimit = 9999;
 
-    const totalProperties = await prisma.property.count({ where: { email, isHighlighted: false, isPublished: true }, include: { SharedProperties: true } });
+    const publishedProperties = await prisma.property.findMany({ include: { SharedProperties: true } });
 
-    if (totalProperties >= limit) throw new ConfigurableError('Limite de destaques atingido', 400);
+    const totalPublishedProperties = publishedProperties.filter((property) => property.isHighlight === false && property.isPublished === true
+      && (property.advertiserEmail === email || property.SharedProperties.some((shared) => shared.email === email))).length;
+
+    return totalPublishedProperties >= publishLimit;
   }
 
   static async checkLimits(email) {
@@ -245,18 +245,45 @@ export default class PropertyService {
     const property = await prisma.property.findFirst({ where: { id: validatedId } });
     if (!property) throw new ConfigurableError('Imóvel não encontrado', 404);
 
-    return property.timesSeen;
+    const allViews = await prisma.visualization.findMany({ where: { propertyId: validatedId } });
+
+    return { timesSeen: property.timesSeen, visualizations: allViews };
   }
 
-  static async addTimesSeen(id) {
+  static async getTimesSeenByMonth(id) {
     const validatedId = validateString(id);
     const property = await prisma.property.findFirst({ where: { id: validatedId } });
     if (!property) throw new ConfigurableError('Imóvel não encontrado', 404);
 
-    await prisma.visualization.create({ data: { propertyId: validatedId } });
+    const allViews = await prisma.visualization.findMany({ where: { propertyId: validatedId } });
+
+    const viewsByMonth = allViews.reduce((acc, view) => {
+      const date = new Date(view.createdAt);
+      const month = date.getMonth() + 1;
+      const year = date.getFullYear();
+      const key = `${month}/${year}`;
+      if (!acc[key]) {
+        acc[key] = 0;
+      }
+      acc[key] += 1;
+      return acc;
+    }, {});
+
+    return { timesSeen: property.timesSeen, visualizations: allViews, viewsByMonth };
+  }
+
+  static async addTimesSeen(id, { latitude = null, longitude = null }) {
+    const validatedId = validateString(id);
+    const property = await prisma.property.findFirst({ where: { id: validatedId } });
+    if (!property) throw new ConfigurableError('Imóvel não encontrado', 404);
+
+    await prisma.visualization.create({ data: {
+      propertyId: validatedId,
+      userLatitude: latitude ? latitude.toString() : null,
+      userLongitude: longitude ? longitude.toString() : null,
+    } });
 
     return prisma.property.update({ where: { id: validatedId }, data: { timesSeen: (property.timesSeen + 1) } });
-    // await prisma.sharedProperties.update({ where: { id: sharedProperty.id, email: validatedEmail }, data: { accepted: true } });
   }
 
   static async getMostSeenPropertiesBySeller(email, take = 6) {
@@ -542,11 +569,15 @@ export default class PropertyService {
   }
 
   static async shelve(id, email) {
+    const validatedEmail = validateEmail(email);
+    const user = await UserService.find({ email: validatedEmail });
+    if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
+
     const validatedId = validateString(id);
     const property = await prisma.property.findFirst({ where: { id: validatedId } });
     if (!property) throw new ConfigurableError('Imóvel não encontrado', 404);
 
-    if (property.advertiserEmail !== email) throw new ConfigurableError('Você não tem permissão para arquivar este imóvel', 401);
+    if (property.advertiserEmail !== email) throw new ConfigurableError('Você não tem permissão para destacar este imóvel', 403);
 
     await prisma.property.update({ where: { id: validatedId }, data: { isPublished: false, isHighlight: false } });
 
@@ -554,16 +585,19 @@ export default class PropertyService {
   }
 
   static async publish(id, email) {
+    const validatedEmail = validateEmail(email);
+    const user = await UserService.find({ email: validatedEmail });
+    if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
+
     const validatedId = validateString(id);
     const property = await prisma.property.findFirst({ where: { id: validatedId } });
     if (!property) throw new ConfigurableError('Imóvel não encontrado', 404);
 
-    if (property.advertiserEmail !== email) throw new ConfigurableError('Você não tem permissão para arquivar este imóvel', 401);
+    if (property.advertiserEmail !== email) throw new ConfigurableError('Você não tem permissão para destacar este imóvel', 403);
 
-    const { subscription } = await this.find(email);
-    if (subscription === 'free' && subscription === 'platinum') {
-      if (property.isHighlight && !property.isHighlight) await this.checkHighlightLimit(email);
-    }
+    if (this.checkPublishLimit(email) === true) throw new ConfigurableError('Limite de publicações atingido', 400);
+
+    await prisma.property.update({ where: { id: validatedId }, data: { isHighlight: false, isPublished: true } });
 
     return { message: 'Imóvel publicado com sucesso' };
   }
@@ -579,9 +613,11 @@ export default class PropertyService {
 
     if (property.advertiserEmail !== email) throw new ConfigurableError('Você não tem permissão para destacar este imóvel', 403);
 
-    if (this.checkHighlightLimit(email)) throw new ConfigurableError('Limite de destaques atingido', 400);
+    if (this.checkHighlightLimit(email) === true) throw new ConfigurableError('Limite de destaques atingido', 400);
 
     await prisma.property.update({ where: { id: validatedId }, data: { isHighlight: true, isPublished: true } });
+
+    return { message: 'Imóvel destacado com sucesso' };
   }
 
   static async destroy(id, email) {
