@@ -76,6 +76,17 @@ export const getTimesSeen = asyncHandler(async (req, res, next) => {
   }
 });
 
+export const getTimesSeenByMonth = asyncHandler(async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const result = await PropertyService.getTimesSeenByMonth(id);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
 export const addTimesSeen = asyncHandler(async (req, res, next) => {
   try {
     const { id } = req.params;

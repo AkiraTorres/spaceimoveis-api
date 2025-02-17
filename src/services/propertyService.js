@@ -250,6 +250,28 @@ export default class PropertyService {
     return { timesSeen: property.timesSeen, visualizations: allViews };
   }
 
+  static async getTimesSeenByMonth(id) {
+    const validatedId = validateString(id);
+    const property = await prisma.property.findFirst({ where: { id: validatedId } });
+    if (!property) throw new ConfigurableError('Imóvel não encontrado', 404);
+
+    const allViews = await prisma.visualization.findMany({ where: { propertyId: validatedId } });
+
+    const viewsByMonth = allViews.reduce((acc, view) => {
+      const date = new Date(view.createdAt);
+      const month = date.getMonth() + 1;
+      const year = date.getFullYear();
+      const key = `${month}/${year}`;
+      if (!acc[key]) {
+        acc[key] = 0;
+      }
+      acc[key] += 1;
+      return acc;
+    }, {});
+
+    return { timesSeen: property.timesSeen, visualizations: allViews, viewsByMonth };
+  }
+
   static async addTimesSeen(id, { latitude = null, longitude = null }) {
     const validatedId = validateString(id);
     const property = await prisma.property.findFirst({ where: { id: validatedId } });
