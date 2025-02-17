@@ -223,3 +223,27 @@ export const highlightProperty = asyncHandler(async (req, res, next) => {
     next(error);
   }
 });
+
+export const publishProperty = asyncHandler(async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { email } = req;
+
+    const result = await PropertyService.publish(id, email);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+export const unpublishProperty = asyncHandler(async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { email } = req;
+
+    const result = await PropertyService.shelve(id, email);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+});

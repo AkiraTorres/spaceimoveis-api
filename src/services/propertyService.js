@@ -48,16 +48,16 @@ export default class PropertyService {
   }
 
   static async checkPublishLimit(email) {
-    let limit;
-    const { subscription } = await prisma.user.find(email);
-    if (subscription === 'free') limit = 3;
-    if (subscription === 'platinum') limit = 5;
-    if (subscription === 'gold') limit = 9999;
-    if (subscription === 'diamond') limit = 9999;
+    let publishLimit = 1;
+    const { type } = await prisma.user.findFirst({ where: { email } });
+    if (['realtor', 'realstate'].includes(type)) publishLimit = 9999;
 
-    const totalProperties = await prisma.property.count({ where: { email, isHighlighted: false, isPublished: true }, include: { SharedProperties: true } });
+    const publishedProperties = await prisma.property.findMany({ include: { SharedProperties: true } });
 
-    if (totalProperties >= limit) throw new ConfigurableError('Limite de destaques atingido', 400);
+    const totalPublishedProperties = publishedProperties.filter((property) => property.isHighlight === false && property.isPublished === true
+      && (property.advertiserEmail === email || property.SharedProperties.some((shared) => shared.email === email))).length;
+
+    return totalPublishedProperties >= publishLimit;
   }
 
   static async checkLimits(email) {
@@ -545,11 +545,15 @@ export default class PropertyService {
   }
 
   static async shelve(id, email) {
+    const validatedEmail = validateEmail(email);
+    const user = await UserService.find({ email: validatedEmail });
+    if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
+
     const validatedId = validateString(id);
     const property = await prisma.property.findFirst({ where: { id: validatedId } });
     if (!property) throw new ConfigurableError('Imóvel não encontrado', 404);
 
-    if (property.advertiserEmail !== email) throw new ConfigurableError('Você não tem permissão para arquivar este imóvel', 401);
+    if (property.advertiserEmail !== email) throw new ConfigurableError('Você não tem permissão para destacar este imóvel', 403);
 
     await prisma.property.update({ where: { id: validatedId }, data: { isPublished: false, isHighlight: false } });
 
@@ -557,16 +561,19 @@ export default class PropertyService {
   }
 
   static async publish(id, email) {
+    const validatedEmail = validateEmail(email);
+    const user = await UserService.find({ email: validatedEmail });
+    if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
+
     const validatedId = validateString(id);
     const property = await prisma.property.findFirst({ where: { id: validatedId } });
     if (!property) throw new ConfigurableError('Imóvel não encontrado', 404);
 
-    if (property.advertiserEmail !== email) throw new ConfigurableError('Você não tem permissão para arquivar este imóvel', 401);
+    if (property.advertiserEmail !== email) throw new ConfigurableError('Você não tem permissão para destacar este imóvel', 403);
 
-    const { subscription } = await this.find(email);
-    if (subscription === 'free' && subscription === 'platinum') {
-      if (property.isHighlight && !property.isHighlight) await this.checkHighlightLimit(email);
-    }
+    if (this.checkPublishLimit(email) === true) throw new ConfigurableError('Limite de publicações atingido', 400);
+
+    await prisma.property.update({ where: { id: validatedId }, data: { isHighlight: false, isPublished: true } });
 
     return { message: 'Imóvel publicado com sucesso' };
   }
@@ -585,6 +592,8 @@ export default class PropertyService {
     if (this.checkHighlightLimit(email) === true) throw new ConfigurableError('Limite de destaques atingido', 400);
 
     await prisma.property.update({ where: { id: validatedId }, data: { isHighlight: true, isPublished: true } });
+
+    return { message: 'Imóvel destacado com sucesso' };
   }
 
   static async destroy(id, email) {
