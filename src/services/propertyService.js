@@ -253,7 +253,11 @@ export default class PropertyService {
     const property = await prisma.property.findFirst({ where: { id: validatedId } });
     if (!property) throw new ConfigurableError('Imóvel não encontrado', 404);
 
-    await prisma.visualization.create({ data: { propertyId: validatedId, userLatitude: latitude, userLongitude: longitude } });
+    await prisma.visualization.create({ data: {
+      propertyId: validatedId,
+      userLatitude: latitude ? latitude.toString() : null,
+      userLongitude: longitude ? longitude.toString() : null,
+    } });
 
     return prisma.property.update({ where: { id: validatedId }, data: { timesSeen: (property.timesSeen + 1) } });
   }
