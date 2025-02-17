@@ -245,7 +245,9 @@ export default class PropertyService {
     const property = await prisma.property.findFirst({ where: { id: validatedId } });
     if (!property) throw new ConfigurableError('Imóvel não encontrado', 404);
 
-    return property.timesSeen;
+    const allViews = await prisma.visualization.findMany({ where: { propertyId: validatedId } });
+
+    return { timesSeen: property.timesSeen, visualizations: allViews };
   }
 
   static async addTimesSeen(id, { latitude = null, longitude = null }) {
