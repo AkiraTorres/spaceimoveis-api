@@ -79,8 +79,9 @@ export const getTimesSeen = asyncHandler(async (req, res, next) => {
 export const addTimesSeen = asyncHandler(async (req, res, next) => {
   try {
     const { id } = req.params;
+    const { latitude = null, longitude = null } = req.body;
 
-    const result = await PropertyService.addTimesSeen(id);
+    const result = await PropertyService.addTimesSeen(id, { latitude, longitude });
     res.status(201).json(result);
   } catch (error) {
     next(error);
