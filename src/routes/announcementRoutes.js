@@ -10,8 +10,8 @@ const router = Express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
 router.get('/valid', controller.getValidAnnouncements);
-router.get('/:id', controller.getAnnouncement);
 router.get('/', verifyJwt, verifyAdmin, controller.getAnnouncements);
+router.get('/:id', controller.getAnnouncement);
 router.put('/view/:id', controller.addViewAnnouncement);
 router.post('/', verifyJwt, verifyAdmin, upload.single('photo'), controller.createAnnouncement);
 router.delete('/:id', verifyJwt, verifyAdmin, controller.deleteAnnouncement);
