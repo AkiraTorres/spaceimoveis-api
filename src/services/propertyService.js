@@ -595,7 +595,7 @@ export default class PropertyService {
 
     if (property.advertiserEmail !== email) throw new ConfigurableError('Você não tem permissão para destacar este imóvel', 403);
 
-    if (this.checkPublishLimit(email) === true) throw new ConfigurableError('Limite de publicações atingido', 400);
+    if (await this.checkPublishLimit(email) === true) throw new ConfigurableError('Limite de publicações atingido', 400);
 
     await prisma.property.update({ where: { id: validatedId }, data: { isHighlight: false, isPublished: true } });
 
@@ -613,7 +613,7 @@ export default class PropertyService {
 
     if (property.advertiserEmail !== email) throw new ConfigurableError('Você não tem permissão para destacar este imóvel', 403);
 
-    if (this.checkHighlightLimit(email) === true) throw new ConfigurableError('Limite de destaques atingido', 400);
+    if (await this.checkHighlightLimit(email)) throw new ConfigurableError('Limite de destaques atingido', 400);
 
     await prisma.property.update({ where: { id: validatedId }, data: { isHighlight: true, isPublished: true } });
 
