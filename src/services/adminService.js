@@ -6,7 +6,7 @@ import { deleteObject, getStorage, ref } from 'firebase/storage';
 import firebaseConfig from '../config/firebase.js';
 import prisma from '../config/prisma.js';
 import ConfigurableError from '../errors/ConfigurableError.js';
-import { validateString } from '../validators/inputValidators.js';
+import { validateString, validateUserType } from '../validators/inputValidators.js';
 import PropertyService from './propertyService.js';
 import UserService from './userService.js';
 
@@ -170,15 +170,10 @@ export default class AdminService extends UserService {
     const orderBy = { createdAt: 'desc' };
 
     if (filter) {
-      if (filter.type) {
-        if (filter.type === 'client') where.type = 'client';
-        if (filter.type === 'owner') where.type = 'owner';
-        if (filter.type === 'realtor') where.type = 'realtor';
-        if (filter.type === 'realstate') where.type = 'realstate';
-      }
-      if (filter.name) where.name = { contains: `${validateString(filter.name)}`, mode: 'insensitive' };
-      if (filter.email) where.email = { contains: `${validateString(filter.email)}`, mode: 'insensitive' };
-      if (filter.handler) where.handler = { contains: `${validateString(filter.handler)}`, mode: 'insensitive' };
+      if (filter.type) where.type = validateUserType(filter.type);
+      if (filter.name) where.name = { contains: validateString(filter.name).toLowerCase() };
+      if (filter.email) where.email = { contains: validateString(filter.email).toLowerCase() };
+      if (filter.handler) where.handler = { contains: validateString(filter.handler).toLowerCase() };
     }
 
     const total = await prisma.user.count({ where });
