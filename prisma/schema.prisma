@@ -407,6 +407,7 @@ model UserMessages {
   userEmail String   @map("user_email") @db.VarChar(25)
   userType  String?  @map("user_type") @db.VarChar(25)
   message   String   @db.VarChar(4096)
+  answered  Boolean  @default(false)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
 

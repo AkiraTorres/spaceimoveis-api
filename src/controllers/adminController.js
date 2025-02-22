@@ -171,3 +171,26 @@ export const propertiesRegisteredMonthly = asyncHandler(async (req, res, next) =
     next(error);
   }
 });
+
+export const getContactMessages = asyncHandler(async (req, res, next) => {
+  try {
+    const { page = 1 } = req.query;
+
+    const result = await AdminService.getContactMessages(page);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+export const answerContactMessage = asyncHandler(async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { message } = req.body;
+
+    const result = await AdminService.answerContactMessage(id, message);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+});

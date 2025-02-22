@@ -245,4 +245,34 @@ export default class AdminService extends UserService {
 
     return dataset;
   }
+
+  static async getContactMessages() {
+    const messages = await prisma.userMessages.findMany();
+
+    if (messages.length === 0) return { messages: [], total: 0 };
+
+    return { messages, total: messages.length };
+  }
+
+  static async answerContactMessage(messageId, answer) {
+    const validatedId = validateString(messageId);
+    const validatedAnswer = validateString(answer);
+
+    const message = await prisma.userMessages.findFirst({ where: { id: validatedId } });
+    if (!message) throw new ConfigurableError('Mensagem não encontrada', 404);
+    if (message.answered) throw new ConfigurableError('Mensagem já respondida', 400);
+
+    const mailOptions = {
+      from: process.env.EMAIL_ADDRESS,
+      to: message.userEmail,
+      subject: 'Resposta à sua mensagem',
+      text: validatedAnswer,
+    };
+
+    await sgMail.send(mailOptions);
+
+    await prisma.userMessages.update({ where: { id: validatedId }, data: { answered: true } });
+
+    return { message: 'Mensagem respondida com sucesso!' };
+  }
 }
