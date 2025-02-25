@@ -73,3 +73,14 @@ export const findAppointmentById = asyncHandler(async (req, res, next) => {
     next(error);
   }
 });
+
+export const returnRandomSellers = asyncHandler(async (req, res, next) => {
+  try {
+    const { total = 5 } = req.query;
+
+    const result = await UserService.returnRandomSellers(total);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+});

@@ -397,4 +397,14 @@ export default class UserService {
 
     return daysMap[day] || null;
   }
+
+  static async returnRandomSellers(total = 5) {
+    const sellers = await prisma.user.findMany({ where: { type: { in: ['realtor', 'realstate'] } } });
+    if (sellers.length === 0) throw new ConfigurableError('Não existem corretores cadastrados', 404);
+
+    const shuffledSellers = sellers.sort(() => 0.5 - Math.random());
+    const randomSellers = shuffledSellers.slice(0, total);
+
+    return { sellers: randomSellers, total: randomSellers.length };
+  }
 }
