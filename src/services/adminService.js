@@ -6,7 +6,7 @@ import { deleteObject, getStorage, ref } from 'firebase/storage';
 import firebaseConfig from '../config/firebase.js';
 import prisma from '../config/prisma.js';
 import ConfigurableError from '../errors/ConfigurableError.js';
-import { validateString } from '../validators/inputValidators.js';
+import { validateString, validateUserType } from '../validators/inputValidators.js';
 import PropertyService from './propertyService.js';
 import UserService from './userService.js';
 
@@ -170,15 +170,10 @@ export default class AdminService extends UserService {
     const orderBy = { createdAt: 'desc' };
 
     if (filter) {
-      if (filter.type) {
-        if (filter.type === 'client') where.type = 'client';
-        if (filter.type === 'owner') where.type = 'owner';
-        if (filter.type === 'realtor') where.type = 'realtor';
-        if (filter.type === 'realstate') where.type = 'realstate';
-      }
-      if (filter.name) where.name = { contains: `${validateString(filter.name)}`, mode: 'insensitive' };
-      if (filter.email) where.email = { contains: `${validateString(filter.email)}`, mode: 'insensitive' };
-      if (filter.handler) where.handler = { contains: `${validateString(filter.handler)}`, mode: 'insensitive' };
+      if (filter.type) where.type = validateUserType(filter.type);
+      if (filter.name) where.name = { contains: validateString(filter.name).toLowerCase() };
+      if (filter.email) where.email = { contains: validateString(filter.email).toLowerCase() };
+      if (filter.handler) where.handler = { contains: validateString(filter.handler).toLowerCase() };
     }
 
     const total = await prisma.user.count({ where });
@@ -244,5 +239,35 @@ export default class AdminService extends UserService {
     }
 
     return dataset;
+  }
+
+  static async getContactMessages() {
+    const messages = await prisma.userMessages.findMany();
+
+    if (messages.length === 0) return { messages: [], total: 0 };
+
+    return { messages, total: messages.length };
+  }
+
+  static async answerContactMessage(messageId, answer) {
+    const validatedId = validateString(messageId);
+    const validatedAnswer = validateString(answer);
+
+    const message = await prisma.userMessages.findFirst({ where: { id: validatedId } });
+    if (!message) throw new ConfigurableError('Mensagem não encontrada', 404);
+    if (message.answered) throw new ConfigurableError('Mensagem já respondida', 400);
+
+    const mailOptions = {
+      from: process.env.EMAIL_ADDRESS,
+      to: message.userEmail,
+      subject: 'Resposta à sua mensagem',
+      text: validatedAnswer,
+    };
+
+    await sgMail.send(mailOptions);
+
+    await prisma.userMessages.update({ where: { id: validatedId }, data: { answered: true } });
+
+    return { message: 'Mensagem respondida com sucesso!' };
   }
 }
