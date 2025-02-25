@@ -1,5 +1,6 @@
 import asyncHandler from 'express-async-handler';
 
+import RealtorService from '../services/realtorService.js';
 import UserService from '../services/userService.js';
 
 export const find = asyncHandler(async (req, res, next) => {
@@ -78,7 +79,7 @@ export const returnRandomSellers = asyncHandler(async (req, res, next) => {
   try {
     const { total = 5 } = req.query;
 
-    const result = await UserService.returnRandomSellers(total);
+    const result = await RealtorService.returnRandomSellers(total);
     res.status(200).json(result);
   } catch (error) {
     next(error);
