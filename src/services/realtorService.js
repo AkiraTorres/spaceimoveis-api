@@ -172,4 +172,15 @@ export default class RealtorService extends UserService {
 
     return prisma.appointment.update({ where: { id: validatedId }, data: { status: 'rejected' } });
   }
+
+  static async returnRandomSellers(total = 5) {
+    const sellers = await prisma.user.findMany({ where: { type: { in: ['realtor', 'realstate'] } } });
+    if (sellers.length === 0) throw new ConfigurableError('Não existem corretores cadastrados', 404);
+
+    const shuffledSellers = sellers.sort(() => 0.5 - Math.random());
+    const randomSellers = shuffledSellers.slice(0, total);
+    const result = await Promise.all(randomSellers.map(async (seller) => this.userDetails(seller.email)));
+
+    return { sellers: result, total: randomSellers.length };
+  }
 }
