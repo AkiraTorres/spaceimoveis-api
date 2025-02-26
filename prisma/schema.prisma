@@ -451,7 +451,7 @@ model Announcement {
   announcerName     String   @map("announcer_name")
   announcerEmail    String   @map("announcer_email")
   announcerCpf      String   @map("announcer_cpf")
-  photoUrl          String   @map("photo_url")
+  photoUrl          String   @map("photo_url") @db.VarChar(1024)
   siteUrl           String   @map("site_url")
   type              String   @map("type")
   paymentType       String?  @map("payment_type")
