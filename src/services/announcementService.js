@@ -42,8 +42,12 @@ export default class AnnouncementService {
     if (!photo) throw new ConfigurableError('Foto não informada', 400);
 
     const id = uuid();
+    // const announcerEmail = validateEmail(data.announcerEmail);
 
-    const storageRef = ref(storage, `images/announcements/${id}-${photo.originalname}`);
+    const photoName = photo.originalname.replace(/ /g, '_');
+    if (!photoName) throw new ConfigurableError('Nome do arquivo inválido', 400);
+
+    const storageRef = ref(storage, `images/announcements/${id}-${photoName}`);
     const metadata = { contentType: photo.mimetype };
     const snapshot = await uploadBytesResumable(storageRef, photo.buffer, metadata);
     const downloadUrl = await getDownloadURL(snapshot.ref);
