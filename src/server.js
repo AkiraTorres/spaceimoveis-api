@@ -5,6 +5,7 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 
 import { createPaymentPreference, paymentStatus } from './config/payment.js';
+import setupSwagger from './config/swagger.js';
 import { findAllRealtorsAndRealstates } from './controllers/realtorController.js';
 import adminRoutes from './routes/adminRoutes.js';
 import announcementRoutes from './routes/announcementRoutes.js';
@@ -64,6 +65,8 @@ app.use('/admin', adminRoutes);
 app.get('/health', (req, res) => {
   res.status(200).send('OK');
 });
+
+setupSwagger(app);
 
 app.all('*', (req, res) => {
   res.status(404).send('Not Found');
