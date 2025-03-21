@@ -117,7 +117,7 @@ export default class NotificationService {
     const validatedEmail = validateEmail(email);
     const validatedChatId = validateString(chatId);
 
-    const chat = await ChatService.findChatById(validatedChatId);
+    const chat = await ChatService.findChatByChatId(validatedChatId);
     if (!chat) throw new ConfigurableError('Chat não encontrado', 404);
 
     const transactions = [
