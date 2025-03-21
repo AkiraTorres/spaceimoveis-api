@@ -14,7 +14,7 @@ io.on('connection', (socket) => {
       const notifications = await NotificationService.getNotifications(data.email);
 
       // io.to(data.email).emit('notification', unreadMessages);
-      io.to(data.email).emit('notification', notifications);
+      io.to(data.email).emit('all_notifications', notifications);
       if (typeof callback === 'function') callback(messagesRoom);
     } catch (error) {
       console.error(error);
