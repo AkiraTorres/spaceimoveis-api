@@ -46,6 +46,8 @@ model User {
   CommentLikes       CommentLikes[]
   Appointment        Appointment[]
   AvailableTime      AvailableTime[]
+  UserNotification   Notification[]     @relation("UserNotification")
+  SenderNotification Notification[]     @relation("SenderNotification")
 
   @@map("users")
 }
@@ -477,6 +479,9 @@ model Notification {
   read      Boolean          @default(false)
   createdAt DateTime         @default(now()) @map("created_at")
   updatedAt DateTime         @default(now()) @updatedAt @map("updated_at")
+
+  s User? @relation("SenderNotification", fields: [sender], references: [email], onDelete: SetNull)
+  u User? @relation("UserNotification", fields: [user], references: [email])
 
   @@map("notifications")
 }
