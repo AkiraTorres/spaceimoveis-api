@@ -22,9 +22,7 @@ export default class NotificationService {
     if (!receiverUser) throw new ConfigurableError('Usuário não encontrado', 404);
 
     const data = { title: validatedTitle, sender: validatedSender, text: validatedText, user: validatedReceiver, type };
-    console.log(data);
     const notification = await prisma.notification.create({ data });
-    console.log(notification);
 
     return {
       ...notification,
@@ -79,15 +77,17 @@ export default class NotificationService {
     const user = await UserService.find({ email: validatedEmail });
     if (!user) throw new ConfigurableError('Usuário não encontrado', 404);
 
-    const notification = await prisma.notification.update({
-      where: { id: validatedId },
-      data: { read: true },
-    });
+    const transactions = [
+      prisma.notification.update({
+        where: { id: validatedId },
+        data: { read: true },
+      }),
+      prisma.notification.deleteMany({
+        where: { id: validatedId, read: true },
+      }),
+    ];
 
-    if (!notification) throw new ConfigurableError('Notificação não encontrada', 404);
-    if (notification.u !== validatedEmail) throw new ConfigurableError('Notificação não pertence ao usuário', 403);
-
-    return notification;
+    return prisma.$transaction(transactions);
   }
 
   static async markAllAsRead(email) {
