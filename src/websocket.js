@@ -1,6 +1,7 @@
 /* eslint-disable no-console */
 import { io } from './server.js';
 import MessageService from './services/messageService.js';
+import NotificationService from './services/notificationService.js';
 
 io.on('connection', (socket) => {
   socket.on('open_chat', async (data, callback) => {
@@ -8,9 +9,12 @@ io.on('connection', (socket) => {
 
     try {
       const messagesRoom = await MessageService.findMessages(data.chatId, data.email);
-      const unreadMessages = await MessageService.getUnreadMessages(data.email);
+      // const unreadMessages = await MessageService.getUnreadMessages(data.email);
+      await NotificationService.markAllAsReadByChatId(data.chatId);
+      const notifications = await NotificationService.getNotifications(data.email);
 
-      io.to(data.email).emit('notification', unreadMessages);
+      // io.to(data.email).emit('notification', unreadMessages);
+      io.to(data.email).emit('notification', notifications);
       if (typeof callback === 'function') callback(messagesRoom);
     } catch (error) {
       console.error(error);
@@ -21,8 +25,27 @@ io.on('connection', (socket) => {
     socket.join(data.email);
 
     if (typeof callback === 'function') {
-      const unreadMessages = await MessageService.getUnreadMessages(data.email);
-      callback(unreadMessages);
+      // const unreadMessages = await MessageService.getUnreadMessages(data.email);
+      const notifications = await NotificationService.getNotifications(data.email);
+      callback(notifications);
+    }
+  });
+
+  socket.on('send_notification', async (data, callback) => {
+    try {
+      const notificationData = {
+        title: data.title,
+        sender: data.sender,
+        text: data.text ? data.text : '',
+        receiver: data.receiver,
+        type: data.type,
+      };
+
+      const notification = await NotificationService.createNotification(notificationData);
+      io.to(data.receiver).emit('notification', notification);
+    } catch (error) {
+      if (typeof callback === 'function') callback(error);
+      else console.error(error);
     }
   });
 
@@ -37,8 +60,17 @@ io.on('connection', (socket) => {
       const msgRes = await MessageService.createMessage(msgData);
       io.to(data.chatId).emit('message', msgRes);
 
-      const unreadMessages = await MessageService.getUnreadMessages(data.receiver);
-      io.to(data.receiver).emit('notification', unreadMessages);
+      const notification = await MessageService.createNotification({
+        title: 'Nova mensagem',
+        sender: data.email,
+        text: data.message,
+        receiver: data.receiver,
+        type: 'message',
+      });
+      io.to(data.receiver).emit('notification', notification);
+
+      // const unreadMessages = await MessageService.getUnreadMessages(data.receiver);
+      // io.to(data.receiver).emit('notification', unreadMessages);
     } catch (error) {
       if (typeof callback === 'function') callback(error);
       else console.error(error);
@@ -59,6 +91,15 @@ io.on('connection', (socket) => {
         platform: data.platform,
       });
       io.to(data.chatId).emit('message', msgRes);
+
+      const notification = await MessageService.createNotification({
+        title: 'Nova mensagem',
+        sender: data.email,
+        text: data.text ? data.text : 'Abra a conversa para visualizar a imagem',
+        receiver: data.receiver,
+        type: 'message',
+      });
+      io.to(data.receiver).emit('notification', notification);
 
       const unreadMessages = await MessageService.getUnreadMessages(data.receiver);
       io.to(data.receiver).emit('notification', unreadMessages);
