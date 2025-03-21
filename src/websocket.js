@@ -60,7 +60,7 @@ io.on('connection', (socket) => {
       const msgRes = await MessageService.createMessage(msgData);
       io.to(data.chatId).emit('message', msgRes);
 
-      const notification = await MessageService.createNotification({
+      const notification = await NotificationService.createNotification({
         title: 'Nova mensagem',
         sender: data.email,
         text: data.message,
@@ -92,7 +92,7 @@ io.on('connection', (socket) => {
       });
       io.to(data.chatId).emit('message', msgRes);
 
-      const notification = await MessageService.createNotification({
+      const notification = await NotificationService.createNotification({
         title: 'Nova mensagem',
         sender: data.email,
         text: data.text ? data.text : 'Abra a conversa para visualizar a imagem',
@@ -101,8 +101,8 @@ io.on('connection', (socket) => {
       });
       io.to(data.receiver).emit('notification', notification);
 
-      const unreadMessages = await MessageService.getUnreadMessages(data.receiver);
-      io.to(data.receiver).emit('notification', unreadMessages);
+      // const unreadMessages = await MessageService.getUnreadMessages(data.receiver);
+      // io.to(data.receiver).emit('notification', unreadMessages);
     } catch (error) {
       if (typeof callback === 'function') callback(error);
       else console.error(error);
