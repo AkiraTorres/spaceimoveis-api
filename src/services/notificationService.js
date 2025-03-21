@@ -22,7 +22,9 @@ export default class NotificationService {
     if (!receiverUser) throw new ConfigurableError('Usuário não encontrado', 404);
 
     const data = { title: validatedTitle, sender: validatedSender, text: validatedText, user: validatedReceiver, type };
+    console.log(data);
     const notification = await prisma.notification.create({ data });
+    console.log(notification);
 
     return {
       ...notification,
