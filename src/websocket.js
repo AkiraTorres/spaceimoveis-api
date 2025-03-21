@@ -10,7 +10,7 @@ io.on('connection', (socket) => {
     try {
       const messagesRoom = await MessageService.findMessages(data.chatId, data.email);
       // const unreadMessages = await MessageService.getUnreadMessages(data.email);
-      await NotificationService.markAllAsReadByChatId(data.chatId);
+      await NotificationService.markAllAsReadByChatId(data.email, data.chatId);
       const notifications = await NotificationService.getNotifications(data.email);
 
       // io.to(data.email).emit('notification', unreadMessages);
