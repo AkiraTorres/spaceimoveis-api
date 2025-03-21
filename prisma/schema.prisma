@@ -470,7 +470,7 @@ model Announcement {
 model Notification {
   id        String           @id @unique @default(uuid())
   title     String
-  message   String?
+  text      String?
   user      String           @map("user_email")
   sender    String?          @map("sender_email")
   type      NotificationType @default(message)
