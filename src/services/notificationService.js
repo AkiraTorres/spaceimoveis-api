@@ -29,7 +29,11 @@ export default class NotificationService {
     return {
       ...notification,
       senderName: senderUser.name,
+      senderEmail: senderUser.email,
       senderProfile: senderUser.profile,
+      userName: receiverUser.name,
+      userEmail: receiverUser.email,
+      userProfile: receiverUser.profile,
     };
   }
 
@@ -41,9 +45,21 @@ export default class NotificationService {
       orderBy: { createdAt: 'desc' },
     });
 
-    console.log(notifications);
+    const result = await Promise.all(notifications.map(async (notification) => {
+      const user = await UserService.find({ email: notification.user, select: { name: true, profile: true } });
+      const sender = await UserService.find({ email: notification.sender, select: { name: true, profile: true } });
+      return {
+        ...notification,
+        userName: user.name,
+        userEmail: user.email,
+        userProfile: user.profile,
+        senderName: sender.name,
+        senderEmail: sender.email,
+        senderProfile: sender.profile,
+      };
+    }));
 
-    return notifications;
+    return result;
   }
 
   static async getUnreadNotifications(email) {
