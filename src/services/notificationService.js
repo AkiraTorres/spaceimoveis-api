@@ -13,7 +13,7 @@ export default class NotificationService {
     const validatedReceiver = validateEmail(receiver);
     const validatedTitle = validateString(title);
     const validatedText = text ? validateString(text) : null;
-    const validatedType = validateMessageType(type);
+    // const validatedType = validateMessageType(type);
 
     const senderUser = await UserService.find({ email: validatedSender });
     if (!senderUser) throw new ConfigurableError('Usuário não encontrado', 404);
@@ -21,7 +21,7 @@ export default class NotificationService {
     const receiverUser = await UserService.find({ email: validatedReceiver });
     if (!receiverUser) throw new ConfigurableError('Usuário não encontrado', 404);
 
-    const data = { title: validatedTitle, sender: validatedSender, text: validatedText, user: validatedReceiver, type: validatedType };
+    const data = { title: validatedTitle, sender: validatedSender, text: validatedText, user: validatedReceiver, type };
     const notification = await prisma.notification.create({ data });
 
     return {
@@ -38,6 +38,8 @@ export default class NotificationService {
       where: { user: validatedEmail },
       orderBy: { createdAt: 'desc' },
     });
+
+    console.log(notifications);
 
     return notifications;
   }
