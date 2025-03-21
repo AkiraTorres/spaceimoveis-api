@@ -467,6 +467,20 @@ model Announcement {
   @@map("announcements")
 }
 
+model Notification {
+  id        String           @id @unique @default(uuid())
+  title     String
+  message   String?
+  user      String           @map("user_email")
+  sender    String?          @map("sender_email")
+  type      NotificationType @default(message)
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now()) @map("created_at")
+  updatedAt DateTime         @default(now()) @updatedAt @map("updated_at")
+
+  @@map("notifications")
+}
+
 enum AnnouncementType {
   rent
   sell
@@ -495,6 +509,14 @@ enum MessageType {
   video
   audio
   file
+}
+
+enum NotificationType {
+  message
+  appointment
+  share
+  like
+  follow
 }
 
 enum Furnished {
