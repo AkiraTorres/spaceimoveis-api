@@ -21,7 +21,7 @@ export default class NotificationService {
     const receiverUser = await UserService.find({ email: validatedReceiver });
     if (!receiverUser) throw new ConfigurableError('Usuário não encontrado', 404);
 
-    const data = { title: validatedTitle, s: validatedSender, text: validatedText, u: validatedReceiver, type };
+    const data = { title: validatedTitle, sender: validatedSender, text: validatedText, user: validatedReceiver, type };
     console.log(data);
     const notification = await prisma.notification.create({ data });
     console.log(notification);
@@ -37,7 +37,7 @@ export default class NotificationService {
     const validatedEmail = validateEmail(email);
 
     const notifications = await prisma.notification.findMany({
-      where: { u: validatedEmail },
+      where: { user: validatedEmail },
       orderBy: { createdAt: 'desc' },
     });
 
@@ -50,7 +50,7 @@ export default class NotificationService {
     const validatedEmail = validateEmail(email);
 
     const notifications = await prisma.notification.findMany({
-      where: { u: validatedEmail, read: false },
+      where: { user: validatedEmail, read: false },
     });
 
     return notifications;
@@ -78,7 +78,7 @@ export default class NotificationService {
     const validatedEmail = validateEmail(email);
 
     const notifications = await prisma.notification.updateMany({
-      where: { u: validatedEmail, read: false },
+      where: { user: validatedEmail, read: false },
       data: { read: true },
     });
 
@@ -90,7 +90,7 @@ export default class NotificationService {
     const validatedType = validateMessageType(type);
 
     const notifications = await prisma.notification.updateMany({
-      where: { u: validatedEmail, type: validatedType, read: false },
+      where: { user: validatedEmail, type: validatedType, read: false },
       data: { read: true },
     });
 
@@ -106,11 +106,11 @@ export default class NotificationService {
 
     const transactions = [
       prisma.notification.updateMany({
-        where: { u: validatedEmail, s: validatedSenderEmail, read: false },
+        where: { user: validatedEmail, sender: validatedSenderEmail, read: false },
         data: { read: true },
       }),
       prisma.notification.deleteMany({
-        where: { u: validatedEmail, s: validatedSenderEmail, type: 'message', read: true },
+        where: { user: validatedEmail, sender: validatedSenderEmail, type: 'message', read: true },
       }),
     ];
 
@@ -126,11 +126,11 @@ export default class NotificationService {
 
     const transactions = [
       prisma.notification.updateMany({
-        where: { u: validatedEmail, s: chat.senderEmail, read: false },
+        where: { user: validatedEmail, sender: chat.senderEmail, read: false },
         data: { read: true },
       }),
       prisma.notification.deleteMany({
-        where: { u: validatedEmail, s: chat.senderEmail, type: 'message', read: true },
+        where: { user: validatedEmail, sender: chat.senderEmail, type: 'message', read: true },
       }),
     ];
 
