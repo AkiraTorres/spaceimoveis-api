@@ -6,15 +6,17 @@ import UserService from './userService.js';
 
 export default class NotificationService {
   // TODO: precisa salvar as mensagens criptografadas no db
-  static async createNotification({ title, sender, text, receiver, type, sharedPropertyId, chatId }) {
+  static async createNotification({ title, sender, text, receiver, type, sharedPropertyId, chatId, appointmentId, propertyId }) {
     if (!title || !sender || !receiver || !type) throw new ConfigurableError('Os campos title, sender, receiver e type são obrigatórios', 400);
 
     const validatedSender = validateEmail(sender);
     const validatedReceiver = validateEmail(receiver);
     const validatedTitle = validateString(title);
     const validatedText = text ? validateString(text) : null;
-    const validatedPropertyId = type === 'share' && sharedPropertyId ? validateString(sharedPropertyId) : null;
-    const validatedChatId = type === 'message' && chatId ? validateString(chatId) : null;
+    const validatedSharedPropertyId = sharedPropertyId ? validateString(sharedPropertyId) : null;
+    const validatedChatId = chatId ? validateString(chatId) : null;
+    const validatedAppointmentId = appointmentId ? validateString(appointmentId) : null;
+    const validatedPropertyId = propertyId ? validateString(propertyId) : null;
     // const validatedType = validateMessageType(type);
 
     const senderUser = await UserService.find({ email: validatedSender });
@@ -30,7 +32,9 @@ export default class NotificationService {
       user: validatedReceiver,
       type,
       chatId: validatedChatId,
-      sharedPropertyId: validatedPropertyId,
+      sharedPropertyId: validatedSharedPropertyId,
+      appointmentId: validatedAppointmentId,
+      propertyId: validatedPropertyId,
     };
     const notification = await prisma.notification.create({ data });
 

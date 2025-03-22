@@ -41,6 +41,8 @@ io.on('connection', (socket) => {
         type: data.type,
         chatId: data.chatId ? data.chatId : null,
         sharedPropertyId: data.sharedPropertyId ? data.sharedPropertyId : null,
+        appointmentId: data.appointmentId ? data.appointmentId : null,
+        propertyId: data.propertyId ? data.propertyId : null,
       };
 
       const notification = await NotificationService.createNotification(notificationData);
