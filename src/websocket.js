@@ -39,6 +39,8 @@ io.on('connection', (socket) => {
         text: data.text ? data.text : '',
         receiver: data.receiver,
         type: data.type,
+        chatId: data.chatId ? data.chatId : null,
+        sharedPropertyId: data.sharedPropertyId ? data.sharedPropertyId : null,
       };
 
       const notification = await NotificationService.createNotification(notificationData);
@@ -66,6 +68,7 @@ io.on('connection', (socket) => {
         text: data.message,
         receiver: data.receiver,
         type: 'message',
+        chatId: data.chatId,
       });
       io.to(data.receiver).emit('notification', notification);
 
@@ -98,6 +101,7 @@ io.on('connection', (socket) => {
         text: data.text ? data.text : 'Abra a conversa para visualizar a imagem',
         receiver: data.receiver,
         type: 'message',
+        chatId: data.chatId,
       });
       io.to(data.receiver).emit('notification', notification);
 

@@ -6,13 +6,15 @@ import UserService from './userService.js';
 
 export default class NotificationService {
   // TODO: precisa salvar as mensagens criptografadas no db
-  static async createNotification({ title, sender, text, receiver, type }) {
+  static async createNotification({ title, sender, text, receiver, type, sharedPropertyId, chatId }) {
     if (!title || !sender || !receiver || !type) throw new ConfigurableError('Os campos title, sender, receiver e type são obrigatórios', 400);
 
     const validatedSender = validateEmail(sender);
     const validatedReceiver = validateEmail(receiver);
     const validatedTitle = validateString(title);
     const validatedText = text ? validateString(text) : null;
+    const validatedPropertyId = type === 'share' && sharedPropertyId ? validateString(sharedPropertyId) : null;
+    const validatedChatId = type === 'message' && chatId ? validateString(chatId) : null;
     // const validatedType = validateMessageType(type);
 
     const senderUser = await UserService.find({ email: validatedSender });
@@ -21,7 +23,15 @@ export default class NotificationService {
     const receiverUser = await UserService.find({ email: validatedReceiver });
     if (!receiverUser) throw new ConfigurableError('Usuário não encontrado', 404);
 
-    const data = { title: validatedTitle, sender: validatedSender, text: validatedText, user: validatedReceiver, type };
+    const data = {
+      title: validatedTitle,
+      sender: validatedSender,
+      text: validatedText,
+      user: validatedReceiver,
+      type,
+      chatId: validatedChatId,
+      sharedPropertyId: validatedPropertyId,
+    };
     const notification = await prisma.notification.create({ data });
 
     return {
