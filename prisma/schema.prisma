@@ -468,15 +468,17 @@ model Announcement {
 }
 
 model Notification {
-  id        String           @id @unique @default(uuid())
-  title     String
-  text      String?
-  user      String           @map("user_email")
-  sender    String?          @map("sender_email")
-  type      NotificationType @default(message)
-  read      Boolean          @default(false)
-  createdAt DateTime         @default(now()) @map("created_at")
-  updatedAt DateTime         @default(now()) @updatedAt @map("updated_at")
+  id               String           @id @unique @default(uuid())
+  title            String
+  text             String?
+  user             String           @map("user_email")
+  sender           String?          @map("sender_email")
+  chatId           String?          @map("chat_id")
+  sharedPropertyId String?          @map("shared_property_id")
+  type             NotificationType @default(message)
+  read             Boolean          @default(false)
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @default(now()) @updatedAt @map("updated_at")
 
   @@map("notifications")
 }
