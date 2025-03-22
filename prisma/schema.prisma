@@ -519,6 +519,7 @@ enum NotificationType {
   share
   like
   follow
+  share_response
 }
 
 enum Furnished {
