@@ -6,7 +6,9 @@ import verifyJwt from '../middlewares/verifyJwt.js';
 
 const router = Express.Router();
 
-router.get('/notifications', verifyGoogleToken, verifyJwt, notificationController.getNotifications);
-router.get('/notifications/unread', verifyGoogleToken, verifyJwt, notificationController.getUnreadNotifications);
-router.post('/notifications/:id', verifyGoogleToken, verifyJwt, notificationController.markAsRead);
-router.post('/notifications/chat/:chatId', verifyGoogleToken, verifyJwt, notificationController.markAllAsReadByChatId);
+router.get('/', notificationController.getNotifications);
+router.get('/unread', verifyGoogleToken, verifyJwt, notificationController.getUnreadNotifications);
+router.post('/:id', verifyGoogleToken, verifyJwt, notificationController.markAsRead);
+router.post('/chat/:chatId', verifyGoogleToken, verifyJwt, notificationController.markAllAsReadByChatId);
+
+export default router;
