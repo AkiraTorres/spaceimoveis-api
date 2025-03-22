@@ -779,7 +779,7 @@ export default class PropertyService {
       .send(mailOptions)
       .catch(() => { response += ' Mas o email não pode ser enviado.'; });
 
-    return { message: response };
+    return { shared, message: response };
   }
 
   static async getSharedProperties(email, status = null, page = 1, take = 6) {
