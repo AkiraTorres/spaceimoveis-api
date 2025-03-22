@@ -522,6 +522,7 @@ enum NotificationType {
   like
   follow
   share_response
+  appointment_response
 }
 
 enum Furnished {
