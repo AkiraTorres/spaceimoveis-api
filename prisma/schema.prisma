@@ -467,6 +467,24 @@ model Announcement {
   @@map("announcements")
 }
 
+model Notification {
+  id               String           @id @unique @default(uuid())
+  title            String
+  text             String?
+  user             String           @map("user_email")
+  sender           String?          @map("sender_email")
+  chatId           String?          @map("chat_id")
+  sharedPropertyId String?          @map("shared_property_id")
+  appointmentId    String?          @map("appointment_id")
+  propertyId       String?          @map("property_id")
+  type             NotificationType @default(message)
+  read             Boolean          @default(false)
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @default(now()) @updatedAt @map("updated_at")
+
+  @@map("notifications")
+}
+
 enum AnnouncementType {
   rent
   sell
@@ -495,6 +513,16 @@ enum MessageType {
   video
   audio
   file
+}
+
+enum NotificationType {
+  message
+  appointment
+  share
+  like
+  follow
+  share_response
+  appointment_response
 }
 
 enum Furnished {

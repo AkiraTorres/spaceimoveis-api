@@ -15,6 +15,7 @@ import favoriteRoutes from './routes/favoriteRoutes.js';
 import followerRoutes from './routes/followerRoutes.js';
 import loginRoutes from './routes/loginRoutes.js';
 import messageRoutes from './routes/messageRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
 import ownerRoutes from './routes/ownerRoutes.js';
 import postRoutes from './routes/postRoutes.js';
 import propertyRoutes from './routes/propertyRoutes.js';
@@ -53,6 +54,7 @@ app.use('/dashboard', sellerDashboardRoutes);
 app.use('/follow', followerRoutes);
 app.use('/posts', postRoutes);
 app.use('/announcement', announcementRoutes);
+app.use('/notifications', notificationRoutes);
 
 app.get('/realtors-and-realstates', findAllRealtorsAndRealstates);
 app.post('/criar-pix', createPaymentPreference);
