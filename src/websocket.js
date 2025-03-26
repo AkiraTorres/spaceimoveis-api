@@ -11,7 +11,7 @@ io.on('connection', (socket) => {
       const messagesRoom = await MessageService.findMessages(data.chatId, data.email);
       // const unreadMessages = await MessageService.getUnreadMessages(data.email);
       await NotificationService.markAllAsReadByChatId(data.email, data.chatId);
-      const notifications = await NotificationService.getNotifications(data.email);
+      const notifications = await NotificationService.getUnreadNotifications(data.email);
 
       // io.to(data.email).emit('notification', unreadMessages);
       io.to(data.email).emit('all_notifications', notifications);
@@ -26,7 +26,7 @@ io.on('connection', (socket) => {
 
     if (typeof callback === 'function') {
       // const unreadMessages = await MessageService.getUnreadMessages(data.email);
-      const notifications = await NotificationService.getNotifications(data.email);
+      const notifications = await NotificationService.getUnreadNotifications(data.email);
       callback(notifications);
     }
   });
