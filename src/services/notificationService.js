@@ -79,9 +79,24 @@ export default class NotificationService {
 
     const notifications = await prisma.notification.findMany({
       where: { user: validatedEmail, read: false },
+      orderBy: { createdAt: 'desc' },
     });
 
-    return notifications;
+    const result = await Promise.all(notifications.map(async (notification) => {
+      const user = await UserService.find({ email: notification.user, select: { name: true, profile: true } });
+      const sender = await UserService.find({ email: notification.sender, select: { name: true, profile: true } });
+      return {
+        ...notification,
+        userName: user.name,
+        userEmail: user.email,
+        userProfile: user.profile,
+        senderName: sender.name,
+        senderEmail: sender.email,
+        senderProfile: sender.profile,
+      };
+    }));
+
+    return result;
   }
 
   static async markAsRead(id, email) {
