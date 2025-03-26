@@ -97,7 +97,7 @@ export default class NotificationService {
         data: { read: true },
       }),
       prisma.notification.deleteMany({
-        where: { id: validatedId, read: true },
+        where: { id: validatedId, type: 'message', read: true },
       }),
     ];
 
@@ -136,11 +136,11 @@ export default class NotificationService {
 
     const transactions = [
       prisma.notification.updateMany({
-        where: { user: validatedEmail, sender: validatedSenderEmail, read: false },
+        where: { user: validatedEmail, sender: validatedSenderEmail, chatId: chat.id, type: 'message', read: false },
         data: { read: true },
       }),
       prisma.notification.deleteMany({
-        where: { user: validatedEmail, sender: validatedSenderEmail, type: 'message', read: true },
+        where: { user: validatedEmail, sender: validatedSenderEmail, chatId: chat.id, type: 'message', read: true },
       }),
     ];
 
@@ -156,11 +156,11 @@ export default class NotificationService {
 
     const transactions = [
       prisma.notification.updateMany({
-        where: { user: validatedEmail, sender: chat.senderEmail, read: false },
+        where: { user: validatedEmail, sender: chat.senderEmail, chatId: chat.id, type: 'message', read: false },
         data: { read: true },
       }),
       prisma.notification.deleteMany({
-        where: { user: validatedEmail, sender: chat.senderEmail, type: 'message', read: true },
+        where: { user: validatedEmail, sender: chat.senderEmail, chatId: chat.id, type: 'message', read: true },
       }),
     ];
 
