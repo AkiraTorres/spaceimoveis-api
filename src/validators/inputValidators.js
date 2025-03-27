@@ -9,25 +9,23 @@ const salt = process.env.CRYPT_SALT;
 
 export function validateEmail(email) {
   if (email === null || email === undefined) throw new ConfigurableError('O campo email é obrigatório', 422);
-  const sanitizedEmail = validator.escape(email);
+  if (!validator.isEmail(email)) throw new ConfigurableError('Email inválido', 422);
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-  if (!emailRegex.test(sanitizedEmail)) throw new ConfigurableError('Email inválido', 422);
+  if (!emailRegex.test(email)) throw new ConfigurableError('Email inválido', 422);
 
-  return sanitizedEmail;
+  return email.trim().toLowerCase();
 }
 
 export function validateString(string, msg = 'O campo é obrigatório') {
-  if (string === undefined || string === '') throw new ConfigurableError(msg, 422);
+  if (typeof string !== 'string' || string.trim().length === 0) throw new ConfigurableError(msg, 422);
 
-  const sanitizedString = validator.escape(string);
+  const trimmedStr = string.trim();
 
-  if (sanitizedString.length === 0 || sanitizedString === '' || sanitizedString === undefined) {
-    throw new ConfigurableError(msg, 422);
-  }
+  if (trimmedStr.length === 0 || !/[^\s]/.test(trimmedStr)) throw new ConfigurableError(msg, 422);
 
-  return sanitizedString;
+  return trimmedStr;
 }
 
 export function validateInteger(integer, msg = 'O campo é obrigatório e deve ser um número inteiro') {
@@ -80,37 +78,33 @@ export function validateBoolean(bool, msg = 'O campo é obrigatório') {
 
 export function validatePassword(password) {
   if (password === null || password === undefined) throw new ConfigurableError('O campo senha é obrigatório', 422);
-  const sanitizedPassword = validator.escape(password);
 
-  if (sanitizedPassword.length === 0 || sanitizedPassword === '' || sanitizedPassword === undefined) {
-    throw new ConfigurableError('O campo senha é obrigatório', 422);
-  }
+  const trimmedPassword = password.trim();
 
-  const sanitizedPasswordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*()_+])[0-9a-zA-Z!@#$%^&*()_+]{8,}$/;
+  if (trimmedPassword.length === 0) throw new ConfigurableError('O campo senha é obrigatório', 422);
 
-  if (!sanitizedPasswordRegex.test(sanitizedPassword)) {
+  const passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*()_+])[0-9a-zA-Z!@#$%^&*()_+]{8,}$/;
+
+  if (!passwordRegex.test(trimmedPassword)) {
     throw new ConfigurableError(`A senha é muito fraca. Ela deve conter pelo menos 8 caracteres, incluindo ao menos um
                             dígito, uma letra minúscula, uma letra maiúscula e um caractere especial (!@#$%^&*()_+)`, 400);
   }
 
-  return bcrypt.hashSync(sanitizedPassword, salt);
+  return bcrypt.hashSync(trimmedPassword, salt);
 }
 
 export function validatePhone(phone) {
   if (phone === null || phone === undefined) throw new ConfigurableError('O campo telefone é obrigatório', 422);
-  const sanitizedPhone = validator.escape(phone);
 
-  if (sanitizedPhone.length === 0 || sanitizedPhone === '' || sanitizedPhone === undefined) {
-    throw new ConfigurableError('O campo telefone é obrigatório', 422);
-  }
+  const trimmedPhone = phone.trim();
+
+  if (trimmedPhone.length === 0 || trimmedPhone === undefined) throw new ConfigurableError('O campo telefone é obrigatório', 422);
 
   const brazilianPhoneNumberRegex = /^(?:\+|00)?(?:55)?(?:\s|-|\.)?(?:(?:\(?\d{2}\)?)(?:\s|-|\.)?)?(?:9\d{4}|\d{4})[-. ]?\d{4}$/;
 
-  if (!brazilianPhoneNumberRegex.test(sanitizedPhone)) {
-    throw new ConfigurableError('O telefone informado é inválido', 400);
-  }
+  if (!brazilianPhoneNumberRegex.test(trimmedPhone)) throw new ConfigurableError('O telefone informado é inválido', 400);
 
-  return sanitizedPhone;
+  return trimmedPhone;
 }
 
 export function validateCpf(cpf) {
