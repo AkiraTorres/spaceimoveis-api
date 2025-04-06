@@ -862,10 +862,6 @@ export default class PropertyService {
       data: { status: 'accepted' },
     });
 
-    await prisma.sharedProperties.deleteMany({
-      where: { propertyId: validatedPropertyId, email: { not: validatedEmail } },
-    });
-
     if (user.type === 'realtor') {
       emailBody = `O corretor ${user.name} aceitou o compartilhamento do imóvel com o id ${validatedPropertyId}!`;
     } else if (user.type === 'realstate') {
