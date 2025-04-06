@@ -112,7 +112,7 @@ export default class UserService {
 
     const newInfo = {
       email: newUser.email,
-      cpf: params.type !== 'client' || params.cpf ? validateCpf(params.cpf, "O campo 'cpf' é obrigatório") : null,
+      cpf: !['client', 'admin'].includes(params.type) || params.cpf ? validateCpf(params.cpf, "O campo 'cpf' é obrigatório") : null,
       cnpj: newUser.type === 'realstate' || params.cnpj ? validateCnpj(params.cnpj, "O campo 'cnpj' é obrigatório") : null,
       rg: params.rg ? validateString(params.rg) : null,
       creci: newUser.type in ['realtor', 'realstate'] || params.creci ? validateString(params.creci, "O campo 'creci' é obrigatório") : null,
