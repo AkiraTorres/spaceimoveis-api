@@ -76,7 +76,7 @@ export default class PropertyService {
   static async getPropertyDetails(propertyId) {
     const property = await prisma.property.findFirst({ where: { id: propertyId } });
 
-    property.shared = await prisma.sharedProperties.findFirst({ where: { propertyId: property.id } });
+    property.shared = await prisma.sharedProperties.findMany({ where: { propertyId: property.id } });
     property.address = await prisma.propertiesAddresses.findFirst({ where: { propertyId: property.id } });
     property.commodities = await prisma.propertiesCommodities.findFirst({ where: { propertyId: property.id } });
     property.prices = await prisma.propertiesPrices.findFirst({ where: { propertyId: property.id } });
@@ -86,12 +86,6 @@ export default class PropertyService {
 
     if (property.verified === 'rejected') {
       property.reasonRejected = (await prisma.reasonRejectedProperty.findFirst({ where: { propertyId: property.id, sharingRejected: false } })).reason;
-    }
-
-    if (property.shared && property.shared.status === 'rejected') {
-      const reasonRejected = await prisma.reasonRejectedProperty.findFirst({ where: { propertyId: property.id, sharingRejected: true } });
-      if (reasonRejected) property.shared.reasonRejected = reasonRejected.reason.trim().replace(/\n/g, '');
-      else property.shared.reasonRejected = 'Sem motivo informado.';
     }
 
     return property;
@@ -905,10 +899,7 @@ export default class PropertyService {
     const transactions = [
       prisma.sharedProperties.update({
         where: { propertyId_email: { propertyId: validatedPropertyId, email: validatedEmail } },
-        data: { status: 'rejected' },
-      }),
-      prisma.reasonRejectedProperty.create({
-        data: { id: uuid(), propertyId: validatedPropertyId, reason: validatedReason, sharingRejected: true },
+        data: { status: 'rejected', reasonRejected: validatedReason },
       }),
     ];
 
