@@ -87,7 +87,6 @@ export const MakeAnAppointment = asyncHandler(async (req, res, next) => {
     const advertiserAvailability = await RealtorService.getAvailability(advertiserEmail);
 
     const result = await ClientService.MakeAnAppointment(userEmail, data, advertiserEmail, advertiserAvailability);
-
     res.status(201).json(result);
   } catch (error) {
     next(error);

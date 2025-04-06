@@ -7,6 +7,7 @@ const blacklist = [];
 const { JWT_SECRET } = process.env;
 
 export default function verifyJwt(req, res, next) {
+  console.log(req.email);
   if (req.email) return next();
 
   try {
@@ -25,6 +26,7 @@ export default function verifyJwt(req, res, next) {
     return jwt.decode(accessToken);
   } catch (error) {
     next(error);
+    console.log(error);
     return res.status(error.status).json(error.message).end();
   }
 }
