@@ -119,12 +119,15 @@ export default class PropertyService {
     const lastPage = Math.ceil(countTotal / take);
     const skip = Number(take * (page - 1));
 
-    const props = await prisma.property.findMany({
-      where,
-      orderBy: { updatedAt: 'desc' },
-      skip,
-      take,
-    });
+    const rawProperties = await prisma.$queryRaw`
+      SELECT * FROM properties
+      WHERE is_highlight = ${isHighlight}
+        AND is_published = ${isPublished}
+        AND verified = 'verified'
+      ORDER BY RAND()
+      LIMIT ${take}
+      OFFSET ${skip};
+    `;
 
     const pagination = {
       path: '/properties',
@@ -135,14 +138,9 @@ export default class PropertyService {
       total: countTotal,
     };
 
-    if (props.length === 0) return { properties: props, pagination };
+    if (rawProperties.length === 0) return { properties: [], pagination };
 
-    const properties = await Promise.all(props.map(async (property) => this.getPropertyDetails(property.id)));
-
-    properties.sort((a, b) => {
-      if (a.totalFavorites !== b.totalFavorites) return b.totalFavorites - a.totalFavorites;
-      return b.timesSeen - a.timesSeen;
-    });
+    const properties = await Promise.all(rawProperties.map(async (property) => this.getPropertyDetails(property.id)));
 
     return { properties, pagination };
   }
