@@ -174,13 +174,17 @@ export default class RealtorService extends UserService {
   }
 
   static async returnRandomSellers(total = 5) {
-    const sellers = await prisma.user.findMany({ where: { type: { in: ['realtor', 'realstate'] } } });
-    if (sellers.length === 0) throw new ConfigurableError('Não existem corretores cadastrados', 404);
+    const sellers = await prisma.$queryRawUnsafe(`
+      SELECT * FROM \`users\`
+      WHERE type IN ('realtor', 'realstate')
+      ORDER BY RAND()
+      LIMIT ${Number(total)}
+    `);
 
-    const shuffledSellers = sellers.sort(() => 0.5 - Math.random());
-    const randomSellers = shuffledSellers.slice(0, total);
-    const result = await Promise.all(randomSellers.map(async (seller) => this.userDetails(seller.email)));
+    if (sellers.length === 0) return { sellers: [], total: 0 };
 
-    return { sellers: result, total: randomSellers.length };
+    const result = await Promise.all(sellers.map(async (seller) => this.userDetails(seller.email)));
+
+    return { sellers: result, total: sellers.length };
   }
 }
