@@ -29,7 +29,7 @@ async function verifyGoogleToken(req, res, next) {
   } catch (error) {
     const status = error.status || error.code || 500;
     const message = error.message || 'Erro ao se conectar com o banco de dados';
-    next(error);
+    next();
     return `${status}: ${message}`;
   }
 }
