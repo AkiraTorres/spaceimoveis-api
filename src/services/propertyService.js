@@ -76,7 +76,15 @@ export default class PropertyService {
   static async getPropertyDetails(propertyId) {
     const property = await prisma.property.findFirst({ where: { id: propertyId } });
 
-    property.shared = await prisma.sharedProperties.findMany({ where: { propertyId: property.id } });
+    property.shared = await prisma.sharedProperties.findMany({
+      where: { propertyId: property.id },
+      include: { user: { select: {
+        name: true,
+        email: true,
+        UserPhoto: { where: { type: 'profile' }, select: { url: true }, take: 1 },
+      } } },
+    });
+
     property.address = await prisma.propertiesAddresses.findFirst({ where: { propertyId: property.id } });
     property.commodities = await prisma.propertiesCommodities.findFirst({ where: { propertyId: property.id } });
     property.prices = await prisma.propertiesPrices.findFirst({ where: { propertyId: property.id } });
