@@ -100,7 +100,7 @@ router.post('/', upload.any(), controller.create);
  *             schema:
  *               $ref: '#/components/schemas/Appointment'
  */
-router.post('/appointment', verifyJwt, controller.MakeAnAppointment);
+router.post('/appointment', verifyGoogleToken, verifyJwt, controller.MakeAnAppointment);
 
 /**
  * @swagger

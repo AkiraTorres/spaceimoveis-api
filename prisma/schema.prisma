@@ -194,17 +194,18 @@ model CommentLikes {
 }
 
 model SharedProperties {
-  id         String      @id @unique @default(uuid())
-  email      String
-  propertyId String      @map("property_id")
-  cut        Decimal     @default(0.03)
-  status     ShareStatus @default(pending)
-  createdAt  DateTime    @default(now()) @map("created_at")
-  updatedAt  DateTime    @default(now()) @updatedAt @map("updated_at")
+  propertyId     String
+  email          String
+  cut            Decimal     @default(0.03)
+  status         ShareStatus @default(pending)
+  reasonRejected String?     @map("reason_rejected")
+  createdAt      DateTime    @default(now()) @map("created_at")
+  updatedAt      DateTime    @default(now()) @updatedAt @map("updated_at")
 
   user     User     @relation(fields: [email], references: [email], onDelete: Cascade)
   property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
+  @@id([propertyId, email]) // chave composta para representar a relação many-to-many
   @@map("properties_shared")
 }
 
@@ -391,10 +392,9 @@ model PropertyPictures {
 }
 
 model ReasonRejectedProperty {
-  id              String  @id @unique @default(uuid())
-  propertyId      String  @map("property_id")
-  reason          String
-  sharingRejected Boolean @default(false) @map("sharing_rejected")
+  id         String @id @unique @default(uuid())
+  propertyId String @map("property_id")
+  reason     String
 
   property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 

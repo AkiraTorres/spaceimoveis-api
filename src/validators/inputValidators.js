@@ -211,7 +211,7 @@ export function validateCreci(creci) {
   if (creci === null || creci === undefined) throw new ConfigurableError('O campo CRECI é obrigatório', 422);
   const sanitizedCreci = validator.escape(creci);
 
-  const creciRegex = /^(CRECI-)?[A-Z]{2}\s?\d{1,15}$/;
+  const creciRegex = /^(CRECI-)?([A-Z]{2}\s?\d{1,15}|\d{1,15}\s?[A-Z]{2})$/;
 
   if (!creciRegex.test(sanitizedCreci)) {
     throw new ConfigurableError('CRECI inválido', 400);

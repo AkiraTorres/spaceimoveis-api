@@ -3,7 +3,7 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
-const client = new OAuth2Client();
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 async function validateGoogleToken(token) {
   const ticket = await client.verifyIdToken({
@@ -18,19 +18,19 @@ async function verifyGoogleToken(req, res, next) {
   try {
     const googleToken = req.headers['x-access-token'];
     const error = new Error('Unauthorized');
-    error.status = 404;
-    const { email } = await validateGoogleToken(googleToken).catch();
+    error.status = 401;
+    const { email } = await validateGoogleToken(googleToken);
 
     if (!email) throw error;
 
     req.email = email;
+    next();
     return req.email;
   } catch (error) {
     const status = error.status || error.code || 500;
     const message = error.message || 'Erro ao se conectar com o banco de dados';
-    return `${status}: ${message}`;
-  } finally {
     next();
+    return `${status}: ${message}`;
   }
 }
 
