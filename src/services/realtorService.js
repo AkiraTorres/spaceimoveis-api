@@ -30,7 +30,8 @@ export default class RealtorService extends UserService {
 
     user.info = await prisma.userInfo.findFirst({ where: { email: userEmail } });
     user.address = await prisma.userAddress.findFirst({ where: { email: userEmail } });
-    user.profile = await prisma.userPhoto.findFirst({ where: { email: userEmail } });
+    user.profile = await prisma.userPhoto.findFirst({ where: { email: userEmail, type: 'profile' } });
+    user.banner = await prisma.userPhoto.findFirst({ where: { email: userEmail, type: 'banner' } });
     user.avgRating = await this.getAvgRateByReceiver(userEmail);
     user.totalRatings = await prisma.userRating.count({ where: { receiverEmail: userEmail } });
     user.favorites = await prisma.favorite.findMany({ where: { userEmail } });
