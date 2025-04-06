@@ -818,7 +818,12 @@ export default class PropertyService {
       total,
     };
 
-    const properties = await Promise.all(shared.map(async (sharedProperty) => this.getPropertyDetails(sharedProperty.propertyId)));
+    const properties = await Promise.all(shared.map(async (sharedProperty) => {
+      const prop = await this.getPropertyDetails(sharedProperty.propertyId);
+      const [sharedInfo] = prop.shared.filter((item) => item.email === validatedEmail);
+      prop.shared = sharedInfo;
+      return prop;
+    }));
 
     return { properties, pagination };
   }
