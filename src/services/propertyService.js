@@ -635,25 +635,22 @@ export default class PropertyService {
 
   static async filter(filters, verified, page = 1, take = 6, path = '/properties/filter') {
     const where = {
-      // Filter based on default properties fields
       advertiserEmail: filters.advertiserEmail ? validateEmail(filters.advertiserEmail) : undefined,
       announcementType: filters.announcementType ? validateAnnouncementType(filters.announcementType) : undefined,
       propertyType: filters.propertyType ? validatePropertyType(filters.propertyType) : undefined,
-      isHighlight: filters.isHighlight ? validateBoolean(filters.isHighlight) : undefined,
       isPublished: filters.isPublished ? validateBoolean(filters.isPublished) : undefined,
       size: {
         gte: filters.minSize ? validatePrice(filters.minSize) : 0,
         lte: filters.maxSize ? validatePrice(filters.maxSize) : 999999999,
       },
-      bathrooms: filters.bathrooms ? filters.bathrooms : undefined,
-      bedrooms: filters.bedrooms ? filters.bedrooms : undefined,
-      parkingSpaces: filters.parkingSpaces ? filters.parkingSpaces : undefined,
+      bathrooms: filters.bathrooms || undefined,
+      bedrooms: filters.bedrooms || undefined,
+      parkingSpaces: filters.parkingSpaces || undefined,
       financiable: filters.financiable ? validateBoolean(filters.financiable) : undefined,
       negotiable: filters.negotiable ? validateBoolean(filters.negotiable) : undefined,
       suites: filters.suites ? validateInteger(filters.suites) : undefined,
       furnished: filters.furnished ? validateFurnished(filters.furnished) : undefined,
 
-      // Filter by location, using related table PropertiesAddresses
       PropertiesAddresses: {
         city: filters.city ? validateString(filters.city) : undefined,
         state: filters.state ? validateUF(filters.state) : undefined,
@@ -662,8 +659,6 @@ export default class PropertyService {
         longitude: filters.longitude ? validateString(filters.longitude) : undefined,
       },
 
-      // Filter by prices, using related table PropertiesPrices
-      // Prices with OR condition
       OR: [
         filters.announcementType !== 'sell' && {
           PropertiesPrices: {
@@ -681,9 +676,8 @@ export default class PropertyService {
             },
           },
         },
-      ].filter(Boolean), // Remove any `false` or `undefined` from the array
+      ].filter(Boolean),
 
-      // Filter by property amenities, using related table PropertiesCommodities
       PropertiesCommodities: {
         pool: filters.pool !== undefined ? validateBoolean(filters.pool) : undefined,
         grill: filters.grill !== undefined ? validateBoolean(filters.grill) : undefined,
@@ -700,16 +694,13 @@ export default class PropertyService {
         solarEnergy: filters.solarEnergy !== undefined ? validateBoolean(filters.solarEnergy) : undefined,
         concierge: filters.concierge !== undefined ? validateBoolean(filters.concierge) : undefined,
         yard: filters.yard !== undefined ? validateBoolean(filters.yard) : undefined,
-        // elevator: filters.elevator !== undefined ? validateBoolean(filters.elevator) : undefined,
       },
     };
+
     if (verified) where.verified = 'verified';
 
     const properties = await prisma.property.findMany({
       where,
-      // orderBy: filters.orderBy ? filters.orderBy : { updatedAt: 'desc' },
-      skip: Number(take * (page - 1)),
-      take: Number(take),
       include: {
         PropertiesPrices: true,
         PropertiesAddresses: true,
@@ -718,7 +709,15 @@ export default class PropertyService {
       },
     });
 
-    const total = await prisma.property.count({ where });
+    // Embaralha resultados
+    properties.sort(() => Math.random() - 0.5);
+
+    // Prioriza imóveis com isHighlight
+    properties.sort((a, b) => b.isHighlight - a.isHighlight);
+
+    const paginated = properties.slice((page - 1) * take, page * take);
+
+    const total = properties.length;
 
     const pagination = {
       path,
@@ -729,7 +728,7 @@ export default class PropertyService {
       total,
     };
 
-    const result = await Promise.all(properties.map((property) => this.getPropertyDetails(property.id)));
+    const result = await Promise.all(paginated.map((property) => this.getPropertyDetails(property.id)));
 
     return { result, pagination };
   }
