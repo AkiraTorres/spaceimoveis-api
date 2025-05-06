@@ -35,9 +35,7 @@ const positionStackApiKey = process.env.POSITION_STACK_API_KEY;
 
 export default class PropertyService {
   static async checkHighlightLimit(email) {
-    let highlightLimit = 2;
-    const { type } = await prisma.user.findFirst({ where: { email } });
-    if (['realtor', 'realstate'].includes(type)) highlightLimit = 5;
+    const { highlightLimit } = await prisma.userInfo.findFirst({ where: { email } });
 
     const highlightedProperties = await prisma.property.findMany({ include: { SharedProperties: true } });
 
@@ -48,9 +46,7 @@ export default class PropertyService {
   }
 
   static async checkPublishLimit(email) {
-    let publishLimit = 5;
-    const { type } = await prisma.user.findFirst({ where: { email } });
-    if (['owner', 'realtor', 'realstate'].includes(type)) publishLimit = 9999;
+    const { publishLimit } = await prisma.userInfo.findFirst({ where: { email } });
 
     const publishedProperties = await prisma.property.findMany({ include: { SharedProperties: true } });
 
@@ -372,11 +368,8 @@ export default class PropertyService {
     if (params.yard !== undefined) commoditiesData.yard = validateBoolean(params.yard);
     if (params.elevator !== undefined) commoditiesData.elevator = validateBoolean(params.elevator);
 
-    const { subscription } = await UserService.find({ email: sellerEmail });
-    if (subscription === 'free' || subscription === 'platinum') {
-      if (data.isHighlight) this.checkHighlightLimit(sellerEmail);
-      else this.checkPublishLimit(sellerEmail);
-    }
+    if (data.isHighlight && await this.checkHighlightLimit(sellerEmail)) throw new ConfigurableError('Limite de destaques atingido', 418);
+    if (data.isPublished && await this.checkPublishLimit(sellerEmail)) throw new ConfigurableError('Limite de publicações atingido', 418);
 
     await prisma.$transaction(async (p) => {
       const createdProperty = await p.property.create({ data });
@@ -494,8 +487,8 @@ export default class PropertyService {
       elevator: params.elevator ? validateBoolean(params.elevator) : oldProperty.elevator,
     };
 
-    if (updatedData.isHighlight && !oldProperty.isHighlight) await this.checkHighlightLimit(validatedSellerEmail);
-    if (updatedData.isPublished && !oldProperty.isPublished) await this.checkPublishLimit(validatedSellerEmail);
+    if (updatedData.isHighlight && !oldProperty.isHighlight && await this.checkHighlightLimit(validatedSellerEmail)) throw new ConfigurableError('Limite de destaques atingido', 418);
+    if (updatedData.isPublished && !oldProperty.isPublished && await this.checkPublishLimit(validatedSellerEmail)) throw new ConfigurableError('Limite de publicações atingido', 418);
 
     // TODO: enable this line again when in production
     if (updatedData.description !== oldProperty.description || files.length > 0) updatedData.verified = 'pending';
@@ -595,7 +588,7 @@ export default class PropertyService {
 
     if (property.advertiserEmail !== email) throw new ConfigurableError('Você não tem permissão para destacar este imóvel', 403);
 
-    if (await this.checkPublishLimit(email) === true) throw new ConfigurableError('Limite de publicações atingido', 400);
+    if (await this.checkPublishLimit(email) === true) throw new ConfigurableError('Limite de publicações atingido', 418);
 
     await prisma.property.update({ where: { id: validatedId }, data: { isHighlight: false, isPublished: true } });
 
@@ -613,7 +606,7 @@ export default class PropertyService {
 
     if (property.advertiserEmail !== email) throw new ConfigurableError('Você não tem permissão para destacar este imóvel', 403);
 
-    if (await this.checkHighlightLimit(email)) throw new ConfigurableError('Limite de destaques atingido', 400);
+    if (await this.checkHighlightLimit(email)) throw new ConfigurableError('Limite de destaques atingido', 418);
 
     await prisma.property.update({ where: { id: validatedId }, data: { isHighlight: true, isPublished: true } });
 
@@ -642,25 +635,22 @@ export default class PropertyService {
 
   static async filter(filters, verified, page = 1, take = 6, path = '/properties/filter') {
     const where = {
-      // Filter based on default properties fields
       advertiserEmail: filters.advertiserEmail ? validateEmail(filters.advertiserEmail) : undefined,
       announcementType: filters.announcementType ? validateAnnouncementType(filters.announcementType) : undefined,
       propertyType: filters.propertyType ? validatePropertyType(filters.propertyType) : undefined,
-      isHighlight: filters.isHighlight ? validateBoolean(filters.isHighlight) : undefined,
       isPublished: filters.isPublished ? validateBoolean(filters.isPublished) : undefined,
       size: {
         gte: filters.minSize ? validatePrice(filters.minSize) : 0,
         lte: filters.maxSize ? validatePrice(filters.maxSize) : 999999999,
       },
-      bathrooms: filters.bathrooms ? filters.bathrooms : undefined,
-      bedrooms: filters.bedrooms ? filters.bedrooms : undefined,
-      parkingSpaces: filters.parkingSpaces ? filters.parkingSpaces : undefined,
+      bathrooms: filters.bathrooms || undefined,
+      bedrooms: filters.bedrooms || undefined,
+      parkingSpaces: filters.parkingSpaces || undefined,
       financiable: filters.financiable ? validateBoolean(filters.financiable) : undefined,
       negotiable: filters.negotiable ? validateBoolean(filters.negotiable) : undefined,
       suites: filters.suites ? validateInteger(filters.suites) : undefined,
       furnished: filters.furnished ? validateFurnished(filters.furnished) : undefined,
 
-      // Filter by location, using related table PropertiesAddresses
       PropertiesAddresses: {
         city: filters.city ? validateString(filters.city) : undefined,
         state: filters.state ? validateUF(filters.state) : undefined,
@@ -669,8 +659,6 @@ export default class PropertyService {
         longitude: filters.longitude ? validateString(filters.longitude) : undefined,
       },
 
-      // Filter by prices, using related table PropertiesPrices
-      // Prices with OR condition
       OR: [
         filters.announcementType !== 'sell' && {
           PropertiesPrices: {
@@ -688,9 +676,8 @@ export default class PropertyService {
             },
           },
         },
-      ].filter(Boolean), // Remove any `false` or `undefined` from the array
+      ].filter(Boolean),
 
-      // Filter by property amenities, using related table PropertiesCommodities
       PropertiesCommodities: {
         pool: filters.pool !== undefined ? validateBoolean(filters.pool) : undefined,
         grill: filters.grill !== undefined ? validateBoolean(filters.grill) : undefined,
@@ -707,16 +694,13 @@ export default class PropertyService {
         solarEnergy: filters.solarEnergy !== undefined ? validateBoolean(filters.solarEnergy) : undefined,
         concierge: filters.concierge !== undefined ? validateBoolean(filters.concierge) : undefined,
         yard: filters.yard !== undefined ? validateBoolean(filters.yard) : undefined,
-        // elevator: filters.elevator !== undefined ? validateBoolean(filters.elevator) : undefined,
       },
     };
+
     if (verified) where.verified = 'verified';
 
     const properties = await prisma.property.findMany({
       where,
-      // orderBy: filters.orderBy ? filters.orderBy : { updatedAt: 'desc' },
-      skip: Number(take * (page - 1)),
-      take: Number(take),
       include: {
         PropertiesPrices: true,
         PropertiesAddresses: true,
@@ -725,7 +709,15 @@ export default class PropertyService {
       },
     });
 
-    const total = await prisma.property.count({ where });
+    // Embaralha resultados
+    properties.sort(() => Math.random() - 0.5);
+
+    // Prioriza imóveis com isHighlight
+    properties.sort((a, b) => b.isHighlight - a.isHighlight);
+
+    const paginated = properties.slice((page - 1) * take, page * take);
+
+    const total = properties.length;
 
     const pagination = {
       path,
@@ -736,7 +728,7 @@ export default class PropertyService {
       total,
     };
 
-    const result = await Promise.all(properties.map((property) => this.getPropertyDetails(property.id)));
+    const result = await Promise.all(paginated.map((property) => this.getPropertyDetails(property.id)));
 
     return { result, pagination };
   }

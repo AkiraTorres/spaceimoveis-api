@@ -33,6 +33,15 @@ const adjustPublishLimit = async (email, limit) => {
   console.log(user);
 };
 
+const adjustHighlightLimit = async (email, limit) => {
+  const user = await UserService.find({ email });
+
+  user.highlightLimit = limit;
+  await prisma.userInfo.update({ where: { email }, data: { highlightLimit: limit } });
+  console.log(`O limite de destaques do usuário ${email} foi ajustado para ${limit}`);
+  console.log(user);
+};
+
 // TODO: Separar apropriadamente as responsabilidades
 // TODO: Adicionar validações de entrada
 // TODO: Adicionar tratamento de erros
@@ -44,6 +53,7 @@ export const createPaymentPreference = async (req, res, next) => {
   try {
     const payment = new Payment(paymentClient);
     const newLimit = req.body.new_limit;
+    const type = req.body.type ? req.body.type : 'publish';
 
     const body = {
       transaction_amount: req.body.transaction_amount,
@@ -69,8 +79,12 @@ export const createPaymentPreference = async (req, res, next) => {
     const job = scheduleJob({ start: new Date(), end: endTime, rule: '*/15 * * * * *' }, async () => {
       if (Date.now() >= endTime) { job.cancel(); }
 
-      if (checkIfPaid(result.id)) {
+      if (checkIfPaid(result.id) && type === 'publish') {
         adjustPublishLimit(body.payer.email, newLimit);
+        job.cancel();
+      } else if (checkIfPaid(result.id) && type === 'highlight') {
+        adjustHighlightLimit(body.payer.email, newLimit);
+        job.cancel();
       }
     });
   } catch (error) {
