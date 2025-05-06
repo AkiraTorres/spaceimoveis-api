@@ -368,11 +368,8 @@ export default class PropertyService {
     if (params.yard !== undefined) commoditiesData.yard = validateBoolean(params.yard);
     if (params.elevator !== undefined) commoditiesData.elevator = validateBoolean(params.elevator);
 
-    const { subscription } = await UserService.find({ email: sellerEmail });
-    if (subscription === 'free' || subscription === 'platinum') {
-      if (data.isHighlight) this.checkHighlightLimit(sellerEmail);
-      else this.checkPublishLimit(sellerEmail);
-    }
+    if (data.isHighlight && await this.checkHighlightLimit(sellerEmail)) throw new ConfigurableError('Limite de destaques atingido', 418);
+    if (data.isPublished && await this.checkPublishLimit(sellerEmail)) throw new ConfigurableError('Limite de publicações atingido', 418);
 
     await prisma.$transaction(async (p) => {
       const createdProperty = await p.property.create({ data });
@@ -490,8 +487,8 @@ export default class PropertyService {
       elevator: params.elevator ? validateBoolean(params.elevator) : oldProperty.elevator,
     };
 
-    if (updatedData.isHighlight && !oldProperty.isHighlight) await this.checkHighlightLimit(validatedSellerEmail);
-    if (updatedData.isPublished && !oldProperty.isPublished) await this.checkPublishLimit(validatedSellerEmail);
+    if (updatedData.isHighlight && !oldProperty.isHighlight && await this.checkHighlightLimit(validatedSellerEmail)) throw new ConfigurableError('Limite de destaques atingido', 418);
+    if (updatedData.isPublished && !oldProperty.isPublished && await this.checkPublishLimit(validatedSellerEmail)) throw new ConfigurableError('Limite de publicações atingido', 418);
 
     // TODO: enable this line again when in production
     if (updatedData.description !== oldProperty.description || files.length > 0) updatedData.verified = 'pending';
@@ -591,7 +588,7 @@ export default class PropertyService {
 
     if (property.advertiserEmail !== email) throw new ConfigurableError('Você não tem permissão para destacar este imóvel', 403);
 
-    if (await this.checkPublishLimit(email) === true) throw new ConfigurableError('Limite de publicações atingido', 400);
+    if (await this.checkPublishLimit(email) === true) throw new ConfigurableError('Limite de publicações atingido', 418);
 
     await prisma.property.update({ where: { id: validatedId }, data: { isHighlight: false, isPublished: true } });
 
@@ -609,7 +606,7 @@ export default class PropertyService {
 
     if (property.advertiserEmail !== email) throw new ConfigurableError('Você não tem permissão para destacar este imóvel', 403);
 
-    if (await this.checkHighlightLimit(email)) throw new ConfigurableError('Limite de destaques atingido', 400);
+    if (await this.checkHighlightLimit(email)) throw new ConfigurableError('Limite de destaques atingido', 418);
 
     await prisma.property.update({ where: { id: validatedId }, data: { isHighlight: true, isPublished: true } });
 
