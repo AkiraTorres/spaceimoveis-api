@@ -35,9 +35,7 @@ const positionStackApiKey = process.env.POSITION_STACK_API_KEY;
 
 export default class PropertyService {
   static async checkHighlightLimit(email) {
-    let highlightLimit = 2;
-    const { type } = await prisma.user.findFirst({ where: { email } });
-    if (['realtor', 'realstate'].includes(type)) highlightLimit = 5;
+    const { highlightLimit } = await prisma.userInfo.findFirst({ where: { email } });
 
     const highlightedProperties = await prisma.property.findMany({ include: { SharedProperties: true } });
 
@@ -48,9 +46,7 @@ export default class PropertyService {
   }
 
   static async checkPublishLimit(email) {
-    let publishLimit = 5;
-    const { type } = await prisma.user.findFirst({ where: { email } });
-    if (['owner', 'realtor', 'realstate'].includes(type)) publishLimit = 9999;
+    const { publishLimit } = await prisma.userInfo.findFirst({ where: { email } });
 
     const publishedProperties = await prisma.property.findMany({ include: { SharedProperties: true } });
 
