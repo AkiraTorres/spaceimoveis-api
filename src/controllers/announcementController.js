@@ -24,6 +24,17 @@ export const getAnnouncements = asyncHandler(async (req, res, next) => {
   }
 });
 
+export const getUserAnnouncements = asyncHandler(async (req, res, next) => {
+  try {
+    const { email } = req;
+
+    const result = await AnnouncementService.getUserAnnouncements(email);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
 export const getValidAnnouncements = asyncHandler(async (req, res, next) => {
   try {
     const result = await AnnouncementService.getAnnouncements(true);
@@ -36,13 +47,46 @@ export const getValidAnnouncements = asyncHandler(async (req, res, next) => {
 export const createAnnouncement = asyncHandler(async (req, res, next) => {
   try {
     const { data } = req.body;
-    const { file } = req;
+    const { file, email = null } = req;
 
     let announcementData = {};
     if (data !== undefined) announcementData = JSON.parse(data);
 
-    const result = await AnnouncementService.createAnnouncement(announcementData, file);
+    const result = await AnnouncementService.createAnnouncement(announcementData, file, email !== null);
     res.status(201).json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+export const generatePayment = asyncHandler(async (req, res, next) => {
+  try {
+    const { data } = req.body;
+
+    const result = await AnnouncementService.generatePayment(data);
+    res.status(201).json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+export const approveAnnouncement = asyncHandler(async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const result = await AnnouncementService.approveAnnouncement(id);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+export const denyAnnouncement = asyncHandler(async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const result = await AnnouncementService.denyAnnouncement(id);
+    res.status(200).json(result);
   } catch (error) {
     next(error);
   }
@@ -73,8 +117,9 @@ export const handlePayment = asyncHandler(async (req, res, next) => {
 export const deleteAnnouncement = asyncHandler(async (req, res, next) => {
   try {
     const { id } = req.params;
+    const { email } = req;
 
-    const result = await AnnouncementService.deleteAnnouncement(id);
+    const result = await AnnouncementService.deleteAnnouncement(id, email);
     res.status(200).json(result);
   } catch (error) {
     next(error);

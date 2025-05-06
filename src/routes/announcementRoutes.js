@@ -3,7 +3,7 @@ import multer from 'multer';
 
 import * as controller from '../controllers/announcementController.js';
 import verifyAdmin from '../middlewares/verifyAdmin.js';
-import verifyJwt from '../middlewares/verifyJwt.js';
+import verifyJwt, { verifyIfLogged } from '../middlewares/verifyJwt.js';
 
 const router = Express.Router();
 
@@ -137,7 +137,12 @@ router.put('/view/:id', controller.addViewAnnouncement);
  *             schema:
  *               $ref: '#/components/schemas/Announcement'
  */
-router.post('/', verifyJwt, verifyAdmin, upload.single('photo'), controller.createAnnouncement);
+router.post('/', verifyIfLogged, upload.single('photo'), controller.createAnnouncement);
+
+router.get('/user/:email', verifyJwt, controller.getUserAnnouncements);
+router.post('/payment', verifyJwt, verifyAdmin, controller.generatePayment);
+router.post('/approve/:id', verifyJwt, verifyAdmin, controller.approveAnnouncement);
+router.post('/deny/:id', verifyJwt, verifyAdmin, controller.denyAnnouncement);
 
 /**
  * @swagger
@@ -165,7 +170,7 @@ router.post('/', verifyJwt, verifyAdmin, upload.single('photo'), controller.crea
  *                   type: string
  *                   description: Confirmation message
  */
-router.delete('/:id', verifyJwt, verifyAdmin, controller.deleteAnnouncement);
+router.delete('/:id', verifyJwt, controller.deleteAnnouncement);
 
 /**
  * @swagger
