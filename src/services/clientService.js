@@ -5,7 +5,7 @@ import { initializeApp } from 'firebase/app';
 import firebaseConfig from '../config/firebase.js';
 import prisma from '../config/prisma.js';
 import ConfigurableError from '../errors/ConfigurableError.js';
-import { validateEmail, validatePassword, validatePhone, validateString, validateUF, validateUserType } from '../validators/inputValidators.js';
+import { validateCreci, validateEmail, validatePassword, validatePhone, validateString, validateUF, validateUserType } from '../validators/inputValidators.js';
 import UserService from './userService.js';
 
 const generateUniqueHandler = async (h) => {
@@ -45,11 +45,16 @@ export default class ClientService extends UserService {
       cpf: params.cpf ? validateString(params.cpf, 'O campo CPF é obrigatório') : oldUser.cpf,
       cnpj: params.cnpj ? validateString(params.cnpj) : oldUser.cnpj,
       rg: params.rg ? validateString(params.rg, 'O campo RG é obrigatório') : oldUser.rg,
-      creci: params.creci ? validateString(params.creci, 'O campo CRECI é obrigatório') : oldUser.creci,
+      creci: params.creci ? validateCreci(params.creci, type === 'realstate') : oldUser.creci,
       phone: params.phone ? validatePhone(params.phone) : oldUser.phone,
       idPhone: params.idPhone ? validateString(params.idPhone) : oldUser.idPhone,
       bio: params.bio ? validateString(params.bio) : oldUser.bio,
     };
+
+    if (type === 'realtor') {
+      infoData.cpf = null;
+      infoData.rg = null;
+    }
 
     const updatedAddress = {
       street: params.street ? validateString(params.street) : oldUser.street,
@@ -106,6 +111,7 @@ export default class ClientService extends UserService {
     return this.userDetails(data.email);
   }
 
+  // eslint-disable-next-line no-unused-vars
   static async MakeAnAppointment(email, data, advertiserEmail, advertiserAvailability) {
     const validatedEmail = validateEmail(email);
     if (!validatedEmail) throw new ConfigurableError('Cliente não encontrado', 404);

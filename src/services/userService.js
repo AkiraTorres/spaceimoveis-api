@@ -112,10 +112,10 @@ export default class UserService {
 
     const newInfo = {
       email: newUser.email,
-      cpf: !['client', 'admin'].includes(params.type) || params.cpf ? validateCpf(params.cpf, "O campo 'cpf' é obrigatório") : null,
+      cpf: !['client', 'realstate', 'admin'].includes(params.type) || params.cpf ? validateCpf(params.cpf, "O campo 'cpf' é obrigatório") : null,
       cnpj: newUser.type === 'realstate' || params.cnpj ? validateCnpj(params.cnpj, "O campo 'cnpj' é obrigatório") : null,
       rg: params.rg ? validateString(params.rg) : null,
-      creci: newUser.type in ['realtor', 'realstate'] || params.creci ? validateString(params.creci, "O campo 'creci' é obrigatório") : null,
+      creci: newUser.type in ['realtor', 'realstate'] || params.creci ? validateCreci(params.creci, newUser.type === 'realstate') : null,
       phone: params.phone ? validatePhone(params.phone) : null,
       idPhone: params.idPhone ? validateString(params.idPhone) : null,
       bio: params.bio ? validateString(params.bio) : null,
@@ -196,7 +196,7 @@ export default class UserService {
         cpf: params.cpf ? validateCpf(params.cpf) : oldUser.cpf,
         cnpj: params.cnpj ? validateCnpj(params.cnpj) : oldUser.cnpj,
         rg: params.rg ? validateString(params.rg) : oldUser.rg,
-        creci: params.creci ? validateCreci(params.creci) : oldUser.creci,
+        creci: params.creci ? validateCreci(params.creci, oldUser.type === 'realstate') : oldUser.creci,
         phone: params.phone ? validatePhone(params.phone) : oldUser.phone,
         idPhone: params.idPhone ? validateString(params.idPhone) : oldUser.idPhone,
         bio: params.bio ? validateString(params.bio) : oldUser.bio,
