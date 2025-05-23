@@ -122,6 +122,11 @@ export default class UserService {
       subscription: newUser.type !== 'admin' ? 'free' : null,
     };
 
+    if (['realtor', 'realstate'].includes(params.type)) {
+      newInfo.highlightLimit = 30;
+      newInfo.publishLimit = 2000;
+    }
+
     const newAddress = {
       email: newUser.email,
       street: params.street ? validateString(params.street) : null,
