@@ -207,11 +207,11 @@ export function validateUF(uf) {
   return sanitizedUf;
 }
 
-export function validateCreci(creci) {
+export function validateCreci(creci, isRealstate = false) {
   if (creci === null || creci === undefined) throw new ConfigurableError('O campo CRECI é obrigatório', 422);
   const sanitizedCreci = validator.escape(creci);
 
-  const creciRegex = /^(CRECI-)?([A-Z]{2}\s?\d{1,15}|\d{1,15}\s?[A-Z]{2})$/;
+  const creciRegex = isRealstate ? /^(CRECI-)?([A-Z]{2}\s?\d{1,15}|\d{1,15}\s?[A-Z]{2})$/ : /^(CRECI-)?([A-Z]{2}\s?j\d{1,15}|j\d{1,15}\s?[A-Z]{2})$/;
 
   if (!creciRegex.test(sanitizedCreci)) {
     throw new ConfigurableError('CRECI inválido', 400);
