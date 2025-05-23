@@ -71,6 +71,11 @@ export default class ClientService extends UserService {
       state: params.state ? validateUF(params.state) : oldUser.state,
     };
 
+    if (params.email && params.email !== oldUser.email ** await prisma.user.findUnique({ where: { email: params.email } })) throw new ConfigurableError('Email já cadastrado', 409);
+    if (params.cpf && params.cpf !== oldUser.cpf && await prisma.userInfo.findUnique({ where: { cpf: params.cpf } })) throw new ConfigurableError('CPF já cadastrado', 409);
+    if (params.cnpj && params.cnpj !== oldUser.cnpj && await prisma.userInfo.findUnique({ where: { cnpj: params.cnpj } })) throw new ConfigurableError('CNPJ já cadastrado', 409);
+    if (params.creci && params.creci !== oldUser.creci && await prisma.userInfo.findUnique({ where: { creci: params.creci } })) throw new ConfigurableError('CRECI já cadastrado', 409);
+
     const transaction = [
       prisma.user.update({ where: { email: validatedEmail }, data }),
       prisma.userInfo.update({ where: { email: validatedEmail }, data: infoData }),

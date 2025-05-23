@@ -229,6 +229,11 @@ export default class UserService {
         url: validateString(social.url),
       })) : null;
 
+      if (params.cpf && params.cpf !== oldUser.cpf && await prisma.userInfo.findFirst({ where: { cpf: params.cpf } })) throw new ConfigurableError('CPF já cadastrado', 409);
+      if (params.cnpj && params.cnpj !== oldUser.cnpj && await prisma.userInfo.findFirst({ where: { cnpj: params.cnpj } })) throw new ConfigurableError('CNPJ já cadastrado', 409);
+      if (params.creci && params.creci !== oldUser.creci && await prisma.userInfo.findFirst({ where: { creci: params.creci } })) throw new ConfigurableError('CRECI já cadastrado', 409);
+      if (params.email && params.email !== oldUser.email && await prisma.user.findFirst({ where: { email: params.email } })) throw new ConfigurableError('Email já cadastrado', 409);
+
       transaction = [
         prisma.user.update({ where: { email: validatedEmail }, data: updatedData }),
         prisma.userInfo.update({ where: { email: validatedEmail }, data: updatedInfo }),
