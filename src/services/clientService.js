@@ -51,6 +51,11 @@ export default class ClientService extends UserService {
       bio: params.bio ? validateString(params.bio) : oldUser.bio,
     };
 
+    if (['realtor', 'realstate'].includes(params.type)) {
+      infoData.highlightLimit = 30;
+      infoData.publishLimit = 2000;
+    }
+
     if (type === 'realtor') {
       infoData.cpf = null;
       infoData.rg = null;
