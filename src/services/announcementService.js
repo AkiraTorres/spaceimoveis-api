@@ -212,15 +212,14 @@ export default class AnnouncementService {
 
     const requestOptions = { idempotencyKey: uuid() };
     const response = await payment.create({ body, requestOptions });
-    const paymentId = (response.id).toString();
-    announcement.paymentId = paymentId;
+    announcement.paymentId = (response.id).toString();
     announcement.validUntil = new Date(Date.now());
 
     const subject = 'Publicação de anúncio na Spaceimoveis';
 
     const emailBody = `
         <!DOCTYPE html>
-          <html>
+          <html lang="utf-8">
             <head>
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
