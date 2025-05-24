@@ -115,14 +115,14 @@ export default class UserService {
       cpf: !['client', 'realstate', 'admin'].includes(params.type) || params.cpf ? validateCpf(params.cpf, "O campo 'cpf' é obrigatório") : null,
       cnpj: newUser.type === 'realstate' || params.cnpj ? validateCnpj(params.cnpj, "O campo 'cnpj' é obrigatório") : null,
       rg: params.rg ? validateString(params.rg) : null,
-      creci: newUser.type in ['realtor', 'realstate'] || params.creci ? validateCreci(params.creci, newUser.type === 'realstate') : null,
+      creci: ['realtor', 'realstate'].includes(newUser.type) || params.creci ? validateCreci(params.creci, newUser.type === 'realstate') : null,
       phone: params.phone ? validatePhone(params.phone) : null,
       idPhone: params.idPhone ? validateString(params.idPhone) : null,
       bio: params.bio ? validateString(params.bio) : null,
       subscription: newUser.type !== 'admin' ? 'free' : null,
     };
 
-    if (['realtor', 'realstate'].includes(params.type)) {
+    if (['realtor', 'realstate'].includes(newUser.type)) {
       newInfo.highlightLimit = 30;
       newInfo.publishLimit = 2000;
     }
