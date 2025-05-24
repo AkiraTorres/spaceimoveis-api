@@ -264,9 +264,13 @@ export default class AdminService extends UserService {
       body: validatedAnswer,
     };
 
-    await sendEmail(mailOptions);
-
     await prisma.userMessages.update({ where: { id: validatedId }, data: { answered: true } });
+
+    await sendEmail(mailOptions).catch((error) => {
+      // eslint-disable-next-line no-console
+      console.error(error);
+      return { message: 'O email não pode ser enviado.' };
+    });
 
     return { message: 'Mensagem respondida com sucesso!' };
   }

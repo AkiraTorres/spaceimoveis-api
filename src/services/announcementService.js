@@ -270,7 +270,11 @@ export default class AnnouncementService {
 
     await prisma.announcement.update({ where: { id: validatedId }, data: { verified: 'verified' } });
 
-    await sendEmail({ to: announcement.announcerEmail, body: emailBody, subject });
+    await sendEmail({ to: announcement.announcerEmail, body: emailBody, subject }).catch((error) => {
+      // eslint-disable-next-line no-console
+      console.error(error);
+      return { announcement, payment: response, message: 'Link de pagamento criado com sucesso. Porém o email não pode ser enviado.' };
+    });
 
     return { announcement, payment: response, message: 'Link de pagamento criado com sucesso.' };
   }

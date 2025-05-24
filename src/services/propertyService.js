@@ -777,7 +777,11 @@ export default class PropertyService {
     };
 
     const response = 'O compartilhamento foi realizado com sucesso!';
-    await sendEmail(mailOptions);
+    await sendEmail(mailOptions).catch((error) => {
+      // eslint-disable-next-line no-console
+      console.error(error);
+      return { shared, message: `${response} Porém o email não pode ser enviado.` };
+    });
 
     return { shared, message: response };
   }
@@ -872,7 +876,11 @@ export default class PropertyService {
     };
 
     const response = 'O compartilhamento foi aceito com sucesso!';
-    await sendEmail(mailOptions);
+    await sendEmail(mailOptions).catch((error) => {
+      // eslint-disable-next-line no-console
+      console.error(error);
+      return { message: `${response} Porém o email não pode ser enviado.` };
+    });
 
     return { message: response };
   }
@@ -918,7 +926,11 @@ export default class PropertyService {
     };
 
     const response = 'O compartilhamento foi negado com sucesso!';
-    await sendEmail(mailOptions);
+    await sendEmail(mailOptions).catch((error) => {
+      // eslint-disable-next-line no-console
+      console.error(error);
+      return { message: `${response} Porém o email não pode ser enviado.` };
+    });
 
     return { message: response };
   }
