@@ -9,6 +9,7 @@ import ConfigurableError from '../errors/ConfigurableError.js';
 import { validateString, validateUserType } from '../validators/inputValidators.js';
 import PropertyService from './propertyService.js';
 import UserService from './userService.js';
+import sendEmail from './emailService.js';
 
 const app = initializeApp(firebaseConfig);
 const storage = getStorage(app);
@@ -258,15 +259,18 @@ export default class AdminService extends UserService {
     if (message.answered) throw new ConfigurableError('Mensagem já respondida', 400);
 
     const mailOptions = {
-      from: process.env.EMAIL_ADDRESS,
       to: message.userEmail,
       subject: 'Resposta à sua mensagem',
-      text: validatedAnswer,
+      body: validatedAnswer,
     };
 
-    await sgMail.send(mailOptions);
-
     await prisma.userMessages.update({ where: { id: validatedId }, data: { answered: true } });
+
+    await sendEmail(mailOptions).catch((error) => {
+      // eslint-disable-next-line no-console
+      console.error(error);
+      return { message: 'O email não pode ser enviado.' };
+    });
 
     return { message: 'Mensagem respondida com sucesso!' };
   }

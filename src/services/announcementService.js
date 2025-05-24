@@ -10,6 +10,7 @@ import { paymentClient } from '../config/payment.js';
 import prisma from '../config/prisma.js';
 import ConfigurableError from '../errors/ConfigurableError.js';
 import { validateCpf, validateEmail, validateInteger, validatePrice, validateString } from '../validators/inputValidators.js';
+import sendEmail from './emailService.js';
 
 const app = initializeApp(firebaseConfig);
 const storage = getStorage(app);
@@ -175,7 +176,6 @@ export default class AnnouncementService {
     const announcement = await prisma.announcement.create({ data: announcementData });
 
     const message = 'Anúncio criado com sucesso.';
-    // if (data.pending) sgMail.send(mailOptions).catch(() => { message += ' Mas o email não pode ser enviado.'; });
 
     return { announcement, payment: response, message };
   }
@@ -212,17 +212,14 @@ export default class AnnouncementService {
 
     const requestOptions = { idempotencyKey: uuid() };
     const response = await payment.create({ body, requestOptions });
-    const paymentId = (response.id).toString();
-    announcement.paymentId = paymentId;
+    announcement.paymentId = (response.id).toString();
     announcement.validUntil = new Date(Date.now());
 
-    const mailOptions = {
-      from: process.env.EMAIL_ADDRESS,
-      to: announcement.announcerEmail,
-      subject: 'Publicação de anúncio na Spaceimoveis',
-      html: `
+    const subject = 'Publicação de anúncio na Spaceimoveis';
+
+    const emailBody = `
         <!DOCTYPE html>
-          <html>
+          <html lang="utf-8">
             <head>
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -268,16 +265,18 @@ export default class AnnouncementService {
                     <p><strong>Space Imóveis</strong></p>
                 </div>
             </body>
-          </html>
-      `,
-    };
+          </html>p
+      `;
 
     await prisma.announcement.update({ where: { id: validatedId }, data: { verified: 'verified' } });
 
-    let message = 'Link de pagamento criado com sucesso.';
-    sgMail.send(mailOptions).catch(() => { message += ' Mas o email não pode ser enviado.'; });
+    await sendEmail({ to: announcement.announcerEmail, body: emailBody, subject }).catch((error) => {
+      // eslint-disable-next-line no-console
+      console.error(error);
+      return { announcement, payment: response, message: 'Link de pagamento criado com sucesso. Porém o email não pode ser enviado.' };
+    });
 
-    return { announcement, payment: response, message };
+    return { announcement, payment: response, message: 'Link de pagamento criado com sucesso.' };
   }
 
   static async approveAnnouncement(announcementId) {
