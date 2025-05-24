@@ -24,6 +24,7 @@ import {
 } from '../validators/inputValidators.js';
 import FavoriteService from './favoriteService.js';
 import UserService from './userService.js';
+import sendEmail from './emailService.js';
 
 dotenv.config();
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
@@ -770,14 +771,13 @@ export default class PropertyService {
     }
 
     const mailOptions = {
-      from: process.env.EMAIL_ADDRESS,
       to: validatedGuestEmail,
       subject: 'Compartilhamento de Imóvel',
-      text: `O proprietário ${owner.name}, dono de uma casa na cidade de ${property.city}-${property.state}, compartilhou um imóvel com você. Para mais informações acesse o site.`,
+      body: `O proprietário ${owner.name}, dono de uma casa na cidade de ${property.city}-${property.state}, compartilhou um imóvel com você. Para mais informações acesse o site.`,
     };
 
-    let response = 'O compartilhamento foi realizado com sucesso!';
-    sgMail.send(mailOptions).catch(() => { response += ' Mas o email não pôde ser enviado.'; });
+    const response = 'O compartilhamento foi realizado com sucesso!';
+    await sendEmail(mailOptions);
 
     return { shared, message: response };
   }
@@ -866,16 +866,13 @@ export default class PropertyService {
     }
 
     const mailOptions = {
-      from: process.env.EMAIL_ADDRESS,
       to: property.owner_email,
       subject: 'Aceito o compartilhamento do imóvel!',
-      text: emailBody,
+      body: emailBody,
     };
 
-    let response = 'O compartilhamento foi aceito com sucesso!';
-    sgMail.send(mailOptions).catch(() => {
-      response += ' Mas o email não pode ser enviado.';
-    });
+    const response = 'O compartilhamento foi aceito com sucesso!';
+    await sendEmail(mailOptions);
 
     return { message: response };
   }
@@ -915,16 +912,13 @@ export default class PropertyService {
     const property = await prisma.property.findFirst({ where: { id: validatedPropertyId } });
 
     const mailOptions = {
-      from: process.env.EMAIL_ADDRESS,
       to: property.advertiserEmail,
       subject: 'Compartilhamento de imóvel negado.',
-      text: emailBody,
+      body: emailBody,
     };
 
-    let response = 'O compartilhamento foi negado com sucesso!';
-    sgMail.send(mailOptions).catch(() => {
-      response += ' Mas o email não pode ser enviado.';
-    });
+    const response = 'O compartilhamento foi negado com sucesso!';
+    await sendEmail(mailOptions);
 
     return { message: response };
   }
