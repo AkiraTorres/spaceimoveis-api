@@ -56,7 +56,7 @@ export default class ClientService extends UserService {
       infoData.publishLimit = 2000;
     }
 
-    if (type === 'realtor') {
+    if (type === 'realstate') {
       infoData.cpf = null;
       infoData.rg = null;
     }
