@@ -121,7 +121,7 @@ export default class ClientService extends UserService {
   }
 
   // eslint-disable-next-line no-unused-vars
-  static async MakeAnAppointment(email, data, advertiserEmail, advertiserAvailability) {
+  static async MakeAnAppointment(email, data, advertiserEmail) {
     const validatedEmail = validateEmail(email);
     if (!validatedEmail) throw new ConfigurableError('Cliente não encontrado', 404);
 
