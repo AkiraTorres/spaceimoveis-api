@@ -142,6 +142,7 @@ export default class UserService {
 
     if (newInfo.cpf && await prisma.userInfo.findFirst({ where: { cpf: newInfo.cpf } })) throw new ConfigurableError('CPF já cadastrado', 409);
     if (newInfo.cnpj && await prisma.userInfo.findFirst({ where: { cnpj: newInfo.cnpj } })) throw new ConfigurableError('CNPJ já cadastrado', 409);
+    if (newInfo.rg && await prisma.userInfo.findFirst({ where: { rg: newInfo.rg } })) throw new ConfigurableError('rg já cadastrado', 409);
     if (newInfo.creci && await prisma.userInfo.findFirst({ where: { creci: newInfo.creci } })) throw new ConfigurableError('CRECI já cadastrado', 409);
 
     const transaction = [
